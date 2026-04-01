@@ -21,7 +21,7 @@ export function Ranking() {
       setRanking(users);
 
       // 2) Ranking de Células (Agregação)
-      const { data: cellData } = await supabase.from("kefel_celulas").select("id, nome");
+      const { data: cellData } = await supabase.from("kefel_celulas").select("id, nome") as { data: { id: string; nome: string }[] | null };
       if (cellData) {
         const cellScores = cellData.map(c => {
           const total = users.filter(u => u.celula_id === c.id).reduce((acc, curr) => acc + curr.tempo_leitura_total, 0);
