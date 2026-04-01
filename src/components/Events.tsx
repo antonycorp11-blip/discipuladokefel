@@ -264,7 +264,7 @@ export function Events() {
   };
 
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-6 pb-28 pt-10">
       <header className="flex justify-between items-center px-2">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tighter italic uppercase">Eventos</h1>
@@ -281,7 +281,7 @@ export function Events() {
       </header>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="flex flex-col bg-[#FDFDFD] pt-10" style={{ height: "calc(100dvh - 80px)" }}>
           <Loader2 className="animate-spin text-blue-500 w-12 h-12" />
           <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Sincronizando Agenda...</p>
         </div>

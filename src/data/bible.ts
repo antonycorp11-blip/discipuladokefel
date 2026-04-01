@@ -107,13 +107,12 @@ export async function fetchBibleChapter(
   }
 
   try {
-    // Usando a API A Bíblia Digital (focada em Português)
-    // Precisamos converter os IDs para as abreviações da API
+    // Siglas corretas para API A Bíblia Digital
     const bookMapping: Record<string, string> = {
       'genesis': 'gn', 'exodus': 'ex', 'leviticus': 'lv', 'numbers': 'nm', 'deuteronomy': 'dt',
       'joshua': 'js', 'judges': 'jz', 'ruth': 'rt', '1+samuel': '1sm', '2+samuel': '2sm',
       '1+kings': '1rs', '2+kings': '2rs', '1+chronicles': '1cr', '2+chronicles': '2cr',
-      'ezra': 'ed', 'nehemiah': 'ne', 'esther': 'et', 'job': 'jo', 'psalms': 'sl',
+      'ezra': 'ed', 'nehemiah': 'ne', 'esther': 'et', 'job': 'jb', 'psalms': 'sl',
       'proverbs': 'pv', 'ecclesiastes': 'ec', 'song+of+solomon': 'ct', 'isaiah': 'is',
       'jeremiah': 'jr', 'lamentations': 'lm', 'ezekiel': 'ez', 'daniel': 'dn',
       'hosea': 'os', 'joel': 'jl', 'amos': 'am', 'obadiah': 'ob', 'jonah': 'jn',
