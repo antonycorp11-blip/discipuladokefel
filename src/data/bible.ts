@@ -106,34 +106,48 @@ export async function fetchBibleChapter(
     return chapterCache.get(cacheKey)!;
   }
 
-  // Tentar primeiro com Almeida, se falhar, tentar o padrão (WEB)
-  const translations = ['almeida', ''];
-  
-  for (const trans of translations) {
-    try {
-      const transParam = trans ? `?translation=${trans}` : '';
-      const url = `https://bible-api.com/${bookId}+${chapter}${transParam}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) continue; // Tenta a próxima tradução
-      
-      const data = await response.json();
-      if (!data.verses || data.verses.length === 0) continue;
+  try {
+    // Usando a API A Bíblia Digital (focada em Português)
+    // Precisamos converter os IDs para as abreviações da API
+    const bookMapping: Record<string, string> = {
+      'genesis': 'gn', 'exodus': 'ex', 'leviticus': 'lv', 'numbers': 'nm', 'deuteronomy': 'dt',
+      'joshua': 'js', 'judges': 'jz', 'ruth': 'rt', '1+samuel': '1sm', '2+samuel': '2sm',
+      '1+kings': '1rs', '2+kings': '2rs', '1+chronicles': '1cr', '2+chronicles': '2cr',
+      'ezra': 'ed', 'nehemiah': 'ne', 'esther': 'et', 'job': 'jo', 'psalms': 'sl',
+      'proverbs': 'pv', 'ecclesiastes': 'ec', 'song+of+solomon': 'ct', 'isaiah': 'is',
+      'jeremiah': 'jr', 'lamentations': 'lm', 'ezekiel': 'ez', 'daniel': 'dn',
+      'hosea': 'os', 'joel': 'jl', 'amos': 'am', 'obadiah': 'ob', 'jonah': 'jn',
+      'micah': 'mq', 'nahum': 'na', 'habakkuk': 'hc', 'zephaniah': 'sf', 'haggai': 'ag',
+      'zechariah': 'zc', 'malachi': 'ml', 'matthew': 'mt', 'mark': 'mc', 'luke': 'lc',
+      'john': 'jo', 'acts': 'at', 'romans': 'rm', '1+corinthians': '1co', '2+corinthians': '2co',
+      'galatians': 'gl', 'ephesians': 'ef', 'philippians': 'fp', 'colossians': 'cl',
+      '1+thessalonians': '1ts', '2+thessalonians': '2ts', '1+timothy': '1tm', '2+timothy': '2tm',
+      'titus': 'tt', 'philemon': 'fm', 'hebrews': 'hb', 'james': 'tg', '1+peter': '1pe',
+      '2+peter': '2pe', '1+john': '1jo', '2+john': '2jo', '3+john': '3jo', 'jude': 'jd',
+      'revelation': 'ap'
+    };
 
-      const verses: BibleVerse[] = data.verses.map((v: any) => ({
-        book_id: v.book_id,
-        book_name: v.book_name,
-        chapter: v.chapter,
-        verse: v.verse,
-        text: v.text.trim(),
-      }));
+    const abrev = bookMapping[bookId] || bookId.slice(0, 2);
+    // Versão: acf (Almeida Corrigida Fiel)
+    const url = `https://www.abibliadigital.com.br/api/verses/acf/${abrev}/${chapter}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Falha na API');
+    
+    const data = await response.json();
+    
+    const verses: BibleVerse[] = (data.verses || []).map((v: any) => ({
+      book_id: bookId,
+      book_name: data.book.name,
+      chapter: data.chapter.number,
+      verse: v.number,
+      text: v.text.trim(),
+    }));
 
-      chapterCache.set(cacheKey, verses);
-      return verses;
-    } catch (err) {
-      console.error(`Erro ao buscar capítulo (${trans}):`, err);
-    }
+    chapterCache.set(cacheKey, verses);
+    return verses;
+  } catch (err) {
+    console.error('Erro na Bíblia Digital, tentando fallback:', err);
+    return [];
   }
-
-  return [];
 }

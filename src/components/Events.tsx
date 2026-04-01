@@ -29,7 +29,7 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
   const [precoRaw, setPrecoRaw] = useState(initial?.preco ? String(initial.preco) : "");
   const [imagePreview, setImagePreview] = useState<string | null>(initial?.imagem_url || null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [banner_position, setBannerPosition] = useState<"top" | "center" | "bottom">(initial?.banner_position || "center");
+  const [banner_pos_y, setBannerPosY] = useState<number>(initial?.banner_pos_y ?? 50);
   const [saving, setSaving] = useState(false);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +77,7 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
         tipo,
         preco: tipo === "pago" ? parseFloat(precoRaw) || 0 : 0,
         imagem_url: finalImageUrl,
-        banner_position: banner_position,
+        banner_pos_y: banner_pos_y, // Salva o percentual exato
         criado_por: user?.id
       };
 
@@ -96,12 +96,6 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
     }
   };
 
-  const positions = [
-    { id: 'top', label: 'Topo', class: 'object-top' },
-    { id: 'center', label: 'Centro', class: 'object-center' },
-    { id: 'bottom', label: 'Inferior', class: 'object-bottom' }
-  ];
-
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white w-full max-w-xl rounded-[2.5rem] p-6 space-y-6 max-h-[90vh] overflow-y-auto my-auto shadow-2xl">
@@ -112,47 +106,62 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase ml-2">Imagem do Evento</label>
+            <label className="text-xs font-bold text-gray-400 uppercase ml-2 tracking-widest">Foto do Evento</label>
             <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full h-44 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-blue-400 transition-colors"
+              onClick={() => !imagePreview && fileInputRef.current?.click()}
+              className="relative w-full aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2.5rem] overflow-hidden group shadow-inner"
             >
               {imagePreview ? (
-                <img 
-                  src={imagePreview} 
-                  className={cn("w-full h-full object-cover", positions.find(p => p.id === banner_position)?.class)} 
-                  alt="Preview" 
-                />
+                <>
+                  <img 
+                    src={imagePreview} 
+                    className="w-full h-full object-cover transition-all"
+                    style={{ objectPosition: `50% ${banner_pos_y}%` }}
+                    alt="Preview" 
+                  />
+                  <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                      className="bg-white/90 backdrop-blur shadow-xl p-3 rounded-2xl hover:bg-white transition-all text-blue-600"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setImagePreview(null); setImageFile(null); }}
+                      className="bg-red-500/90 text-white shadow-xl p-3 rounded-2xl hover:bg-red-600 transition-all font-bold"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  
+                  {/* Ajuste por arraste (Interface de Grade/Slider) */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur p-4 rounded-3xl shadow-2xl border border-white/50">
+                    <div className="flex items-center justify-between mb-3">
+                       <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Arraste para ajustar altura</span>
+                       <span className="text-[10px] font-black text-gray-400">{banner_pos_y}%</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" max="100" 
+                      value={banner_pos_y} 
+                      onChange={(e) => setBannerPosY(parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-100 rounded-full appearance-none accent-blue-600 cursor-pointer"
+                    />
+                  </div>
+                </>
               ) : (
-                <div className="text-center">
-                  <Upload className="mx-auto text-gray-300 w-8 h-8" />
-                  <span className="text-xs text-gray-400 mt-2 block font-bold uppercase">Toque para enviar foto</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gray-50 cursor-pointer group-hover:bg-blue-50/50 transition-all">
+                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+                    <Upload className="text-blue-600" size={28} />
+                  </div>
+                  <span className="text-xs text-gray-400 font-black uppercase tracking-widest leading-relaxed">Toque para<br/>enviar foto</span>
                 </div>
               )}
             </div>
             <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
-            
-            {/* Seletor de Enquadramento */}
-            {imagePreview && (
-              <div className="space-y-1 mt-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase ml-2 tracking-widest">Enquadramento da Foto</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {positions.map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setBannerPosition(p.id as any)}
-                      className={cn(
-                        "py-2 rounded-xl font-bold text-xs uppercase transition-all border",
-                        banner_position === p.id ? "bg-black text-white border-black" : "bg-white text-gray-400 border-gray-100"
-                      )}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="space-y-4">
@@ -290,10 +299,8 @@ export function Events() {
                   {event.imagem_url ? (
                     <img 
                       src={event.imagem_url} 
-                      className={cn(
-                        "w-full h-full object-cover group-hover:scale-105 transition-transform duration-700",
-                        event.banner_position === 'top' ? "object-top" : event.banner_position === 'bottom' ? "object-bottom" : "object-center"
-                      )} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      style={{ objectPosition: `50% ${event.banner_pos_y ?? 50}%` }}
                       alt={event.titulo} 
                     />
                   ) : (

@@ -152,13 +152,13 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
     const book = selectedBook.nome;
     const chapter = selectedChapter;
 
-    // Salvar progresso
+    // Salvar progresso na tabela correta
     if (user && readSeconds > 10) {
-      await supabase.from("kefel_reading_progress").insert({
+      await supabase.from("kefel_leitura_logs").insert({
         user_id: user.id,
         book_id: selectedBook.id,
-        chapter: selectedChapter,
-        duration_seconds: readSeconds
+        capitulo: selectedChapter,
+        segundos: readSeconds
       });
     }
 
