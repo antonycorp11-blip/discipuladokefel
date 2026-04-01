@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- ── Ícones e PWA ────────────────────────────────── -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+
+    <!-- ── Viewport mobile-first ─────────────────────── -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- ── PWA / App Shell ───────────────────────────── -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kefel" />
+    <meta name="application-name" content="Kefel" />
+    <meta name="theme-color" content="#1e3a8a" />
+    <meta name="msapplication-TileColor" content="#1e3a8a" />
+    <meta name="msapplication-TileImage" content="/logo.png" />
+
+    <!-- ── SEO ───────────────────────────────────────── -->
+    <title>Kefel Discipulado</title>
+    <meta name="description" content="App de discipulado da comunidade Kefel — Bíblia completa, células, eventos e muito mais." />
+
+    <!-- ── Manifest ──────────────────────────────────── -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- ── Fonte ─────────────────────────────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <style>
+      /* Simula viewport de celular quando no desktop */
+      html, body {
+        background-color: #e5e7eb;
+        min-height: 100dvh;
+      }
+
+      #root {
+        max-width: 430px;
+        min-height: 100dvh;
+        margin: 0 auto;
+        background: #f9fafb;
+        position: relative;
+        box-shadow: 0 0 60px rgba(0,0,0,0.15);
+      }
+
+      /* Remove o fundo cinza no desktop — full mobile feel */
+      @media (max-width: 430px) {
+        html, body { background-color: #f9fafb; }
+        #root { box-shadow: none; }
+      }
+
+      /* Safe area para notch/home bar do iPhone */
+      @supports (padding: env(safe-area-inset-bottom)) {
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+      }
+
+      /* Prevent text scale on iOS */
+      * { -webkit-text-size-adjust: 100%; }
+
+      /* Scroll suave */
+      html { scroll-behavior: smooth; }
+
+      /* Fonte padrão */
+      body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

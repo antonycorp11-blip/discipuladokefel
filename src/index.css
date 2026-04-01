@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Scrollbar invisível — sensação nativa mobile */
+::-webkit-scrollbar { width: 0px; background: transparent; }
+
+/* Tap highlight removido */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Transições em links */
+a { transition: opacity 0.15s ease; }
+
+/* Safe area iOS (home bar / notch) */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
