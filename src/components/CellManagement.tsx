@@ -312,17 +312,15 @@ export function CellManagement() {
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Células</h1>
           <p className="text-gray-400 text-sm font-medium">Grupos e líderes.</p>
         </div>
-        {canManage && (
+        {isMaster && (
           <div className="flex gap-2">
-            {isMaster && (
-              <button
-                onClick={() => setShowInvite(true)}
-                className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg shadow-purple-100 active:scale-95 transition-transform"
-                title="Convidar Líder"
-              >
-                <UserPlus className="w-5 h-5" />
-              </button>
-            )}
+            <button
+              onClick={() => setShowInvite(true)}
+              className="bg-purple-600 text-white p-3 rounded-2xl shadow-lg shadow-purple-100 active:scale-95 transition-transform"
+              title="Convidar Líder"
+            >
+              <UserPlus className="w-5 h-5" />
+            </button>
             <button
               onClick={() => { setEditingCelula(null); setShowForm(true); }}
               className="bg-blue-600 text-white p-3 rounded-2xl shadow-lg shadow-blue-100 active:scale-95 transition-transform"
