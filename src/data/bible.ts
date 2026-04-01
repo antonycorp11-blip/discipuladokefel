@@ -106,31 +106,34 @@ export async function fetchBibleChapter(
     return chapterCache.get(cacheKey)!;
   }
 
-  try {
-    // Usando a API bible-api.com com tradução ACF (Almeida Corrigida Fiel) em português
-    const url = `https://bible-api.com/${bookId}+${chapter}?translation=almeida`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Falha ao carregar capítulo');
-    const data = await response.json();
+  // Tentar primeiro com Almeida, se falhar, tentar o padrão (WEB)
+  const translations = ['almeida', ''];
+  
+  for (const trans of translations) {
+    try {
+      const transParam = trans ? `?translation=${trans}` : '';
+      const url = `https://bible-api.com/${bookId}+${chapter}${transParam}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) continue; // Tenta a próxima tradução
+      
+      const data = await response.json();
+      if (!data.verses || data.verses.length === 0) continue;
 
-    const verses: BibleVerse[] = (data.verses || []).map((v: {
-      book_id: string;
-      book_name: string;
-      chapter: number;
-      verse: number;
-      text: string;
-    }) => ({
-      book_id: v.book_id,
-      book_name: v.book_name,
-      chapter: v.chapter,
-      verse: v.verse,
-      text: v.text.trim(),
-    }));
+      const verses: BibleVerse[] = data.verses.map((v: any) => ({
+        book_id: v.book_id,
+        book_name: v.book_name,
+        chapter: v.chapter,
+        verse: v.verse,
+        text: v.text.trim(),
+      }));
 
-    chapterCache.set(cacheKey, verses);
-    return verses;
-  } catch (err) {
-    console.error('Erro ao buscar capítulo bíblico:', err);
-    return [];
+      chapterCache.set(cacheKey, verses);
+      return verses;
+    } catch (err) {
+      console.error(`Erro ao buscar capítulo (${trans}):`, err);
+    }
   }
+
+  return [];
 }
