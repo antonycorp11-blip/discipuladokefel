@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Calendar, MapPin, Clock, Plus, Trash2, Edit2, X, Upload, Loader2, Users
+  Calendar, MapPin, Clock, Plus, Trash2, Edit2, X, Upload, Loader2, Users, Image as ImageIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +29,7 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
   const [precoRaw, setPrecoRaw] = useState(initial?.preco ? String(initial.preco) : "");
   const [imagePreview, setImagePreview] = useState<string | null>(initial?.imagem_url || null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [banner_position, setBannerPosition] = useState<"top" | "center" | "bottom">(initial?.banner_position || "center");
   const [saving, setSaving] = useState(false);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,6 +77,7 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
         tipo,
         preco: tipo === "pago" ? parseFloat(precoRaw) || 0 : 0,
         imagem_url: finalImageUrl,
+        banner_position: banner_position,
         criado_por: user?.id
       };
 
@@ -94,6 +96,12 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
     }
   };
 
+  const positions = [
+    { id: 'top', label: 'Topo', class: 'object-top' },
+    { id: 'center', label: 'Centro', class: 'object-center' },
+    { id: 'bottom', label: 'Inferior', class: 'object-bottom' }
+  ];
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white w-full max-w-xl rounded-[2.5rem] p-6 space-y-6 max-h-[90vh] overflow-y-auto my-auto shadow-2xl">
@@ -110,7 +118,11 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
               className="w-full h-44 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-blue-400 transition-colors"
             >
               {imagePreview ? (
-                <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                <img 
+                  src={imagePreview} 
+                  className={cn("w-full h-full object-cover", positions.find(p => p.id === banner_position)?.class)} 
+                  alt="Preview" 
+                />
               ) : (
                 <div className="text-center">
                   <Upload className="mx-auto text-gray-300 w-8 h-8" />
@@ -119,6 +131,28 @@ function EventForm({ initial, onSave, onCancel }: EventFormProps) {
               )}
             </div>
             <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
+            
+            {/* Seletor de Enquadramento */}
+            {imagePreview && (
+              <div className="space-y-1 mt-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase ml-2 tracking-widest">Enquadramento da Foto</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {positions.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setBannerPosition(p.id as any)}
+                      className={cn(
+                        "py-2 rounded-xl font-bold text-xs uppercase transition-all border",
+                        banner_position === p.id ? "bg-black text-white border-black" : "bg-white text-gray-400 border-gray-100"
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -209,7 +243,7 @@ export function Events() {
        return;
     }
 
-    const names = data?.map((d: any) => d.kefel_profiles?.nome).filter(Boolean).join("\n") || "Nenhum inscrito até o momento.";
+    const names = (data as any[] | null)?.map((d: any) => d.kefel_profiles?.nome).filter(Boolean).join("\n") || "Nenhum inscrito até o momento.";
     alert(`Lista de Inscritos - ${event.titulo}\n\n${names}`);
   };
 
@@ -254,7 +288,14 @@ export function Events() {
               <div key={event.id} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden group">
                 <div className="relative h-52 w-full bg-gray-100">
                   {event.imagem_url ? (
-                    <img src={event.imagem_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={event.titulo} />
+                    <img 
+                      src={event.imagem_url} 
+                      className={cn(
+                        "w-full h-full object-cover group-hover:scale-105 transition-transform duration-700",
+                        event.banner_position === 'top' ? "object-top" : event.banner_position === 'bottom' ? "object-bottom" : "object-center"
+                      )} 
+                      alt={event.titulo} 
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300">
                       <ImageIcon size={48} />
