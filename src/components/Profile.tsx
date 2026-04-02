@@ -3,6 +3,7 @@ import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, St
 import { useAuth } from "@/context/AuthContext";
 import { supabase, type KefelCelula, type KefelProfile, type KefelFavorito } from "@/lib/supabase";
 import { Link, useParams } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 
 export function Profile() {
   const { id } = useParams();
