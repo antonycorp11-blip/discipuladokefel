@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star } from "lucide-react";
+import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, type KefelCelula, type KefelProfile, type KefelFavorito } from "@/lib/supabase";
 import { Link, useParams } from "react-router-dom";
@@ -8,10 +8,17 @@ export function Profile() {
   const { id } = useParams();
   const { user: currentUser, setUser, logout } = useAuth();
   
+  const [profile, setProfile] = useState<KefelProfile | null>(null);
+  const [meuGrupo, setMeuGrupo] = useState<KefelCelula | null>(null);
+  const [favorites, setFavorites] = useState<KefelFavorito[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [newName, setNewName] = useState(currentUser?.nome || "");
   const [pushEnabled, setPushEnabled] = useState(true);
   const [meusRelatorios, setMeusRelatorios] = useState<any[]>([]);
+
+  const isOwnProfile = !id || id === currentUser?.id;
 
   useEffect(() => {
     async function loadProfile() {

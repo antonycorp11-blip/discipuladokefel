@@ -111,25 +111,8 @@ export function Home() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 mb-10">
-        <Link to="/biblia" className="glass-panel p-6 rounded-[2.8rem] shadow-sm border-white/50 flex flex-col gap-4 active:scale-95 transition-soft group hover:shadow-lg">
-          <div className="w-12 h-12 bg-[#1B3B6B]/5 rounded-2xl flex items-center justify-center text-[#1B3B6B] shadow-sm transition-soft group-hover:bg-[#1B3B6B] group-hover:text-white group-hover:rotate-6"><BookOpen size={24} /></div>
-          <div className="px-1">
-             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Leitura</p>
-             <span className="font-black text-gray-900 italic uppercase italic tracking-tighter text-lg leading-none">Bíblia</span>
-          </div>
-        </Link>
-        <Link to="/ranking" className="glass-panel p-6 rounded-[2.8rem] shadow-sm border-white/50 flex flex-col gap-4 active:scale-95 transition-soft group hover:shadow-lg">
-          <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm transition-soft group-hover:bg-rose-500 group-hover:text-white group-hover:-rotate-6"><Trophy size={24} /></div>
-          <div className="px-1">
-             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Elite</p>
-             <span className="font-black text-gray-900 italic uppercase italic tracking-tighter text-lg leading-none">Ranking</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Atalhos para Líderes (Novo) */}
-      {(user?.role === 'lider' || user?.role === 'master') && (
+      {/* Atalhos para Líderes (Novo) - Corrigido para mostrar só para Líderes/Master */}
+      {(user?.role === 'lider' || user?.role === 'master' || user?.email === 'aquilles@kefel.com') && (
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-6 px-2">
              <div className="w-2 h-6 bg-[#1B3B6B] rounded-full" />
