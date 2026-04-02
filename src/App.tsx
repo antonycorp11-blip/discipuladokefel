@@ -3,7 +3,7 @@ import { Layout } from "./components/Layout";
 import { Home } from "./components/Home";
 import { BibleReader } from "./components/BibleReader";
 import { Ranking } from "./components/Ranking";
-import { Events } from "./components/Events";
+import Events from "./components/Events";
 import { Profile } from "./components/Profile";
 import { Login } from "./components/Login";
 import { Register } from "./components/Register";

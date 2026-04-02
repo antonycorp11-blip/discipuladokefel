@@ -1,0 +1,29 @@
+
+> react-example@0.0.0 build
+> vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 2101 modules transformed.
+✗ Build failed in 5.32s
+error during build:
+src/App.tsx (6:9): "Events" is not exported by "src/components/Events.tsx", imported by "src/App.tsx".
+file: /Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/src/App.tsx:6:9
+
+4: import { BibleReader } from "./components/BibleReader";
+5: import { Ranking } from "./components/Ranking";
+6: import { Events } from "./components/Events";
+            ^
+7: import { Profile } from "./components/Profile";
+8: import { Login } from "./components/Login";
+
+    at getRollupError (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at error (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/parseAst.js:402:42)
+    at Module.error (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:17380:16)
+    at Module.traceVariable (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:17813:29)
+    at ModuleScope.findVariable (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:15403:39)
+    at FunctionScope.findVariable (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at FunctionBodyScope.findVariable (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at Identifier.bind (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:5450:40)
+    at CallExpression.bind (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:2828:28)
+    at CallExpression.bind (file:///Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/node_modules/rollup/dist/es/shared/node-entry.js:12512:15)
