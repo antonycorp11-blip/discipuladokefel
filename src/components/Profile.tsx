@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { User, Settings, LogOut, Shield, Users, BookOpen, Clock, Crown, Loader2, Camera, ChevronRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { supabase, type KefelCelula } from "@/lib/supabase";
+import { supabase, type KefelCelula, type KefelProfile } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 
 export function Profile() {
@@ -37,7 +37,7 @@ export function Profile() {
       const { data: updated, error: updateError } = await supabase.from("kefel_profiles").update({ avatar_url: publicUrl }).eq("id", user.id).select("*").single();
       if (updateError) throw updateError;
 
-      setUser(updated as any);
+      setUser(updated as KefelProfile);
       alert("Foto atualizada!");
     } catch (err: any) {
       alert("Erro no upload: " + err.message);

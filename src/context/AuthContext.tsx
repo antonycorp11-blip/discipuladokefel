@@ -12,6 +12,7 @@ interface AuthContextType {
   register: (nome: string, email: string, password: string, celulaId?: string) => Promise<{ success: boolean; message?: string }>;
   updateReadingTime: (seconds: number, livro: string, capitulo: number) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  setUser: React.Dispatch<React.SetStateAction<KefelProfile | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -157,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, updateReadingTime, refreshProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, updateReadingTime, refreshProfile, setUser }}>
       {children}
     </AuthContext.Provider>
   );

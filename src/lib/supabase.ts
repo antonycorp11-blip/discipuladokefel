@@ -14,7 +14,7 @@ export interface KefelProfile {
   role: KefelRole;
   celula_id?: string | null;
   tempo_leitura_total: number;
-  photo_url?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface KefelCelula {

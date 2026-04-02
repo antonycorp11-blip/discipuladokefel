@@ -48,9 +48,9 @@ export function CellManagement() {
     if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `cell_${Date.now()}.${fileExt}`;
-        const { data: upData } = await supabase.storage.from("event-banners").upload(fileName, imageFile);
+        const { data: upData } = await supabase.storage.from("kefel-eventos").upload(fileName, imageFile);
         if (upData) {
-            const { data: urlData } = supabase.storage.from("event-banners").getPublicUrl(upData.path);
+            const { data: urlData } = supabase.storage.from("kefel-eventos").getPublicUrl(upData.path);
             imageUrl = urlData.publicUrl;
         }
     }
@@ -101,7 +101,7 @@ export function CellManagement() {
            <h1 className="text-2xl font-black text-gray-900 italic uppercase">Células</h1>
            <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
         </div>
-        {user?.role === 'master' && (
+        {(user?.role === 'master' || user?.role === 'lider') && (
           <button onClick={() => setShowAddForm(true)} className="bg-black text-white p-3.5 rounded-2xl shadow-premium shadow-black/10 active:scale-95 transition-soft">
             <Plus size={20} />
           </button>
@@ -163,7 +163,7 @@ export function CellManagement() {
                         {imagePreview ? (
                           <>
                             <img src={imagePreview} className="w-full h-full object-cover" />
-                            <button onClick={() => {setImageFile(null); setImagePreview(null);}} className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-soft flex items-center justify-center text-white"><X size={24}/></button>
+                            <button type="button" onClick={() => {setImageFile(null); setImagePreview(null);}} className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-soft flex items-center justify-center text-white"><X size={24}/></button>
                           </>
                         ) : (
                           <label className="cursor-pointer flex flex-col items-center">

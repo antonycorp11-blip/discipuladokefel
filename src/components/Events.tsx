@@ -16,6 +16,7 @@ interface Evento {
   endereco: string;
   imagem_url: string;
   tipo: "gratuito" | "pago" | "cota";
+  banner_pos_y?: number;
   pix_key?: string;
   cota_desc?: string;
   criado_por: string;
@@ -44,6 +45,7 @@ export default function Events() {
   const [cotaDesc, setCotaDesc] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [bannerPosY, setBannerPosY] = useState(50);
 
   useEffect(() => {
     fetchEvents();
@@ -86,9 +88,9 @@ export default function Events() {
     if (imageFile) {
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const { data: upData, error: upErr } = await supabase.storage.from("event-banners").upload(fileName, imageFile);
+      const { data: upData, error: upErr } = await supabase.storage.from("kefel-eventos").upload(fileName, imageFile);
       if (upData) {
-        const { data: urlData } = supabase.storage.from("event-banners").getPublicUrl(upData.path);
+        const { data: urlData } = supabase.storage.from("kefel-eventos").getPublicUrl(upData.path);
         imageUrl = urlData.publicUrl;
       }
     }
@@ -103,6 +105,7 @@ export default function Events() {
       pix_key: tipo === 'pago' ? pixKey : null,
       cota_desc: tipo === 'cota' ? cotaDesc : null,
       imagem_url: imageUrl,
+      banner_pos_y: bannerPosY,
       criado_por: user.id
     });
 
@@ -117,7 +120,7 @@ export default function Events() {
   const resetForm = () => {
     setTitulo(""); setDescricao(""); setData(""); setHora(""); 
     setEndereco(""); setPreco(0); setTipo("gratuito"); setPixKey(""); setCotaDesc("");
-    setImageFile(null); setImagePreview(null);
+    setImageFile(null); setImagePreview(null); setBannerPosY(50);
   };
 
   return (
@@ -146,7 +149,11 @@ export default function Events() {
                  
                  <div className="relative h-48 w-full rounded-[2rem] overflow-hidden shadow-inner bg-gray-50 border border-black/5">
                     {event.imagem_url ? (
-                      <img src={event.imagem_url} className="w-full h-full object-cover transition-soft group-hover:scale-105" />
+                      <img 
+                        src={event.imagem_url} 
+                        className="w-full h-full object-cover transition-soft group-hover:scale-105" 
+                        style={{ objectPosition: `center ${event.banner_pos_y || 50}%` }}
+                      />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-white text-indigo-200">
                          <ImageIcon size={48} />
@@ -266,8 +273,8 @@ export default function Events() {
                   <div className="relative h-56 rounded-[3rem] bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center transition-soft hover:border-indigo-300 group">
                     {imagePreview ? (
                       <>
-                        <img src={imagePreview} className="w-full h-full object-cover" />
-                        <button onClick={() => {setImageFile(null); setImagePreview(null);}} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-xl backdrop-blur-md"><X size={16}/></button>
+                        <img src={imagePreview} className="w-full h-full object-cover" style={{ objectPosition: `center ${bannerPosY}%` }} />
+                        <button type="button" onClick={() => {setImageFile(null); setImagePreview(null);}} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-xl backdrop-blur-md z-10"><X size={16}/></button>
                       </>
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center p-10 text-center">
@@ -279,6 +286,23 @@ export default function Events() {
                       </label>
                     )}
                   </div>
+
+                  {imagePreview && (
+                    <div className="space-y-4 px-4">
+                      <div className="flex justify-between items-center">
+                        <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Ajustar enquadramento vertical</p>
+                        <span className="text-[9px] font-black text-gray-400">{bannerPosY}%</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={bannerPosY} 
+                        onChange={(e) => setBannerPosY(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1">
