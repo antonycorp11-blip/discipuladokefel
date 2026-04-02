@@ -146,7 +146,7 @@ export function Home() {
               const isInscribed = inscribedIds.includes(event.id);
               return (
                 <div key={event.id} className="glass-panel p-5 rounded-[2.5rem] shadow-sm flex gap-5 items-center transition-soft hover:shadow-xl hover:shadow-[#1B3B6B]/5 group border-white/50 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#1B3B6B]/50/5 rounded-full -mr-12 -mt-12 blur-2xl opacity-0 group-hover:opacity-100 transition-soft" />
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#1B3B6B]/5 rounded-full -mr-12 -mt-12 blur-2xl opacity-0 group-hover:opacity-100 transition-soft" />
                   
                   <div className="w-16 h-16 bg-white rounded-[1.8rem] shadow-sm flex flex-col items-center justify-center overflow-hidden relative border border-gray-100 flex-shrink-0 transition-soft group-hover:scale-105 p-0.5">
                     {event.imagem_url ? (
@@ -159,6 +159,11 @@ export function Home() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                       <span className="text-[9px] font-black uppercase text-[#1B3B6B] bg-[#1B3B6B]/5 px-2.5 py-1 rounded-full border border-[#1B3B6B]/10 tracking-widest leading-none">
+                          {date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}
+                       </span>
+                    </div>
                     <h4 className="font-black text-gray-900 truncate uppercase text-sm tracking-tight italic leading-tight">{event.titulo}</h4>
                     <div className="flex items-center gap-2 opacity-40 mt-1">
                       <MapPin size={10} className="text-rose-500" />
