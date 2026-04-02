@@ -69,7 +69,6 @@ export default function Events() {
   }
 
   async function fetchInscriptions(eventId: string) {
-    setLoadingInsc(true);
     try {
        const { data, error } = await supabase
          .from("kefel_eventos_inscritos")
@@ -77,8 +76,7 @@ export default function Events() {
             id,
             confirmado_em,
             user_id,
-            kefel_profiles (
-               id,
+            kefel_profiles!fk_kefel_eventos_inscritos_user (
                nome,
                avatar_url,
                celula_id

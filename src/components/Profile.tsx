@@ -14,9 +14,12 @@ export function Profile() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showReportCenter, setShowReportCenter] = useState(false);
   const [newName, setNewName] = useState(currentUser?.nome || "");
   const [pushEnabled, setPushEnabled] = useState(true);
   const [meusRelatorios, setMeusRelatorios] = useState<any[]>([]);
+  const [allRelatorios, setAllRelatorios] = useState<any[]>([]);
+  const [loadingAllRels, setLoadingAllRels] = useState(false);
 
   const isOwnProfile = !id || id === currentUser?.id;
 
@@ -50,6 +53,18 @@ export function Profile() {
     }
     loadProfile();
   }, [id, currentUser?.id, currentUser?.role]);
+
+  async function fetchAllReports() {
+    if (currentUser?.role !== 'master') return;
+    setLoadingAllRels(true);
+    const { data, error } = await supabase
+      .from("kefel_relatorios")
+      .select("*, kefel_profiles(nome, avatar_url), kefel_celulas(nome)")
+      .order('data', { ascending: false });
+    
+    if (!error) setAllRelatorios(data || []);
+    setLoadingAllRels(false);
+  }
 
   const handleUpdateName = async () => {
     if (!profile || !newName) return;
@@ -266,10 +281,19 @@ export function Profile() {
             <Link to="/celulas" className="p-6 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
                <div className="flex items-center gap-4">
                   <Users className="text-[#1B3B6B]" size={20} />
-                  <span className="font-bold text-gray-900 text-sm">Gerenciar Células</span>
+                  <span className="font-bold text-gray-900 text-sm">Gerenciar Minha Célula</span>
                </div>
                <ChevronRight className="text-gray-200" size={16} />
             </Link>
+          )}
+          {currentUser.role === 'master' && (
+            <button onClick={() => { setShowReportCenter(true); fetchAllReports(); }} className="p-6 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
+               <div className="flex items-center gap-4">
+                  <FileText className="text-[#1B3B6B]" size={20} />
+                  <span className="font-bold text-gray-900 text-sm">Central de Relatórios Master</span>
+               </div>
+               <ChevronRight className="text-gray-200" size={16} />
+            </button>
           )}
           <button onClick={logout} className="p-6 flex items-center justify-between hover:bg-red-50 active:bg-red-100 transition-colors">
             <div className="flex items-center gap-4">
@@ -279,6 +303,80 @@ export function Profile() {
           </button>
         </div>
       )}
+
+      {/* Modal Central de Relatórios Master */}
+      <AnimatePresence>
+        {showReportCenter && (
+          <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md flex items-end">
+             <div className="bg-white w-full h-[90vh] rounded-t-[4rem] p-8 overflow-y-auto pb-32 shadow-2xl">
+                <div className="flex justify-between items-center mb-8">
+                   <div>
+                      <h2 className="text-2xl font-black text-gray-900 uppercase italic">Central Master</h2>
+                      <p className="text-[10px] font-black uppercase text-[#1B3B6B] tracking-[0.2em]">{allRelatorios.length} Envios Totais</p>
+                   </div>
+                   <button onClick={() => setShowReportCenter(false)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
+                </div>
+
+                {loadingAllRels ? (
+                  <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
+                ) : (
+                  <div className="space-y-12">
+                    {(() => {
+                      const groupedByMonth: Record<string, any[]> = {};
+                      allRelatorios.forEach(rel => {
+                        const date = new Date(rel.data);
+                        const monthName = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                        if (!groupedByMonth[monthName]) groupedByMonth[monthName] = [];
+                        groupedByMonth[monthName].push(rel);
+                      });
+
+                      return Object.entries(groupedByMonth).map(([month, reports]) => (
+                        <div key={month} className="space-y-4">
+                          <h4 className="text-[10px] font-black text-[#1B3B6B] uppercase tracking-[0.3em] ml-4 bg-[#1B3B6B]/5 py-2 px-6 rounded-full w-fit italic">{month}</h4>
+                          <div className="grid gap-4">
+                            {reports.map(rel => {
+                              const d = new Date(rel.data);
+                              const weekNum = Math.ceil(d.getDate() / 7);
+                              return (
+                                <div key={rel.id} className="glass-panel p-6 rounded-[2.5rem] border-white/50 relative overflow-hidden flex flex-col gap-4">
+                                   <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#1B3B6B]" />
+                                   
+                                   <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                         <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-[#1B3B6B] font-black italic text-[10px]">W{weekNum}</div>
+                                         <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Semana {weekNum} • {rel.tipo}</p>
+                                            <p className="font-bold text-gray-900 text-sm mt-1">{d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</p>
+                                         </div>
+                                      </div>
+                                      <div className="bg-[#1B3B6B] text-white px-4 py-2 rounded-2xl shadow-lg">
+                                         <p className="text-[9px] font-black uppercase opacity-60 leading-none">Presença</p>
+                                         <p className="text-sm font-black italic mt-0.5">{rel.presentes}</p>
+                                      </div>
+                                   </div>
+
+                                   <div className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-dashed border-gray-100">
+                                      <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm bg-white p-0.5">
+                                         {rel.kefel_profiles?.avatar_url ? <img src={rel.kefel_profiles.avatar_url} className="w-full h-full object-cover rounded-lg" /> : <User className="w-full h-full p-2 text-gray-200" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                         <p className="text-[12px] font-black text-gray-900 uppercase italic leading-none truncate">{rel.kefel_celulas?.nome || "Culto / Cel. Avulsa"}</p>
+                                         <p className="text-[9px] text-[#1B3B6B] font-black uppercase tracking-widest mt-1.5 opacity-60">Líder: {rel.kefel_profiles?.nome || "Desconhecido"}</p>
+                                      </div>
+                                   </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
+             </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Modal de Configurações */}
       {showSettings && (
