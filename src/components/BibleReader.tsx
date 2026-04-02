@@ -128,11 +128,11 @@ export default function BibleReader() {
 
         <div className="flex items-center gap-3">
           <div className="bg-blue-50 px-3 py-1.5 rounded-xl flex items-center gap-2">
-            <Clock size={12} className="text-blue-600" />
-            <span className="text-[10px] font-black text-blue-600 tabular-nums">{Math.floor(sessionSeconds/60)}:{(sessionSeconds%60).toString().padStart(2,'0')}</span>
+            <Clock size={12} className="text-[#1B3B6B]" />
+            <span className="text-[10px] font-black text-[#1B3B6B] tabular-nums">{Math.floor(sessionSeconds/60)}:{(sessionSeconds%60).toString().padStart(2,'0')}</span>
           </div>
           {selectedVerses.length > 0 && (
-            <button onClick={shareSelected} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg animate-in zoom-in">
+            <button onClick={shareSelected} className="bg-[#1B3B6B] text-white p-2.5 rounded-xl shadow-lg animate-in zoom-in">
               <Share2 size={16} />
             </button>
           )}
@@ -142,7 +142,7 @@ export default function BibleReader() {
       <div className="flex-1 overflow-y-auto px-6 py-8 scroll-smooth">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
-             <Loader2 className="animate-spin text-blue-600" />
+             <Loader2 className="animate-spin text-[#1B3B6B]" />
           </div>
         ) : (
           <div className="max-w-xl mx-auto space-y-4">
@@ -192,7 +192,7 @@ export default function BibleReader() {
               {selectorStep === 'chapter' && (
                 <div className="grid grid-cols-4 gap-3">
                   {Array.from({ length: selectedBook.capitulos }, (_, i) => i + 1).map(c => (
-                    <button key={c} onClick={() => { setChapter(c); setSelectorStep('verse'); }} className={`p-4 rounded-2xl font-bold text-sm ${chapter === c ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400'}`}>{c}</button>
+                    <button key={c} onClick={() => { setChapter(c); setSelectorStep('verse'); }} className={`p-4 rounded-2xl font-bold text-sm ${chapter === c ? 'bg-[#1B3B6B] text-white' : 'bg-gray-50 text-gray-400'}`}>{c}</button>
                   ))}
                 </div>
               )}

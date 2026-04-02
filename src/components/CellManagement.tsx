@@ -115,7 +115,7 @@ export function CellManagement() {
       <header className="flex justify-between items-center mb-8 pt-4">
         <div>
            <h1 className="text-2xl font-black text-gray-900 italic uppercase">Células</h1>
-           <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+           <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
         </div>
         {(user?.role === 'master' || user?.role === 'lider') && (
           <button onClick={() => setShowAddForm(true)} className="bg-black text-white p-3.5 rounded-2xl shadow-premium shadow-black/10 active:scale-95 transition-soft">
@@ -125,7 +125,7 @@ export function CellManagement() {
       </header>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
+        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
       ) : (
         <div className="grid gap-6 pb-10">
           {celulas.map(c => (
@@ -167,7 +167,7 @@ export function CellManagement() {
                <div className="flex justify-between items-center mb-8">
                   <div>
                     <h2 className="text-2xl font-black text-gray-900 italic uppercase">Nova Célula</h2>
-                    <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+                    <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
                   </div>
                   <button onClick={() => setShowAddForm(false)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
                </div>
@@ -194,12 +194,12 @@ export function CellManagement() {
 
                   <div className="space-y-2">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Como se chama?</p>
-                     <input required placeholder="EX: CÉLULA FILIPENSES" value={nome} onChange={e => setNome(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft" />
+                     <input required placeholder="EX: CÉLULA FILIPENSES" value={nome} onChange={e => setNome(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none focus:bg-[#1B3B6B]/5 border border-transparent focus:border-indigo-100 transition-soft" />
                   </div>
 
                   <div className="space-y-2">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Dia do Encontro</p>
-                     <select value={diaSemana} onChange={e => setDiaSemana(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none h-[74px] focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft appearance-none">
+                     <select value={diaSemana} onChange={e => setDiaSemana(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none h-[74px] focus:bg-[#1B3B6B]/5 border border-transparent focus:border-indigo-100 transition-soft appearance-none">
                         {["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"].map(d => (
                            <option key={d} value={d}>{d}</option>
                         ))}
@@ -208,7 +208,7 @@ export function CellManagement() {
 
                   <div className="space-y-2">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Quem é o Líder?</p>
-                     <select value={liderId || ""} onChange={e => setLiderId(e.target.value || null)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none h-[74px] focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft appearance-none">
+                     <select value={liderId || ""} onChange={e => setLiderId(e.target.value || null)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none h-[74px] focus:bg-[#1B3B6B]/5 border border-transparent focus:border-indigo-100 transition-soft appearance-none">
                         <option value="">SELECIONE UM LÍDER...</option>
                         {usuarios.map(u => (
                            <option key={u.id} value={u.id}>{u.nome}</option>
@@ -216,7 +216,7 @@ export function CellManagement() {
                      </select>
                   </div>
 
-                  <button disabled={saving} type="submit" className="w-full bg-indigo-600 text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
+                  <button disabled={saving} type="submit" className="w-full bg-[#1B3B6B] text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
                      {saving ? <Loader2 className="animate-spin mx-auto" /> : "Consagrar Nova Célula"}
                   </button>
                </form>

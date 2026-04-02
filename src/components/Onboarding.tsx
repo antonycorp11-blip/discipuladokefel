@@ -53,7 +53,7 @@ export function Onboarding() {
          <div className="space-y-2">
             <p className="text-[10px] font-black text-gray-400 uppercase italic ml-2">Qual seu nome completo?</p>
             <div className="bg-gray-50 p-6 rounded-[2rem] flex items-center gap-4">
-               <User className="text-blue-600 w-5 h-5" />
+               <User className="text-[#1B3B6B] w-5 h-5" />
                <input 
                   placeholder="EX: JOÃO DA SILVA" 
                   value={nome} 
@@ -67,17 +67,17 @@ export function Onboarding() {
          <div className="space-y-4">
             <p className="text-[10px] font-black text-gray-400 uppercase italic ml-2">Qual sua célula de destino?</p>
             {loading ? (
-              <div className="flex justify-center p-10"><Loader2 className="animate-spin text-blue-600" /></div>
+              <div className="flex justify-center p-10"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
             ) : (
               <div className="grid gap-3">
                 {celulas.map(c => (
                   <button 
                     key={c.id} 
                     onClick={() => setSelectedCell(c.id)}
-                    className={`p-6 rounded-[2.5rem] border-2 transition-all flex items-center justify-between group ${selectedCell === c.id ? 'bg-blue-600 border-blue-600 text-white shadow-2xl' : 'bg-gray-50 border-transparent text-gray-400'}`}
+                    className={`p-6 rounded-[2.5rem] border-2 transition-all flex items-center justify-between group ${selectedCell === c.id ? 'bg-[#1B3B6B] border-blue-600 text-white shadow-2xl' : 'bg-gray-50 border-transparent text-gray-400'}`}
                   >
                     <div className="flex items-center gap-4">
-                       <Users size={18} className={selectedCell === c.id ? 'text-white' : 'text-blue-600'} />
+                       <Users size={18} className={selectedCell === c.id ? 'text-white' : 'text-[#1B3B6B]'} />
                        <span className="font-black italic uppercase text-xs tracking-tighter leading-none">{c.nome}</span>
                     </div>
                     {selectedCell === c.id && <CheckCircle size={18} />}

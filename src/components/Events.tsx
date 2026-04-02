@@ -158,7 +158,7 @@ export default function Events() {
       <header className="flex justify-between items-center mb-8 pt-4">
         <div>
            <h1 className="text-2xl font-black text-gray-900 italic uppercase">Agenda</h1>
-           <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+           <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
         </div>
         {(user?.role === 'master' || user?.role === 'lider') && (
           <button onClick={() => setShowForm(true)} className="bg-black text-white p-3.5 rounded-2xl shadow-premium shadow-black/10 active:scale-95 transition-soft">
@@ -168,14 +168,14 @@ export default function Events() {
       </header>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
+        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
       ) : (
         <div className="grid gap-6 pb-10">
           {eventos.map(event => {
             const date = new Date(event.data_hora);
             return (
               <div key={event.id} className="glass-panel p-6 rounded-[2.5rem] shadow-sm flex flex-col gap-5 transition-soft group border-white/50 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#1B3B6B]/50/5 rounded-full -mr-16 -mt-16 blur-2xl" />
                  
                  <div className="relative h-48 w-full rounded-[2rem] overflow-hidden shadow-inner bg-gray-50 border border-black/5">
                     {event.imagem_url ? (
@@ -185,14 +185,14 @@ export default function Events() {
                         style={{ objectPosition: `center ${event.banner_pos_y || 50}%` }}
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-white text-indigo-200">
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-white text-[#1B3B6B]/20">
                          <ImageIcon size={48} />
                       </div>
                     )}
                     
                     <div className="absolute top-4 right-4 flex gap-2 z-20">
                         {user?.id === event.criado_por && (
-                          <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-indigo-600 shadow-xl active:scale-90 transition-soft">
+                          <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-[#1B3B6B] shadow-xl active:scale-90 transition-soft">
                             <Users size={18} />
                           </button>
                         )}
@@ -209,7 +209,7 @@ export default function Events() {
                     </div>
 
                     <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl flex flex-col items-center min-w-[60px] border border-white/10 z-20">
-                       <span className="text-[10px] font-black uppercase text-indigo-400">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                       <span className="text-[10px] font-black uppercase text-[#1B3B6B]">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
                        <span className="text-xl font-black text-white tracking-tighter leading-none mt-0.5">{date.getDate()}</span>
                     </div>
                  </div>
@@ -217,14 +217,14 @@ export default function Events() {
                  <div className="px-1 space-y-3">
                     <div className="flex justify-between items-start gap-4">
                        <h3 className="text-xl font-black text-gray-900 italic uppercase tracking-tighter leading-tight flex-1">{event.titulo}</h3>
-                       <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${event.tipo === 'pago' ? 'bg-indigo-50 text-indigo-600' : 'bg-green-50 text-green-600'}`}>
+                       <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${event.tipo === 'pago' ? 'bg-[#1B3B6B]/5 text-[#1B3B6B]' : 'bg-green-50 text-green-600'}`}>
                           {event.tipo}
                        </div>
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-4 opacity-60">
                        <div className="flex items-center gap-1.5">
-                          <Clock size={12} className="text-indigo-600" />
+                          <Clock size={12} className="text-[#1B3B6B]" />
                           <span className="text-[10px] font-black uppercase">{date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                        </div>
                        <div className="flex items-center gap-1.5 min-w-0">
@@ -255,13 +255,13 @@ export default function Events() {
                <div className="flex justify-between items-center mb-8">
                   <div>
                     <h2 className="text-2xl font-black text-gray-900 italic uppercase">Inscritos</h2>
-                    <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Lista de Participantes</p>
+                    <p className="text-[10px] font-black uppercase text-[#1B3B6B] tracking-widest">Lista de Participantes</p>
                   </div>
                   <button onClick={() => setShowInscriptions(null)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
                </div>
                
                <div className="flex-1 overflow-y-auto space-y-4 pb-10">
-                  {loadingInsc ? <Loader2 className="animate-spin mx-auto text-indigo-600" /> : inscribedUsers.length === 0 ? (
+                  {loadingInsc ? <Loader2 className="animate-spin mx-auto text-[#1B3B6B]" /> : inscribedUsers.length === 0 ? (
                     <div className="py-20 text-center space-y-4">
                        <Users size={48} className="mx-auto text-gray-100" />
                        <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Ninguém inscrito ainda</p>
@@ -297,7 +297,7 @@ export default function Events() {
               <div className="flex justify-between items-center mb-10">
                  <div>
                     <h2 className="text-2xl font-black text-gray-900 italic uppercase">{editId ? "Editar Evento" : "Novo Evento"}</h2>
-                    <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+                    <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
                  </div>
                  <button onClick={() => setShowForm(false)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
               </div>
@@ -313,7 +313,7 @@ export default function Events() {
                       </>
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center p-10 text-center">
-                         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-200 mb-4 group-hover:scale-110 transition-soft">
+                         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-[#1B3B6B]/20 mb-4 group-hover:scale-110 transition-soft">
                             <Camera size={32} />
                          </div>
                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Escolher Foto do Banner</span>
@@ -325,7 +325,7 @@ export default function Events() {
                   {(imagePreview || imageUrl) && (
                     <div className="space-y-4 px-4">
                       <div className="flex justify-between items-center">
-                        <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Ajustar enquadramento vertical</p>
+                        <p className="text-[9px] font-black text-[#1B3B6B] uppercase tracking-widest italic">Ajustar enquadramento vertical</p>
                         <span className="text-[9px] font-black text-gray-400">{bannerPosY}%</span>
                       </div>
                       <input 
@@ -342,10 +342,10 @@ export default function Events() {
 
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">O que vai acontecer?</p>
-                  <input required placeholder="TÍTULO DO EVENTO" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.8rem] font-black italic uppercase text-xs outline-none focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft" />
+                  <input required placeholder="TÍTULO DO EVENTO" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.8rem] font-black italic uppercase text-xs outline-none focus:bg-[#1B3B6B]/5 border border-transparent focus:border-indigo-100 transition-soft" />
                 </div>
 
-                <textarea placeholder="DESCRIÇÃO COMPLETA..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full bg-gray-50 p-7 rounded-[2rem] text-sm h-40 outline-none focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft" />
+                <textarea placeholder="DESCRIÇÃO COMPLETA..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full bg-gray-50 p-7 rounded-[2rem] text-sm h-40 outline-none focus:bg-[#1B3B6B]/5 border border-transparent focus:border-indigo-100 transition-soft" />
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -386,7 +386,7 @@ export default function Events() {
                    </AnimatePresence>
                 </div>
 
-                <button disabled={saving} type="submit" className="w-full bg-indigo-600 text-white py-7 rounded-[2rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
+                <button disabled={saving} type="submit" className="w-full bg-[#1B3B6B] text-white py-7 rounded-[2rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
                   {saving ? <Loader2 className="animate-spin mx-auto" /> : (editId ? "Salvar Alterações" : "Publicar Evento na Agenda")}
                 </button>
               </form>

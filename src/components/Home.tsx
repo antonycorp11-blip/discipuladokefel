@@ -68,7 +68,7 @@ export function Home() {
       <header className="flex items-center justify-between py-6">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-white p-1 rounded-2xl shadow-premium shadow-black/5 ring-1 ring-white/50 flex items-center justify-center overflow-hidden transition-soft hover:scale-105">
-             {user?.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="text-indigo-600" size={28} />}
+             {user?.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="text-[#1B3B6B]" size={28} />}
           </div>
           <div>
             <h1 className="text-2xl font-black text-gray-900 leading-tight italic uppercase tracking-tighter">Olá, {user?.nome?.split(' ')[0]}</h1>
@@ -79,7 +79,7 @@ export function Home() {
           </div>
         </div>
         <button className="glass-panel p-3.5 rounded-2xl shadow-sm relative transition-soft active:scale-90">
-          <Bell size={20} className="text-indigo-600" />
+          <Bell size={20} className="text-[#1B3B6B]" />
           <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm" />
         </button>
       </header>
@@ -88,12 +88,12 @@ export function Home() {
       <div className="relative group mb-10">
         <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-rose-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition-soft" />
         <div className="relative bg-black rounded-[2.5rem] p-8 text-white shadow-2xl overflow-hidden min-h-[220px] flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/20 rounded-full -mr-20 -mt-20 blur-3xl" />
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#1B3B6B]/50/20 rounded-full -mr-20 -mt-20 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-rose-500/10 rounded-full -ml-20 -mb-20 blur-3xl" />
           
           <div className="relative z-10 flex justify-between items-start">
             <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
-              <BookOpen size={24} className="text-indigo-400" />
+              <BookOpen size={24} className="text-[#1B3B6B]" />
             </div>
             <button onClick={shareVerse} className="bg-white/10 p-3 rounded-2xl backdrop-blur-md hover:bg-white/20 transition-soft active:scale-90">
                <Share2 size={18} />
@@ -103,8 +103,8 @@ export function Home() {
           <div className="relative z-10 space-y-4">
             <p className="text-2xl font-black leading-tight italic tracking-tight">"{VERSE.text}"</p>
             <div className="flex items-center gap-3">
-              <div className="h-0.5 w-8 bg-indigo-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">{VERSE.ref}</span>
+              <div className="h-0.5 w-8 bg-[#1B3B6B]/50" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1B3B6B]">{VERSE.ref}</span>
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export function Home() {
 
       <div className="grid grid-cols-2 gap-5 mb-10">
         <Link to="/biblia" className="glass-panel p-6 rounded-[2.8rem] shadow-sm border-white/50 flex flex-col gap-4 active:scale-95 transition-soft group hover:shadow-lg">
-          <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm transition-soft group-hover:bg-indigo-600 group-hover:text-white group-hover:rotate-6"><BookOpen size={24} /></div>
+          <div className="w-12 h-12 bg-[#1B3B6B]/5 rounded-2xl flex items-center justify-center text-[#1B3B6B] shadow-sm transition-soft group-hover:bg-[#1B3B6B] group-hover:text-white group-hover:rotate-6"><BookOpen size={24} /></div>
           <div className="px-1">
              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Leitura</p>
              <span className="font-black text-gray-900 italic uppercase italic tracking-tighter text-lg leading-none">Bíblia</span>
@@ -131,29 +131,29 @@ export function Home() {
       <section className="mb-10">
         <div className="flex items-center justify-between mb-6 px-2">
           <div className="flex items-center gap-2">
-             <div className="w-2 h-6 bg-indigo-600 rounded-full" />
+             <div className="w-2 h-6 bg-[#1B3B6B] rounded-full" />
              <h2 className="text-xl font-black text-gray-900 italic uppercase tracking-tighter">Agenda</h2>
           </div>
-          <Link to="/eventos" className="text-indigo-600 text-[10px] font-black uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-full active:scale-90 transition-soft">Ver tudo</Link>
+          <Link to="/eventos" className="text-[#1B3B6B] text-[10px] font-black uppercase tracking-widest bg-[#1B3B6B]/5 px-4 py-2 rounded-full active:scale-90 transition-soft">Ver tudo</Link>
         </div>
 
         {loading ? (
-          <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
+          <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
         ) : (
           <div className="space-y-6">
             {upcomingEvents.map(event => {
               const date = new Date(event.data_hora);
               const isInscribed = inscribedIds.includes(event.id);
               return (
-                <div key={event.id} className="glass-panel p-5 rounded-[2.5rem] shadow-sm flex gap-5 items-center transition-soft hover:shadow-xl hover:shadow-indigo-500/5 group border-white/50 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full -mr-12 -mt-12 blur-2xl opacity-0 group-hover:opacity-100 transition-soft" />
+                <div key={event.id} className="glass-panel p-5 rounded-[2.5rem] shadow-sm flex gap-5 items-center transition-soft hover:shadow-xl hover:shadow-[#1B3B6B]/5 group border-white/50 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#1B3B6B]/50/5 rounded-full -mr-12 -mt-12 blur-2xl opacity-0 group-hover:opacity-100 transition-soft" />
                   
                   <div className="w-16 h-16 bg-white rounded-[1.8rem] shadow-sm flex flex-col items-center justify-center overflow-hidden relative border border-gray-100 flex-shrink-0 transition-soft group-hover:scale-105 p-0.5">
                     {event.imagem_url ? (
                       <img src={event.imagem_url} className="absolute inset-0 w-full h-full object-cover rounded-[1.7rem]" />
                     ) : (
                       <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black uppercase text-indigo-600">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                        <span className="text-[10px] font-black uppercase text-[#1B3B6B]">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
                         <span className="text-2xl font-black text-gray-900 tracking-tighter leading-none mt-0.5">{date.getDate()}</span>
                       </div>
                     )}
@@ -187,7 +187,7 @@ export function Home() {
         
         {meuGrupo ? (
           <div className="glass-panel p-6 rounded-[3rem] shadow-sm border-white/50 flex items-center gap-5 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/5 rounded-full -mr-20 -mt-20 blur-3xl" />
+            <div className="absolute top-0 right-0 w-40 h-40 bg-[#1B3B6B]/50/5 rounded-full -mr-20 -mt-20 blur-3xl" />
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-rose-500 rounded-[1.8rem] flex items-center justify-center text-white shadow-lg transition-soft group-hover:scale-110 group-hover:rotate-3">
                <Users size={28} />
             </div>
@@ -198,7 +198,7 @@ export function Home() {
                  <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Toda {meuGrupo.dia_semana}</p>
               </div>
             </div>
-            <ArrowRight size={20} className="text-gray-200 group-hover:text-indigo-600 transition-soft group-hover:translate-x-2" />
+            <ArrowRight size={20} className="text-gray-200 group-hover:text-[#1B3B6B] transition-soft group-hover:translate-x-2" />
           </div>
         ) : (
           <div className="glass-panel p-10 rounded-[3rem] shadow-sm border-white/50 text-center flex flex-col items-center gap-4 border-dashed border-2">
@@ -206,7 +206,7 @@ export function Home() {
                <Users size={28} />
             </div>
             <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Sem célula vinculada</p>
-            <button className="text-indigo-600 text-[10px] font-black uppercase tracking-widest underline underline-offset-4">Vincular Agora</button>
+            <button className="text-[#1B3B6B] text-[10px] font-black uppercase tracking-widest underline underline-offset-4">Vincular Agora</button>
           </div>
         )}
       </section>
@@ -227,7 +227,7 @@ export function Home() {
               <div className="flex justify-between items-start pt-2">
                 <div className="space-y-1">
                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full tracking-widest">{selectedEvent.tipo}</span>
+                      <span className="text-[10px] font-black uppercase text-[#1B3B6B] bg-[#1B3B6B]/5 px-3 py-1 rounded-full tracking-widest">{selectedEvent.tipo}</span>
                       {selectedEvent.tipo === 'pago' && <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 px-3 py-1 rounded-full tracking-widest">R$ {selectedEvent.preco}</span>}
                    </div>
                    <h3 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter leading-tight mt-2">{selectedEvent.titulo}</h3>
@@ -266,7 +266,7 @@ export function Home() {
               <button 
                 onClick={handleInscribe} 
                 disabled={subscribing} 
-                className="w-full bg-indigo-600 text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-[0.1em] active:scale-95 transition-soft disabled:opacity-50"
+                className="w-full bg-[#1B3B6B] text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-[0.1em] active:scale-95 transition-soft disabled:opacity-50"
               >
                 {subscribing ? <Loader2 className="animate-spin mx-auto" /> : "Garantir minha vaga"}
               </button>

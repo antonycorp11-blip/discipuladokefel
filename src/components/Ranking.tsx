@@ -52,9 +52,9 @@ export function Ranking() {
     <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
       <header className="mb-8 pt-4 flex items-center justify-between">
         <div>
-           <h1 className="text-2xl font-black text-gray-900 italic uppercase">Ranking</h1>
-           <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
-           <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-2">Dedicados à Palavra</p>
+            <h1 className="text-2xl font-black text-gray-900 italic uppercase">Ranking</h1>
+            <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-2">Dedicados à Palavra</p>
         </div>
         <div className="bg-black p-3.5 rounded-[1.5rem] shadow-xl text-white transform -rotate-3 hover:rotate-0 transition-transform"><Trophy size={22} className="text-[#1B3B6B]" /></div>
       </header>
@@ -82,7 +82,7 @@ export function Ranking() {
                    {user.avatar_url ? (
                      <img src={user.avatar_url} className="w-full h-full object-cover rounded-2xl" />
                    ) : (
-                     <User className={isTop3 ? "text-indigo-200" : "text-gray-200"} size={isTop3 ? 28 : 22} />
+                     <User className={isTop3 ? "text-[#1B3B6B]/20" : "text-gray-200"} size={isTop3 ? 28 : 22} />
                    )}
                 </div>
 
@@ -91,8 +91,8 @@ export function Ranking() {
                      {user.nome || "Anônimo"}
                    </h3>
                    <div className="flex items-center gap-1.5 mt-1 bg-white/50 w-fit px-2 py-0.5 rounded-lg border border-white/80">
-                      <Clock size={11} className="text-indigo-600" />
-                      <p className="text-[11px] font-black text-indigo-600 tabular-nums uppercase">{formatTime(user.tempo_leitura_total)}</p>
+                      <Clock size={11} className="text-[#1B3B6B]" />
+                      <p className="text-[11px] font-black text-[#1B3B6B] tabular-nums uppercase">{formatTime(user.tempo_leitura_total)}</p>
                    </div>
                 </div>
 

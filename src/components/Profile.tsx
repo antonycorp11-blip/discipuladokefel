@@ -91,7 +91,7 @@ export function Profile() {
   if (loading) {
      return (
        <div className="flex flex-col items-center justify-center h-screen gap-4">
-          <Loader2 className="animate-spin text-indigo-600" />
+          <Loader2 className="animate-spin text-[#1B3B6B]" />
           <p className="text-gray-400 font-bold uppercase italic text-[10px]">Carregando Perfil...</p>
        </div>
      );
@@ -111,8 +111,8 @@ export function Profile() {
         )}
       </header>
 
-      <div className="flex flex-col items-center gap-6 py-10 glass-panel rounded-[3.5rem] shadow-premium shadow-indigo-500/5 mb-8 relative border-white/50">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+      <div className="flex flex-col items-center gap-6 py-10 glass-panel rounded-[3.5rem] shadow-premium shadow-[#1B3B6B]/5 mb-8 relative border-white/50">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#1B3B6B]/50/5 rounded-full -mr-16 -mt-16 blur-2xl" />
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-[#1B3B6B] to-[#4F93F5] rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition-soft"></div>
           <div className="relative w-32 h-32 bg-white rounded-[2.8rem] shadow-xl border-4 border-white flex items-center justify-center overflow-hidden transition-soft group-hover:scale-105">
@@ -168,8 +168,8 @@ export function Profile() {
           <div className="flex flex-col gap-4">
              {favorites.map(fav => (
                <div key={fav.id} className="glass-panel p-6 rounded-[2rem] border-white/30 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 bg-indigo-50 px-4 py-2 rounded-bl-2xl">
-                     <p className="text-[10px] font-black text-indigo-600 uppercase italic tracking-tighter">
+                  <div className="absolute top-0 right-0 bg-[#1B3B6B]/5 px-4 py-2 rounded-bl-2xl">
+                     <p className="text-[10px] font-black text-[#1B3B6B] uppercase italic tracking-tighter">
                         {fav.livro} {fav.capitulo}:{fav.versiculo}
                      </p>
                   </div>
