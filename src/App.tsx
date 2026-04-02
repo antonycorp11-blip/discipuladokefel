@@ -9,6 +9,7 @@ import { Login } from "./components/Login";
 import { Register } from "./components/Register";
 import { CellManagement } from "./components/CellManagement";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Onboarding } from "./components/Onboarding";
 
 // ── Tela de loading global ──────────────────────────────────────
 function LoadingScreen() {
@@ -33,6 +34,11 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     );
+  }
+
+  // Se o usuário não tiver uma célula, forçamos o Onboarding
+  if (!user.celula_id && user.role !== 'master') {
+    return <Onboarding />;
   }
 
   return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
   ChevronLeft, ChevronRight, BookOpen, Clock, 
-  Settings, Share2, Copy, CheckCircle, Loader2, List
+  Share2, Loader2, Star, X
 } from "lucide-react";
 import { BIBLE_BOOKS, fetchBibleChapter, BibleVerse } from "@/data/bible";
 import { supabase } from "@/lib/supabase";
@@ -9,177 +9,168 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function BibleReader() {
   const { user } = useAuth();
-  const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS[0]);
+  const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === '1') || BIBLE_BOOKS[0]);
   const [chapter, setChapter] = useState(1);
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSelector, setShowSelector] = useState(false);
-  const [readingTime, setReadingTime] = useState(0);
-  const [copiedVerse, setCopiedVerse] = useState<number | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectorStep, setSelectorStep] = useState<'book' | 'chapter' | 'verse'>('book');
+  
+  const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  
+  // Cronômetro de Luxo e Acumulativo
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const sessionRef = useRef(0);
+  const timerId = useRef<NodeJS.Timeout | null>(null);
 
-  // Carrega o capítulo
   useEffect(() => {
     async function load() {
       setLoading(true);
       const data = await fetchBibleChapter(selectedBook.id, chapter);
       setVerses(data);
+      setSelectedVerses([]);
       setLoading(false);
     }
     load();
   }, [selectedBook, chapter]);
 
-  // Cronômetro de leitura
   useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setReadingTime(prev => prev + 1);
+    timerId.current = setInterval(() => {
+      setSessionSeconds(s => {
+        const next = s + 1;
+        sessionRef.current = next;
+        return next;
+      });
     }, 1000);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      // Salva o log ao sair ou mudar de capítulo se ler por mais de 10 segundos
-      if (readingTime >= 10 && user) {
-        saveReadingLog(readingTime);
-      }
+      if (timerId.current) clearInterval(timerId.current);
+      if (sessionRef.current > 2) syncLeitura(sessionRef.current);
     };
-  }, [selectedBook, chapter, user]);
+  }, []);
 
-  const saveReadingLog = async (seconds: number) => {
+  const syncLeitura = async (secs: number) => {
+    if (!user) return;
     await supabase.from("kefel_leitura_logs").insert({
-      user_id: user?.id,
+      user_id: user.id,
       livro: selectedBook.nome,
       capitulo: chapter,
-      tempo_segundos: seconds
+      tempo_segundos: secs
     });
-    setReadingTime(0);
   };
 
-  const handleCopy = (text: string, verseNum: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedVerse(verseNum);
-    setTimeout(() => setCopiedVerse(null), 2000);
+  const toggleVerse = (vNum: number) => {
+    setSelectedVerses(prev => 
+      prev.includes(vNum) ? prev.filter(v => v !== vNum) : [...prev, vNum]
+    );
+  };
+
+  const handleShare = () => {
+    const text = verses.filter(v => selectedVerses.includes(v.verse)).map(v => `${v.verse}. ${v.text}`).join('\n');
+    const msg = `${selectedBook.nome} ${chapter}\n\n${text}\n\nLido no Kefel App`;
+    if (navigator.share) navigator.share({ text: msg });
+    else { navigator.clipboard.writeText(msg); alert("Copiado!"); }
   };
 
   const formatTime = (s: number) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const m = Math.floor(s / 60);
+    const rs = s % 60;
+    return `${m}:${rs.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#FAFAFA] pt-14 pb-24 overflow-hidden">
-      {/* Header Fixo */}
-      <header className="px-6 py-4 flex items-center justify-between bg-white border-b border-gray-100 shadow-sm z-10">
-        <button 
-          onClick={() => setShowSelector(true)}
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-2xl active:scale-95 transition-all shadow-lg"
-        >
-          <BookOpen size={16} className="text-blue-400" />
-          <span className="font-black italic uppercase text-xs tracking-wider">
-            {selectedBook.nome} {chapter}
-          </span>
+    <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 overflow-hidden">
+      <header className="px-6 py-4 flex items-center justify-between bg-white border-b border-gray-100 shadow-sm z-30">
+        <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-black text-white px-4 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform shadow-xl">
+          <BookOpen size={14} className="text-blue-400" />
+          <span className="text-[10px] font-black uppercase italic tracking-widest">{selectedBook.nome} {chapter}</span>
         </button>
 
-        <div className="flex items-center gap-3 bg-blue-50 px-3 py-2 rounded-2xl">
-          <Clock size={14} className="text-blue-600" />
-          <span className="text-[10px] font-black text-blue-600 tabular-nums">
-            {formatTime(readingTime)}
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-50 px-3 py-1.5 rounded-xl flex items-center gap-2">
+            <Clock size={12} className="text-blue-600" />
+            <span className="text-[10px] font-black text-blue-600 tabular-nums">{formatTime(sessionSeconds)}</span>
+          </div>
+          {selectedVerses.length > 0 && (
+            <button onClick={handleShare} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg animate-in zoom-in">
+              <Share2 size={16} />
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Conteúdo da Bíblia */}
-      <div className="flex-1 overflow-y-auto px-6 py-8 select-text">
+      <div className="flex-1 overflow-y-auto px-6 py-10 scroll-smooth">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
-             <Loader2 className="animate-spin text-blue-600" size={32} />
-             <p className="text-[10px] font-black text-gray-400 uppercase italic">Carregando Escrituras...</p>
+             <Loader2 className="animate-spin text-blue-600" />
+             <p className="text-[10px] font-black text-gray-400 uppercase italic">Iniciando leitura...</p>
           </div>
         ) : (
-          <div className="space-y-6 max-w-2xl mx-auto">
-            {verses.map((v) => (
+          <div className="max-w-xl mx-auto space-y-8">
+            {verses.map(v => (
               <div 
-                key={v.verse} 
-                className="group relative animate-in fade-in slide-in-from-bottom-2 duration-500"
-                onClick={() => handleCopy(v.text, v.verse)}
+                key={v.verse} id={`v-${v.verse}`} onClick={() => toggleVerse(v.verse)}
+                className={`p-4 rounded-[2rem] transition-all duration-300 relative ${selectedVerses.includes(v.verse) ? 'bg-blue-50/80 ring-1 ring-blue-100' : 'active:bg-gray-50'}`}
               >
                 <div className="flex gap-4">
-                  <span className="text-[10px] font-black text-blue-600 mt-1.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                    {v.verse}
-                  </span>
-                  <p className="text-lg leading-relaxed text-gray-800 font-medium tracking-tight">
-                    {v.text}
-                  </p>
-                </div>
-                {copiedVerse === v.verse && (
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-black px-3 py-1.5 rounded-full flex items-center gap-2 animate-in zoom-in duration-200">
-                    <CheckCircle size={10} className="text-green-400" />
-                    COPIADO
+                  <div className="flex flex-col items-center gap-3 pt-1">
+                    <span className={`text-[11px] font-black ${selectedVerses.includes(v.verse) ? 'text-blue-600' : 'text-gray-300'}`}>{v.verse}</span>
+                    <button onClick={(e) => { e.stopPropagation(); setFavorites(p => p.includes(v.verse) ? p.filter(f => f !== v.verse) : [...p, v.verse]); }} className={favorites.includes(v.verse) ? 'text-amber-500' : 'text-gray-100'}>
+                      <Star size={14} fill={favorites.includes(v.verse) ? "currentColor" : "none"} />
+                    </button>
                   </div>
-                )}
+                  <p className="text-lg font-medium text-gray-800 leading-relaxed tracking-tight">{v.text}</p>
+                </div>
               </div>
             ))}
-            
-            {/* Navegação Rápida entre Capítulos */}
-            <div className="pt-10 flex justify-between items-center px-4">
-              <button 
-                disabled={chapter === 1}
-                onClick={() => setChapter(prev => prev - 1)}
-                className="p-4 bg-white rounded-2xl shadow-xl disabled:opacity-30 active:scale-90 transition-all border border-gray-100"
-              >
-                <ChevronLeft className="text-blue-600" />
-              </button>
-              <p className="text-[10px] font-black text-gray-300 uppercase italic">Fim do Capítulo {chapter}</p>
-              <button 
-                disabled={chapter >= selectedBook.capitulos}
-                onClick={() => setChapter(prev => prev + 1)}
-                className="p-4 bg-white rounded-2xl shadow-xl disabled:opacity-30 active:scale-90 transition-all border border-gray-100"
-              >
-                <ChevronRight className="text-blue-600" />
-              </button>
-            </div>
           </div>
         )}
       </div>
 
-      {/* Seletor de Livro/Capítulo */}
-      {showSelector && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-end animate-in fade-in duration-300">
-          <div className="bg-white w-full h-[85vh] rounded-t-[3rem] p-8 flex flex-col space-y-6 animate-in slide-in-from-bottom duration-500">
-             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-black italic uppercase tracking-tighter decoration-blue-600 underline decoration-4">Biblioteca</h2>
-                <button 
-                  onClick={() => setShowSelector(false)}
-                  className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  <ChevronLeft className="rotate-90" size={20} />
-                </button>
-             </div>
+      <nav className="p-6 grid grid-cols-2 gap-4 bg-white/80 backdrop-blur-md border-t border-gray-100">
+        <button disabled={chapter === 1} onClick={() => setChapter(c => c - 1)} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-center disabled:opacity-30"><ChevronLeft className="text-gray-400" /></button>
+        <button disabled={chapter >= selectedBook.capitulos} onClick={() => setChapter(c => c + 1)} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-center disabled:opacity-30"><ChevronRight className="text-gray-400" /></button>
+      </nav>
 
-             <div className="flex-1 overflow-y-auto pr-2 space-y-8">
-               {/* Sessão Antigo/Novo Testamento */}
-               {['AT', 'NT'].map(t => (
-                 <div key={t} className="space-y-4">
-                   <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t === 'AT' ? 'Antigo Testamento' : 'Novo Testamento'}</h3>
-                   <div className="grid grid-cols-2 gap-3">
-                     {BIBLE_BOOKS.filter(b => b.testamento === t).map(book => (
-                       <button
-                         key={book.id}
-                         onClick={() => {
-                           setSelectedBook(book);
-                           setChapter(1);
-                           setShowSelector(false);
-                         }}
-                         className={`p-4 rounded-[1.5rem] text-left transition-all ${selectedBook.id === book.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' : 'bg-gray-50 text-gray-800'}`}
-                       >
-                         <p className="font-black italic uppercase text-[11px] leading-tight">{book.nome}</p>
-                         <p className={`text-[9px] mt-1 ${selectedBook.id === book.id ? 'text-blue-100' : 'text-gray-400'}`}>{book.capitulos} cap.</p>
-                       </button>
-                     ))}
-                   </div>
-                 </div>
-               ))}
-             </div>
+      {/* Seletor Hierárquico */}
+      {showSelector && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-end">
+          <div className="bg-white w-full h-[85vh] rounded-t-[3rem] p-8 flex flex-col space-y-6 animate-in slide-in-from-bottom duration-500">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-black italic uppercase underline decoration-blue-600 decoration-4">Biblioteca</h2>
+              <button onClick={() => setShowSelector(false)} className="bg-gray-50 p-3 rounded-full"><X size={20} /></button>
+            </div>
+            
+            <div className="flex gap-2 h-1">
+              {['book','chapter','verse'].map(s => <div key={s} className={`h-full flex-1 rounded-full ${selectorStep === s ? 'bg-blue-600' : 'bg-gray-100'}`} />)}
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 pt-2">
+              {selectorStep === 'book' && (
+                <div className="grid grid-cols-2 gap-3 pb-10">
+                  {BIBLE_BOOKS.map(b => (
+                    <button key={b.id} onClick={() => { setSelectedBook(b); setSelectorStep('chapter'); }} className={`p-5 rounded-[2rem] text-left border-2 transition-all ${selectedBook.id === b.id ? 'border-blue-600 bg-blue-50' : 'border-transparent bg-gray-50'}`}>
+                       <p className="font-black italic uppercase text-[10px] tracking-tighter">{b.nome}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {selectorStep === 'chapter' && (
+                <div className="grid grid-cols-4 gap-3 pb-10">
+                  {Array.from({ length: selectedBook.capitulos }, (_, i) => i + 1).map(c => (
+                    <button key={c} onClick={() => { setChapter(c); setSelectorStep('verse'); }} className={`p-4 rounded-2xl font-black text-sm ${chapter === c ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400'}`}>{c}</button>
+                  ))}
+                </div>
+              )}
+              {selectorStep === 'verse' && (
+                <div className="grid grid-cols-4 gap-3 pb-10">
+                  {verses.map(v => (
+                    <button key={v.verse} onClick={() => { setShowSelector(false); setTimeout(() => { document.getElementById(`v-${v.verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }} className="p-4 bg-gray-50 rounded-2xl font-black text-sm text-gray-400">{v.verse}</button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

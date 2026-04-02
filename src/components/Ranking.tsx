@@ -42,8 +42,8 @@ export function Ranking() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      <header className="flex items-center justify-between">
+    <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 px-6 overflow-y-auto">
+      <header className="mb-8 pt-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Ranking</h1>
           <p className="text-gray-400 text-sm font-medium">Os mais dedicados à Palavra.</p>

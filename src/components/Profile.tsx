@@ -45,9 +45,9 @@ export function Profile() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Meu Perfil</h1>
+    <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 px-6 overflow-y-auto">
+      <header className="mb-8 pt-4 flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight italic uppercase underline decoration-blue-600 decoration-4">Meu Perfil</h1>
         <button className="bg-gray-100 p-3 rounded-2xl text-gray-400 active:scale-95 transition-transform">
           <Settings className="w-5 h-5" />
         </button>
@@ -131,21 +131,8 @@ export function Profile() {
           </svg>
         </button>
 
-        <button className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
-          <div className="flex items-center gap-4">
-            <div className="bg-purple-50 w-10 h-10 rounded-2xl flex items-center justify-center text-purple-600">
-              <Shield className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-gray-900">Privacidade</h4>
-          </div>
-          <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        <button
+        <button className="w-full flex items-center justify-between p-5 hover:bg-red-50 transition-colors group"
           onClick={logout}
-          className="w-full flex items-center justify-between p-5 hover:bg-red-50 transition-colors group"
         >
           <div className="flex items-center gap-4">
             <div className="bg-red-50 w-10 h-10 rounded-2xl flex items-center justify-center text-red-500 group-hover:bg-red-100">
