@@ -290,5 +290,3 @@ export function Profile() {
     </div>
   );
 }
-  );
-}
