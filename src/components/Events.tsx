@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { 
   Plus, Calendar, MapPin, Clock, 
-  X, Camera, Loader2, Image as ImageIcon, Trash2, Tag, QrCode, AlertCircle, Users, User
+  X, Camera, Loader2, Image as ImageIcon, Trash2, Tag, QrCode, AlertCircle, Users, User, ChevronRight, ArrowRight
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { motion, AnimatePresence } from "motion/react";
 
 interface Evento {
   id: string;
@@ -14,11 +15,11 @@ interface Evento {
   preco: number;
   endereco: string;
   imagem_url: string;
-  banner_pos_y: number;
   tipo: "gratuito" | "pago" | "cota";
   pix_key?: string;
   cota_desc?: string;
   criado_por: string;
+  kefel_eventos_inscritos?: any[];
 }
 
 export default function Events() {
@@ -120,135 +121,220 @@ export default function Events() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 px-6 overflow-y-auto">
+    <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
       <header className="flex justify-between items-center mb-8 pt-4">
-        <h1 className="text-2xl font-bold text-gray-900 italic uppercase underline decoration-blue-600 decoration-4">Agenda</h1>
-        {user?.role !== 'member' && (
-          <button onClick={() => setShowForm(true)} className="bg-black text-white p-3 rounded-2xl shadow-xl active:scale-95 transition-all">
+        <div>
+           <h1 className="text-2xl font-black text-gray-900 italic uppercase">Agenda</h1>
+           <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+        </div>
+        {(user?.role === 'master' || user?.role === 'lider') && (
+          <button onClick={() => setShowForm(true)} className="bg-black text-white p-3.5 rounded-2xl shadow-premium shadow-black/10 active:scale-95 transition-soft">
             <Plus size={20} />
           </button>
         )}
       </header>
 
-      {loading ? <Loader2 className="animate-spin mx-auto text-blue-600" /> : (
-        <div className="grid gap-8 pb-10">
-          {eventos.map(event => (
-            <div key={event.id} className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 flex flex-col relative">
-              <div className="relative h-48 bg-gray-100">
-                {event.imagem_url ? (
-                  <img src={event.imagem_url} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-200"><ImageIcon size={48} /></div>
-                )}
-                <div className="absolute top-4 right-4 flex gap-2">
-                   {user?.id === event.criado_por && (
-                     <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-white/90 backdrop-blur p-2.5 rounded-xl text-blue-600 shadow-xl active:scale-95">
-                       <Users size={18} />
-                     </button>
-                   )}
-                   {(user?.role === 'master' || user?.id === event.criado_por) && (
-                     <button onClick={() => handleDelete(event.id)} className="bg-white/90 backdrop-blur p-2.5 rounded-xl text-red-500 shadow-xl active:scale-95">
-                       <Trash2 size={18} />
-                     </button>
-                   )}
-                </div>
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
+      ) : (
+        <div className="grid gap-6 pb-10">
+          {eventos.map(event => {
+            const date = new Date(event.data_hora);
+            return (
+              <div key={event.id} className="glass-panel p-6 rounded-[2.5rem] shadow-sm flex flex-col gap-5 transition-soft group border-white/50 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                 
+                 <div className="relative h-48 w-full rounded-[2rem] overflow-hidden shadow-inner bg-gray-50 border border-black/5">
+                    {event.imagem_url ? (
+                      <img src={event.imagem_url} className="w-full h-full object-cover transition-soft group-hover:scale-105" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-white text-indigo-200">
+                         <ImageIcon size={48} />
+                      </div>
+                    )}
+                    
+                    <div className="absolute top-4 right-4 flex gap-2 z-20">
+                       {user?.id === event.criado_por && (
+                         <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-indigo-600 shadow-xl active:scale-90 transition-soft">
+                           <Users size={18} />
+                         </button>
+                       )}
+                       {(user?.role === 'master' || user?.id === event.criado_por) && (
+                         <button onClick={() => handleDelete(event.id)} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-rose-500 shadow-xl active:scale-90 transition-soft">
+                           <Trash2 size={18} />
+                         </button>
+                       )}
+                    </div>
+
+                    <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl flex flex-col items-center min-w-[60px] border border-white/10 z-20">
+                       <span className="text-[10px] font-black uppercase text-indigo-400">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                       <span className="text-xl font-black text-white tracking-tighter leading-none mt-0.5">{date.getDate()}</span>
+                    </div>
+                 </div>
+
+                 <div className="px-1 space-y-3">
+                    <div className="flex justify-between items-start gap-4">
+                       <h3 className="text-xl font-black text-gray-900 italic uppercase tracking-tighter leading-tight flex-1">{event.titulo}</h3>
+                       <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${event.tipo === 'pago' ? 'bg-indigo-50 text-indigo-600' : 'bg-green-50 text-green-600'}`}>
+                          {event.tipo}
+                       </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-4 opacity-60">
+                       <div className="flex items-center gap-1.5">
+                          <Clock size={12} className="text-indigo-600" />
+                          <span className="text-[10px] font-black uppercase">{date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                       </div>
+                       <div className="flex items-center gap-1.5 min-w-0">
+                          <MapPin size={12} className="text-rose-500" />
+                          <span className="text-[10px] font-black uppercase truncate">{event.endereco}</span>
+                       </div>
+                    </div>
+
+                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{event.descricao}</p>
+                 </div>
               </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase italic">{event.titulo}</h3>
-                <div className="flex items-center gap-4 text-gray-400 text-[10px] font-bold uppercase mb-4">
-                  <div className="flex items-center gap-1"><Calendar size={12} className="text-blue-600" /> {new Date(event.data_hora).toLocaleDateString('pt-BR')}</div>
-                  <div className="flex items-center gap-1"><MapPin size={12} className="text-blue-600" /> {event.endereco}</div>
-                </div>
-                <p className="text-sm text-gray-500 line-clamp-2">{event.descricao}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Modal Relatório de Inscrições */}
-      {showInscriptions && (
-        <div className="fixed inset-0 z-[110] bg-black/70 backdrop-blur-md flex items-end animate-in fade-in">
-          <div className="bg-white w-full h-[80vh] rounded-t-[3rem] p-8 flex flex-col animate-in slide-in-from-bottom duration-300">
-             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold italic uppercase">Inscritos no Evento</h2>
-                <button onClick={() => setShowInscriptions(null)} className="bg-gray-100 p-3 rounded-full"><X size={20} /></button>
-             </div>
-             <div className="flex-1 overflow-y-auto space-y-4">
-                {loadingInsc ? <Loader2 className="animate-spin mx-auto text-blue-600" /> : inscribedUsers.length === 0 ? (
-                  <p className="text-center text-gray-400 py-10 font-bold uppercase text-xs">Ninguém inscrito ainda</p>
-                ) : inscribedUsers.map(insc => (
-                  <div key={insc.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
-                    <div className="w-10 h-10 bg-white rounded-xl overflow-hidden border border-gray-100">
-                       {insc.kefel_profiles?.avatar_url ? <img src={insc.kefel_profiles.avatar_url} className="w-full h-full object-cover" /> : <User className="p-2 text-blue-200" />}
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{insc.kefel_profiles?.nome || "Usuário"}</p>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase">{new Date(insc.confirmado_em).toLocaleString('pt-BR')}</p>
-                    </div>
+      <AnimatePresence>
+        {showInscriptions && (
+          <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-end">
+            <motion.div 
+               initial={{ y: "100%" }}
+               animate={{ y: 0 }}
+               exit={{ y: "100%" }}
+               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+               className="bg-white w-full h-[85vh] rounded-t-[3.5rem] p-8 flex flex-col shadow-2xl"
+            >
+               <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">Inscritos</h2>
+                    <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Lista de Participantes</p>
                   </div>
-                ))}
-             </div>
+                  <button onClick={() => setShowInscriptions(null)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
+               </div>
+               
+               <div className="flex-1 overflow-y-auto space-y-4 pb-10">
+                  {loadingInsc ? <Loader2 className="animate-spin mx-auto text-indigo-600" /> : inscribedUsers.length === 0 ? (
+                    <div className="py-20 text-center space-y-4">
+                       <Users size={48} className="mx-auto text-gray-100" />
+                       <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Ninguém inscrito ainda</p>
+                    </div>
+                  ) : inscribedUsers.map(insc => (
+                    <div key={insc.id} className="flex items-center gap-4 p-5 glass-panel rounded-3xl border-gray-100 shadow-sm">
+                      <div className="w-14 h-14 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm p-1">
+                         {insc.kefel_profiles?.avatar_url ? <img src={insc.kefel_profiles.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="w-full h-full p-2 text-indigo-100" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-black text-gray-900 uppercase italic text-sm">{insc.kefel_profiles?.nome || "Usuário"}</p>
+                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-1">{new Date(insc.confirmado_em).toLocaleString('pt-BR')}</p>
+                      </div>
+                    </div>
+                  ))}
+               </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Modal Criar Evento */}
-      {showForm && (
-        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-end animate-in fade-in">
-          <div className="bg-white w-full h-[90vh] rounded-t-[3.5rem] p-8 overflow-y-auto animate-in slide-in-from-bottom duration-500 pb-20">
-            <div className="flex justify-between items-center mb-8">
-               <h2 className="text-xl font-bold italic uppercase underline decoration-blue-600 decoration-4">Novo Evento</h2>
-               <button onClick={() => setShowForm(false)} className="bg-gray-100 p-3 rounded-full"><X /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Banner do Evento</p>
-                <div className="relative h-48 rounded-[2rem] bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center">
-                  {imagePreview ? (
-                    <img src={imagePreview} className="w-full h-full object-cover" />
-                  ) : (
-                    <label className="cursor-pointer flex flex-col items-center">
-                       <Camera size={32} className="text-gray-300" />
-                       <span className="text-[10px] font-bold text-gray-400 uppercase mt-2">Escolher Foto</span>
-                       <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                    </label>
-                  )}
-                </div>
-              </div>
-
-              <input required placeholder="TÍTULO DO EVENTO" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.5rem] font-bold italic uppercase text-xs" />
-              <textarea placeholder="DESCRIÇÃO..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.5rem] text-sm h-32" />
-              <div className="grid grid-cols-2 gap-4">
-                 <input required type="date" value={data} onChange={e => setData(e.target.value)} className="bg-gray-50 p-6 rounded-[1.5rem] font-bold text-xs" />
-                 <input required type="time" value={hora} onChange={e => setHora(e.target.value)} className="bg-gray-50 p-6 rounded-[1.5rem] font-bold text-xs" />
-              </div>
-              <input required placeholder="LOCAL" value={endereco} onChange={e => setEndereco(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.5rem] font-bold italic uppercase text-xs" />
-              
-              <div className="bg-gray-50 p-4 rounded-[2rem] space-y-4">
-                 <div className="flex gap-2">
-                    {['gratuito', 'pago', 'cota'].map(t => (
-                      <button key={t} type="button" onClick={() => setTipo(t as any)} className={`flex-1 py-4 rounded-xl font-bold text-[10px] uppercase transition-all ${tipo === t ? 'bg-black text-white shadow-xl' : 'bg-white text-gray-400'}`}>{t}</button>
-                    ))}
+      <AnimatePresence>
+        {showForm && (
+          <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md flex items-end">
+            <motion.div 
+               initial={{ y: "100%" }}
+               animate={{ y: 0 }}
+               exit={{ y: "100%" }}
+               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+               className="bg-white w-full h-[92vh] rounded-t-[3.5rem] p-8 overflow-y-auto shadow-2xl pb-32"
+            >
+              <div className="flex justify-between items-center mb-10">
+                 <div>
+                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">Novo Evento</h2>
+                    <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
                  </div>
-                 {tipo === 'pago' && (
-                   <div className="space-y-4">
-                     <input type="number" placeholder="VALOR R$" value={preco} onChange={e => setPreco(Number(e.target.value))} className="w-full bg-white p-6 rounded-2xl font-bold" />
-                     <input placeholder="CHAVE PIX" value={pixKey} onChange={e => setPixKey(e.target.value)} className="w-full bg-white p-6 rounded-2xl font-bold text-xs uppercase" />
-                   </div>
-                 )}
-                 {tipo === 'cota' && (
-                   <textarea placeholder="O QUE TRAZER?" value={cotaDesc} onChange={e => setCotaDesc(e.target.value)} className="w-full bg-white p-6 rounded-2xl font-bold text-xs h-24" />
-                 )}
+                 <button onClick={() => setShowForm(false)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
               </div>
 
-              <button disabled={saving} type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[1.5rem] font-black shadow-xl uppercase italic disabled:opacity-50">
-                {saving ? <Loader2 className="animate-spin mx-auto" /> : "Publicar Evento"}
-              </button>
-            </form>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">Banner Principal</p>
+                  <div className="relative h-56 rounded-[3rem] bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center transition-soft hover:border-indigo-300 group">
+                    {imagePreview ? (
+                      <>
+                        <img src={imagePreview} className="w-full h-full object-cover" />
+                        <button onClick={() => {setImageFile(null); setImagePreview(null);}} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-xl backdrop-blur-md"><X size={16}/></button>
+                      </>
+                    ) : (
+                      <label className="cursor-pointer flex flex-col items-center p-10 text-center">
+                         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-200 mb-4 group-hover:scale-110 transition-soft">
+                            <Camera size={32} />
+                         </div>
+                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Escolher Foto do Banner</span>
+                         <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">O que vai acontecer?</p>
+                  <input required placeholder="TÍTULO DO EVENTO" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.8rem] font-black italic uppercase text-xs outline-none focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft" />
+                </div>
+
+                <textarea placeholder="DESCRIÇÃO COMPLETA..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full bg-gray-50 p-7 rounded-[2rem] text-sm h-40 outline-none focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft" />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">Data</p>
+                    <input required type="date" value={data} onChange={e => setData(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.8rem] font-bold text-xs outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">Horário</p>
+                    <input required type="time" value={hora} onChange={e => setHora(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.8rem] font-bold text-xs outline-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">Localização</p>
+                  <input required placeholder="ENDEREÇO OU LINK" value={endereco} onChange={e => setEndereco(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.8rem] font-black italic uppercase text-xs outline-none" />
+                </div>
+                
+                <div className="bg-gray-50 p-6 rounded-[2.5rem] space-y-6">
+                   <div className="flex gap-3">
+                      {['gratuito', 'pago', 'cota'].map(t => (
+                        <button key={t} type="button" onClick={() => setTipo(t as any)} className={`flex-1 py-5 rounded-2xl font-black text-[10px] uppercase transition-soft ${tipo === t ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-white text-gray-300 hover:text-gray-500'}`}>{t}</button>
+                      ))}
+                   </div>
+                   
+                   <AnimatePresence mode="wait">
+                    {tipo === 'pago' && (
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-4">
+                        <input type="number" placeholder="VALOR POR PESSOA R$" value={preco} onChange={e => setPreco(Number(e.target.value))} className="w-full bg-white p-6 rounded-2xl font-black italic text-sm outline-none" />
+                        <input placeholder="CHAVE PIX PARA PAGAMENTO" value={pixKey} onChange={e => setPixKey(e.target.value)} className="w-full bg-white p-6 rounded-2xl font-black text-xs uppercase outline-none" />
+                      </motion.div>
+                    )}
+                    {tipo === 'cota' && (
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-3">
+                        <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest text-center px-4">Instruções sobre o que cada um deve levar</p>
+                        <textarea placeholder="EX: HOMENS LEVAM REFRIGERANTE, MULHERES LEVAM SALGADO..." value={cotaDesc} onChange={e => setCotaDesc(e.target.value)} className="w-full bg-white p-6 rounded-2xl font-bold text-xs h-28 outline-none" />
+                      </motion.div>
+                    )}
+                   </AnimatePresence>
+                </div>
+
+                <button disabled={saving} type="submit" className="w-full bg-indigo-600 text-white py-7 rounded-[2rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
+                  {saving ? <Loader2 className="animate-spin mx-auto" /> : "Publicar Evento na Agenda"}
+                </button>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

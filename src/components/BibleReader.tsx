@@ -34,20 +34,20 @@ export default function BibleReader() {
   }, [selectedBook, chapter]);
 
   useEffect(() => {
-    // Sincroniza a cada 30 segundos
+    // Sincroniza a cada 10 segundos para maior precisão (feedback do usuário)
     timerId.current = setInterval(() => {
       setSessionSeconds(s => {
         const next = s + 1;
         sessionRef.current = next;
-        if (next % 30 === 0) syncLeitura(30); 
+        if (next % 10 === 0) syncLeitura(10); 
         return next;
       });
     }, 1000);
 
     return () => {
       if (timerId.current) clearInterval(timerId.current);
-      // Salva o tempo restante que não completou um ciclo de 30s
-      const remaining = sessionRef.current % 30;
+      // Salva o tempo restante
+      const remaining = sessionRef.current % 10;
       if (remaining > 0) syncLeitura(remaining);
     };
   }, []);

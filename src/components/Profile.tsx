@@ -1,6 +1,6 @@
+import React, { useState, useEffect } from "react";
 import { User, Settings, LogOut, Shield, Users, BookOpen, Clock, Crown, Loader2, Camera, ChevronRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useState, useEffect } from "react";
 import { supabase, type KefelCelula } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 
@@ -55,44 +55,57 @@ export function Profile() {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 px-6 overflow-y-auto">
+    <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
       <header className="mb-8 pt-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 italic uppercase underline decoration-blue-600 decoration-4">Perfil</h1>
-        <button className="bg-gray-100 p-3 rounded-2xl text-gray-400 active:scale-95 transition-transform"><Settings className="w-5 h-5" /></button>
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 italic uppercase">Perfil</h1>
+          <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+        </div>
+        <button className="glass-panel p-3.5 rounded-2xl text-indigo-600 active:scale-95 transition-transform shadow-sm"><Settings className="w-5 h-5" /></button>
       </header>
 
-      <div className="flex flex-col items-center gap-4 py-8 bg-white rounded-[3rem] shadow-sm border border-gray-100 mb-8 relative">
-        <div className="relative">
-          <div className="w-28 h-28 bg-gray-50 rounded-[2.5rem] shadow-sm border-4 border-white flex items-center justify-center overflow-hidden">
+      <div className="flex flex-col items-center gap-6 py-10 glass-panel rounded-[3.5rem] shadow-premium shadow-indigo-500/5 mb-8 relative border-white/50">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-rose-500 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition-soft"></div>
+          <div className="relative w-32 h-32 bg-white rounded-[2.8rem] shadow-xl border-4 border-white flex items-center justify-center overflow-hidden transition-soft group-hover:scale-105">
             {uploading ? (
-              <Loader2 className="animate-spin text-blue-600" />
+              <Loader2 className="animate-spin text-indigo-600" />
             ) : user.avatar_url ? (
               <img src={user.avatar_url} className="w-full h-full object-cover" />
             ) : (
-              <User size={48} className="text-blue-100" />
+              <User size={56} className="text-indigo-100" />
             )}
           </div>
-          <label className="absolute bottom-0 right-0 bg-blue-600 p-2.5 rounded-2xl text-white shadow-xl cursor-pointer active:scale-90 transition-transform">
-            <Camera size={18} />
+          <label className="absolute -bottom-2 -right-2 bg-black text-white p-3.5 rounded-2xl shadow-xl cursor-pointer active:scale-90 transition-soft hover:bg-indigo-600">
+            <Camera size={20} />
             <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
           </label>
         </div>
-        <div className="text-center">
-          <h2 className="text-xl font-black text-gray-900 italic uppercase underline decoration-blue-600 decoration-4">{user.nome}</h2>
-          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-2">{user.role}</p>
+        <div className="text-center px-4">
+          <h2 className="text-2xl font-black text-gray-900 italic uppercase tracking-tighter leading-tight">{user.nome}</h2>
+          <div className="flex items-center justify-center gap-2 mt-2">
+             <div className="h-0.5 w-4 bg-indigo-600 opacity-20" />
+             <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">{user.role}</p>
+             <div className="h-0.5 w-4 bg-indigo-600 opacity-20" />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col gap-2">
-           <Clock size={20} className="text-blue-600" />
-           <p className="text-[10px] font-black text-gray-400 uppercase">Tempo Lido</p>
-           <p className="text-lg font-black text-gray-900 italic">{formatTime(user.tempo_leitura_total)}</p>
+      <div className="grid grid-cols-2 gap-5 mb-8">
+        <div className="glass-panel p-6 rounded-[2.5rem] shadow-sm border-white/50 flex flex-col gap-3 transition-soft hover:shadow-lg">
+           <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm"><Clock size={20} /></div>
+           <div>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tempo Lido</p>
+              <p className="text-xl font-black text-gray-900 italic tracking-tighter">{formatTime(user.tempo_leitura_total)}</p>
+           </div>
         </div>
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col gap-2">
-           <Users size={20} className="text-green-600" />
-           <p className="text-[10px] font-black text-gray-400 uppercase">Célula</p>
-           <p className="text-sm font-black text-gray-900 truncate italic">{meuGrupo?.nome || "Sem Célula"}</p>
+        <div className="glass-panel p-6 rounded-[2.5rem] shadow-sm border-white/50 flex flex-col gap-3 transition-soft hover:shadow-lg">
+           <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600 shadow-sm"><Users size={20} /></div>
+           <div>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Célula</p>
+              <p className="text-sm font-black text-gray-900 truncate italic tracking-tighter">{meuGrupo?.nome || "Sem Célula"}</p>
+           </div>
         </div>
       </div>
 

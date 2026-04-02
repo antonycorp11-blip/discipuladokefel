@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { 
   Users, Plus, X, 
   Loader2, Trash2, Shield, User,
-  Camera, CheckCircle
+  Camera, CheckCircle, Clock, ChevronRight
 } from "lucide-react";
 import { supabase, type KefelCelula } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { motion, AnimatePresence } from "motion/react";
 
 export function CellManagement() {
   const { user } = useAuth();
@@ -40,7 +41,7 @@ export function CellManagement() {
 
   async function handleAddCell(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || user.role !== "master") return;
+    if (!user || (user.role !== "master" && user.role !== "lider")) return;
     setSaving(true);
 
     let imageUrl = "";
@@ -64,9 +65,12 @@ export function CellManagement() {
 
     if (!error) {
       setShowAddForm(false);
-      fetchData();
       resetForm();
-    } else alert("Erro ao criar: " + error.message);
+      fetchData();
+      alert("Célula criada com sucesso!");
+    } else {
+      alert("Erro ao criar: " + error.message);
+    }
     setSaving(false);
   }
 
@@ -91,92 +95,119 @@ export function CellManagement() {
   if (user?.role !== "master" && user?.role !== "lider") return null;
 
   return (
-    <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 px-6 overflow-y-auto">
+    <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
       <header className="flex justify-between items-center mb-8 pt-4">
-        <h1 className="text-2xl font-bold text-gray-900 italic uppercase underline decoration-blue-600 decoration-4">Células</h1>
+        <div>
+           <h1 className="text-2xl font-black text-gray-900 italic uppercase">Células</h1>
+           <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+        </div>
         {user?.role === 'master' && (
-          <button onClick={() => setShowAddForm(true)} className="bg-black text-white p-3 rounded-2xl shadow-xl active:scale-95 transition-all">
+          <button onClick={() => setShowAddForm(true)} className="bg-black text-white p-3.5 rounded-2xl shadow-premium shadow-black/10 active:scale-95 transition-soft">
             <Plus size={20} />
           </button>
         )}
       </header>
 
-      {loading ? <Loader2 className="animate-spin mx-auto text-blue-600" /> : (
-        <div className="grid gap-6">
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
+      ) : (
+        <div className="grid gap-6 pb-10">
           {celulas.map(c => (
-            <div key={c.id} className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                 <div className="w-14 h-14 bg-blue-50 rounded-2xl overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-blue-600">
-                    {c.imagem_url ? <img src={c.imagem_url} className="w-full h-full object-cover" /> : <Users size={24} />}
+            <div key={c.id} className="glass-panel p-6 rounded-[2.5rem] shadow-sm flex items-center justify-between border-white/50 group transition-soft hover:shadow-lg">
+              <div className="flex items-center gap-5">
+                 <div className="w-16 h-16 bg-white rounded-[1.8rem] overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-indigo-100 border border-gray-50 p-1 group-hover:scale-110 transition-soft">
+                    {c.imagem_url ? <img src={c.imagem_url} className="w-full h-full object-cover rounded-2xl" /> : <Users size={28} />}
                  </div>
                  <div>
-                    <h3 className="font-bold text-gray-900 uppercase italic text-sm">{c.nome}</h3>
-                    <p className="text-gray-400 text-[10px] uppercase font-bold tracking-widest">{c.dia_semana}</p>
+                    <h3 className="font-black text-gray-900 uppercase italic text-base leading-tight">{c.nome}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                       <Clock size={10} className="text-rose-500" />
+                       <p className="text-gray-400 text-[10px] uppercase font-black tracking-widest">{c.dia_semana}</p>
+                    </div>
                  </div>
               </div>
-              {user?.role === 'master' && (
-                <button onClick={() => handleDelete(c.id)} className="bg-red-50 text-red-500 p-3 rounded-2xl active:scale-95 transition-all"><Trash2 size={16} /></button>
-              )}
+              <div className="flex items-center gap-2">
+                {user?.role === 'master' && (
+                  <button onClick={() => handleDelete(c.id)} className="bg-rose-50 text-rose-500 p-3.5 rounded-2xl active:scale-90 transition-soft hover:bg-rose-100"><Trash2 size={18} /></button>
+                )}
+                <ChevronRight size={20} className="text-gray-200" />
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {/* Modal Criar Células */}
-      {showAddForm && (
-        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-end animate-in fade-in">
-          <div className="bg-white w-full h-[90vh] rounded-t-[3.5rem] p-8 flex flex-col space-y-6 animate-in slide-in-from-bottom duration-300 pb-20">
-             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold italic uppercase underline decoration-blue-600 decoration-4">Nova Célula</h2>
-                <button onClick={() => setShowAddForm(false)} className="bg-gray-100 p-3 rounded-full"><X size={20} /></button>
-             </div>
+      <AnimatePresence>
+        {showAddForm && (
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-end">
+            <motion.div 
+               initial={{ y: "100%" }}
+               animate={{ y: 0 }}
+               exit={{ y: "100%" }}
+               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+               className="bg-white w-full h-[85vh] rounded-t-[3.5rem] p-8 flex flex-col shadow-2xl pb-32"
+            >
+               <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">Nova Célula</h2>
+                    <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+                  </div>
+                  <button onClick={() => setShowAddForm(false)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
+               </div>
 
-             <form onSubmit={handleAddCell} className="space-y-6 flex-1 overflow-y-auto">
-                <div className="space-y-2">
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Logo/Foto da Célula</p>
-                   <div className="relative h-32 w-32 mx-auto rounded-[2rem] bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center">
-                      {imagePreview ? (
-                        <img src={imagePreview} className="w-full h-full object-cover" />
-                      ) : (
-                        <label className="cursor-pointer flex flex-col items-center">
-                           <Camera size={24} className="text-gray-300" />
-                           <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                        </label>
-                      )}
-                   </div>
-                </div>
+               <form onSubmit={handleAddCell} className="space-y-8 flex-1 overflow-y-auto pr-2">
+                  <div className="space-y-3">
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Identidade Visual</p>
+                     <div className="relative h-40 w-40 mx-auto rounded-[3rem] bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center transition-soft hover:border-indigo-300 group">
+                        {imagePreview ? (
+                          <>
+                            <img src={imagePreview} className="w-full h-full object-cover" />
+                            <button onClick={() => {setImageFile(null); setImagePreview(null);}} className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-soft flex items-center justify-center text-white"><X size={24}/></button>
+                          </>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center">
+                             <div className="p-4 bg-white rounded-2xl shadow-sm text-indigo-100 mb-2 group-hover:scale-110 transition-soft">
+                                <Camera size={32} />
+                             </div>
+                             <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                          </label>
+                        )}
+                     </div>
+                  </div>
 
-                <div className="space-y-1">
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nome da Célula</p>
-                   <input required placeholder="EX: CÉLULA FILIPENSES" value={nome} onChange={e => setNome(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.5rem] font-bold italic uppercase text-xs outline-none" />
-                </div>
+                  <div className="space-y-2">
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Como se chama?</p>
+                     <input required placeholder="EX: CÉLULA FILIPENSES" value={nome} onChange={e => setNome(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft" />
+                  </div>
 
-                <div className="space-y-1">
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Dia da Semana</p>
-                   <select value={diaSemana} onChange={e => setDiaSemana(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[1.5rem] font-bold italic uppercase text-xs outline-none h-[70px]">
-                      {["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"].map(d => (
-                         <option key={d} value={d}>{d}</option>
-                      ))}
-                   </select>
-                </div>
+                  <div className="space-y-2">
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Dia do Encontro</p>
+                     <select value={diaSemana} onChange={e => setDiaSemana(e.target.value)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none h-[74px] focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft appearance-none">
+                        {["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"].map(d => (
+                           <option key={d} value={d}>{d}</option>
+                        ))}
+                     </select>
+                  </div>
 
-                <div className="space-y-1">
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Escolher Líder</p>
-                   <select value={liderId || ""} onChange={e => setLiderId(e.target.value || null)} className="w-full bg-gray-50 p-6 rounded-[1.5rem] font-bold italic uppercase text-xs outline-none h-[70px]">
-                      <option value="">SELECIONE UM LÍDER...</option>
-                      {usuarios.map(u => (
-                         <option key={u.id} value={u.id}>{u.nome}</option>
-                      ))}
-                   </select>
-                </div>
+                  <div className="space-y-2">
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Quem é o Líder?</p>
+                     <select value={liderId || ""} onChange={e => setLiderId(e.target.value || null)} className="w-full bg-gray-50 p-6 rounded-[2rem] font-black italic uppercase text-xs outline-none h-[74px] focus:bg-indigo-50 border border-transparent focus:border-indigo-100 transition-soft appearance-none">
+                        <option value="">SELECIONE UM LÍDER...</option>
+                        {usuarios.map(u => (
+                           <option key={u.id} value={u.id}>{u.nome}</option>
+                        ))}
+                     </select>
+                  </div>
 
-                <button disabled={saving} type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[1.5rem] font-bold shadow-xl active:scale-95 disabled:opacity-50 uppercase italic">
-                   {saving ? <Loader2 className="animate-spin mx-auto" /> : "Criar Célula"}
-                </button>
-             </form>
+                  <button disabled={saving} type="submit" className="w-full bg-indigo-600 text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
+                     {saving ? <Loader2 className="animate-spin mx-auto" /> : "Consagrar Nova Célula"}
+                  </button>
+               </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
