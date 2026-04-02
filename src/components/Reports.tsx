@@ -17,7 +17,7 @@ export function Reports() {
   
   // Form state
   const [presentes, setPresentes] = useState(0);
-  const [data, setData] = useState("");
+  const [data, setData] = useState(new Date().toISOString().split('T')[0]); // Fallback para hoje
   const [cellDay, setCellDay] = useState("");
 
   useEffect(() => {
@@ -111,11 +111,13 @@ export function Reports() {
       <form onSubmit={handleSubmit} className="space-y-8 pb-10">
          {/* Data (Informativa) */}
          <div className="space-y-2 opacity-50 select-none">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Data Automática ({type === 'celula' ? cellDay : 'Domingo'})</p>
-            <div className="relative">
-              <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input type="date" value={data} readOnly className="w-full bg-gray-50 p-6 pl-14 rounded-[2rem] font-black italic uppercase text-xs outline-none border border-transparent" />
-            </div>
+              <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-[#1B3B6B]" size={16} />
+              <input 
+                type="date" 
+                value={data} 
+                onChange={(e) => setData(e.target.value)}
+                className="w-full bg-white p-6 pl-14 rounded-[2rem] font-black italic uppercase text-xs outline-none border border-gray-100 shadow-sm focus:border-[#1B3B6B]/20 transition-soft" 
+              />
          </div>
 
          {/* Contador de Presentes */}

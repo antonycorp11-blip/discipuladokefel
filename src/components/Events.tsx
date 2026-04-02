@@ -330,13 +330,15 @@ export default function Events() {
                        <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Ninguém inscrito ainda</p>
                     </div>
                   ) : (
-                    // Agrupar por Célula
-                    Array.from(new Set(inscribedUsers.map(i => i.kefel_profiles?.celula_id))).map(celId => {
-                       const celName = celulasRepo.find(c => c.id === celId)?.nome || "Outras / Sem Célula";
-                       const membersInCel = inscribedUsers.filter(i => i.kefel_profiles?.celula_id === celId);
+                    // Agrupar por Célula (lidando com nulos e perfis ausentes)
+                    Array.from(new Set(inscribedUsers.map(i => i.kefel_profiles?.celula_id || 'sem-celula'))).map(celId => {
+                       const celName = celulasRepo.find(c => c.id === celId)?.nome || "Membros sem Célula / Visitantes";
+                       const membersInCel = inscribedUsers.filter(i => (i.kefel_profiles?.celula_id || 'sem-celula') === celId);
+
+                       if (membersInCel.length === 0) return null;
 
                        return (
-                          <div key={celId || 'null'} className="space-y-4">
+                          <div key={String(celId)} className="space-y-4">
                              <div className="flex items-center justify-between bg-gray-50/80 px-6 py-4 rounded-[2rem] border border-gray-100 border-dashed">
                                 <h4 className="text-[11px] font-black text-gray-900 uppercase italic tracking-tighter">{celName}</h4>
                                 <span className="text-[10px] font-black text-[#1B3B6B] bg-white px-3 py-1 rounded-full shadow-sm">{membersInCel.length}</span>
