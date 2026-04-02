@@ -17,6 +17,7 @@ export function Profile() {
   const [showSettings, setShowSettings] = useState(false);
   const [showReportCenter, setShowReportCenter] = useState(false);
   const [newName, setNewName] = useState(currentUser?.nome || "");
+  const [newPhone, setNewPhone] = useState(currentUser?.telefone || "");
   const [pushEnabled, setPushEnabled] = useState(true);
   const [meusRelatorios, setMeusRelatorios] = useState<any[]>([]);
   const [allRelatorios, setAllRelatorios] = useState<any[]>([]);
@@ -67,20 +68,35 @@ export function Profile() {
     setLoadingAllRels(false);
   }
 
-  const handleUpdateName = async () => {
+  const formatPhone = (val: string) => {
+    const clean = val.replace(/\D/g, "");
+    if (clean.length <= 2) return clean;
+    if (clean.length <= 7) return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
+    return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
+  };
+
+  const handleUpdateProfile = async () => {
     if (!profile || !newName) return;
+    const telClean = (newPhone || "").replace(/\D/g, "");
+    
     const { data, error } = await supabase
       .from("kefel_profiles")
-      .update({ nome: newName })
+      .update({ 
+        nome: newName.trim(),
+        telefone: telClean || null 
+      })
       .eq("id", profile.id)
       .select("*")
       .single();
     
     if (!error && data) {
-      setProfile(data as KefelProfile);
-      if (isOwnProfile) setUser(data as KefelProfile);
+      const updated = data as KefelProfile;
+      setProfile(updated);
+      if (isOwnProfile) setUser(updated);
       setShowSettings(false);
-      alert("Nome atualizado!");
+      alert("Perfil atualizado!");
+    } else {
+      alert("Erro ao atualizar: " + (error?.message || "Erro desconhecido"));
     }
   };
 
@@ -411,7 +427,19 @@ export function Profile() {
                     <input 
                       value={newName} 
                       onChange={e => setNewName(e.target.value)}
-                      className="w-full bg-gray-50 p-5 rounded-2xl font-bold outline-none" 
+                      placeholder="Seu Nome"
+                      className="w-full bg-gray-50 p-5 rounded-2xl font-bold outline-none italic uppercase" 
+                    />
+                 </div>
+
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">WhatsApp</p>
+                    <input 
+                      type="tel"
+                      value={formatPhone(newPhone)} 
+                      onChange={e => setNewPhone(e.target.value)}
+                      placeholder="(00) 00000-0000"
+                      className="w-full bg-gray-50 p-5 rounded-2xl font-bold outline-none italic" 
                     />
                  </div>
 
@@ -428,7 +456,7 @@ export function Profile() {
                     </button>
                  </div>
 
-                 <button onClick={handleUpdateName} className="w-full bg-[#1B3B6B] text-white py-5 rounded-[2rem] font-black uppercase italic tracking-widest shadow-lg active:scale-95 transition-soft">
+                 <button onClick={handleUpdateProfile} className="w-full bg-[#1B3B6B] text-white py-5 rounded-[2rem] font-black uppercase italic tracking-widest shadow-lg active:scale-95 transition-soft">
                     Salvar Alterações
                  </button>
               </div>

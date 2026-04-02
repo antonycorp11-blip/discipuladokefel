@@ -191,22 +191,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!telClean) return { success: false, message: "Telefone inválido" };
 
       // 1. Verificar se já existe perfil com este telefone
-      const { data: existingProfile, error: searchError } = await supabase
+      // Como o telefone é único, buscamos por ele primeiro.
+      // Se o usuário forneceu um nome, validamos se o nome no banco "contém" o que ele digitou (flexível).
+      const { data: existingProfiles, error: searchError } = await supabase
         .from("kefel_profiles")
         .select("*")
-        .eq("telefone", telClean)
-        .maybeSingle();
+        .eq("telefone", telClean);
 
-      if (existingProfile) {
-        // Se existe, faz o login (reconecta)
-        const profile = existingProfile as KefelProfile;
+      if (searchError) throw searchError;
+
+      // Se encontrou perfis com este telefone
+      if (existingProfiles && existingProfiles.length > 0) {
+        // Tenta encontrar um que combine com o nome (flexível)
+        const match = existingProfiles.find(p => 
+          p.nome.toLowerCase().includes(nome.toLowerCase()) || 
+          nome.toLowerCase().includes(p.nome.toLowerCase())
+        );
+
+        if (match) {
+          const profile = match as KefelProfile;
+          // Atualiza o nome ou célula se necessário (ou mantém)
+          localStorage.setItem('kefel_member_data', JSON.stringify({ 
+            nome: profile.nome, 
+            celula_id: profile.celula_id, 
+            telefone: telClean 
+          }));
+          setUser(profile);
+          return { success: true };
+        } else if (existingProfiles.length === 1 && !nome) {
+           // Se só tem um e o nome não foi passado (caso de reconnect direto), aceita
+           setUser(existingProfiles[0] as KefelProfile);
+           return { success: true };
+        }
         
-        // Opcional: Atualizar o nome ou célula se mudou no "login"
-        await supabase.from("kefel_profiles").update({ nome, celula_id: (celulaId && celulaId.length > 5) ? celulaId : profile.celula_id }).eq("id", profile.id);
-        
-        localStorage.setItem('kefel_member_data', JSON.stringify({ nome, celula_id: celulaId, telefone: telClean }));
-        setUser({ ...profile, nome, celula_id: celulaId });
-        return { success: true };
+        // Se o telefone existe mas o nome é totalmente diferente, por segurança informamos erro
+        return { success: false, message: "Este WhatsApp já está vinculado a outro nome. Verifique se digitou corretamente." };
       }
 
       // 2. Novo Cadastro (Login Anônimo como base de ID)

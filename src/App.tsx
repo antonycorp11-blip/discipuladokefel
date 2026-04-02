@@ -13,6 +13,7 @@ import { Onboarding } from "./components/Onboarding";
 import { Library } from "./components/Library";
 import { PDFViewer } from "./components/PDFViewer";
 import { Reports } from "./components/Reports";
+import { WhatsAppRequired } from "./components/WhatsAppRequired";
 import OneSignal from 'react-onesignal';
 
 // ── Tela de loading global ──────────────────────────────────────
@@ -37,6 +38,11 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     );
+  }
+
+  // Se o usuário não tiver WhatsApp, forçamos o registro (Blindagem de Conta)
+  if (user && !user.telefone && user.role !== 'master') {
+    return <WhatsAppRequired />;
   }
 
   // Se o usuário não tiver uma célula, forçamos o Onboarding

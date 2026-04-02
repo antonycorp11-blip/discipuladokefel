@@ -14,6 +14,15 @@ export function Login() {
   // Member states
   const [memberName, setMemberName] = useState("");
   const [memberPhone, setMemberPhone] = useState("");
+  const [isExistingMember, setIsExistingMember] = useState(false);
+  
+  // Função para formatar o telefone (máscara)
+  const formatPhone = (val: string) => {
+    const clean = val.replace(/\D/g, "");
+    if (clean.length <= 2) return clean;
+    if (clean.length <= 7) return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
+    return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
+  };
   
   // Admin states
   const [email, setEmail] = useState("");
@@ -67,10 +76,12 @@ export function Login() {
 
   const handleMemberSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCell || !memberName.trim()) return;
+    if (!isExistingMember && !selectedCell) return;
+    if (!memberName.trim()) return;
+    
     setError(null);
     setLoading(true);
-    const result = await signInMember(memberName.trim(), selectedCell.id, memberPhone.trim());
+    const result = await signInMember(memberName.trim(), selectedCell?.id || "", memberPhone.trim());
     if (!result.success) {
       setError(result.message || "Erro ao entrar.");
     }
@@ -79,6 +90,13 @@ export function Login() {
 
   const selectCell = (cell: KefelCelula) => {
     setSelectedCell(cell);
+    setIsExistingMember(false);
+    setStep('nameInput');
+  };
+
+  const startExistingFlow = () => {
+    setSelectedCell(null);
+    setIsExistingMember(true);
     setStep('nameInput');
   };
 
@@ -141,7 +159,12 @@ export function Login() {
             >
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-xs font-black uppercase text-gray-900 tracking-widest italic">Escolha sua Célula</h2>
-                <span className="h-[1px] flex-1 bg-gray-200 ml-4 opacity-50" />
+                <button 
+                  onClick={startExistingFlow}
+                  className="text-[9px] font-black uppercase tracking-widest text-[#1B3B6B] bg-[#1B3B6B]/5 px-4 py-2 rounded-full border border-[#1B3B6B]/10 hover:bg-[#1B3B6B]/10 transition-all italic hover:scale-105 active:scale-95"
+                >
+                  Já sou cadastrado
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -189,19 +212,31 @@ export function Login() {
                   onClick={() => setStep('selection')}
                   className="mb-6 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
                 >
-                  <ChevronLeft size={14} /> Mudar Célula
+                  <ChevronLeft size={14} /> Voltar para Seleção
                 </button>
                 
-                <div className="w-24 h-24 rounded-3xl bg-white shadow-premium p-3 border border-white mb-4">
-                  <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-50">
-                    <img src={selectedCell.imagem_url || ""} alt="" className="w-full h-full object-cover" />
+                {isExistingMember ? (
+                  <div className="flex flex-col items-center mb-4">
+                    <div className="w-24 h-24 rounded-3xl bg-white shadow-premium p-4 flex items-center justify-center border border-white mb-4">
+                      <ShieldCheck className="text-[#1B3B6B] w-12 h-12" />
+                    </div>
+                    <h2 className="text-lg font-black italic uppercase text-gray-900">Recuperar Acesso</h2>
                   </div>
-                </div>
-                <h2 className="text-lg font-black italic uppercase text-gray-900">{selectedCell.nome}</h2>
+                ) : selectedCell && (
+                  <>
+                    <div className="w-24 h-24 rounded-3xl bg-white shadow-premium p-3 border border-white mb-4">
+                      <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-50">
+                        <img src={selectedCell.imagem_url || ""} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+                    <h2 className="text-lg font-black italic uppercase text-gray-900">{selectedCell.nome}</h2>
+                  </>
+                )}
                 <div className="h-1 w-8 bg-[#1B3B6B] rounded-full mt-2" />
               </div>
 
               <form onSubmit={handleMemberSignup} className="space-y-4">
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Como podemos te chamar?</label>
                   <div className="relative">
@@ -221,13 +256,13 @@ export function Login() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Número do seu WhatsApp</label>
                   <div className="relative">
-                    <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-[#1B3B6B]" />
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-[#1B3B6B]" />
                     <input
                       type="tel"
                       required
                       placeholder="(00) 00000-0000"
                       value={memberPhone}
-                      onChange={(e) => setMemberPhone(e.target.value)}
+                      onChange={(e) => setMemberPhone(formatPhone(e.target.value))}
                       className="w-full bg-white border-2 border-transparent shadow-premium rounded-[1.8rem] py-6 pl-16 pr-6 focus:border-[#1B3B6B]/20 focus:outline-none transition-all font-black text-xs uppercase italic text-gray-900 tracking-tight"
                     />
                   </div>
@@ -240,7 +275,7 @@ export function Login() {
                   disabled={loading}
                   className="w-full bg-[#1B3B6B] text-white py-6 rounded-[1.8rem] font-black uppercase italic tracking-[0.2em] shadow-premium shadow-[#1B3B6B]/20 active:scale-95 transition-all disabled:opacity-70 flex items-center justify-center gap-3"
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : <>Entrar na Célula <ArrowRight size={18} /></>}
+                  {loading ? <Loader2 className="animate-spin" /> : <>{isExistingMember ? 'Recuperar Acesso' : 'Entrar na Célula'} <ArrowRight size={18} /></>}
                 </button>
               </form>
             </motion.div>
