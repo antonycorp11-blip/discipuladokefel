@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (data.user) {
         const dummyEmail = `anon_${data.user.id}@kefel.com`;
-        const { error: profileError } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("kefel_profiles")
           .upsert({
             id: data.user.id,
@@ -156,12 +156,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             celula_id: celulaId,
             email: dummyEmail, // NOT NULL constraint
             tempo_leitura_total: 0
-          });
+          })
+          .select("*")
+          .single();
           
         if (profileError) throw profileError;
-        
-        const profile = await loadProfile(data.user.id);
-        setUser(profile);
+        setUser(profile as KefelProfile);
       }
       
       return { success: true };
