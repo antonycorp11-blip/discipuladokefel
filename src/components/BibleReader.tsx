@@ -22,6 +22,33 @@ export default function BibleReader() {
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const sessionRef = useRef(0);
   const timerId = useRef<NodeJS.Timeout|null>(null);
+  const isInitialLoad = useRef(true);
+
+  // Carrega posição inicial do usuário
+  useEffect(() => {
+    if (user?.last_bible_reading && isInitialLoad.current) {
+        const { bookId, chapter } = user.last_bible_reading as { bookId: string, chapter: number };
+        const book = BIBLE_BOOKS.find(b => b.id === bookId);
+        if (book) setSelectedBook(book);
+        if (chapter) setChapter(chapter);
+        isInitialLoad.current = false;
+    }
+  }, [user]);
+
+  // Salva posição sempre que mudar
+  useEffect(() => {
+    if (!user || isInitialLoad.current) return;
+    
+    const saveProgress = async () => {
+        await supabase
+            .from("kefel_profiles")
+            .update({ 
+                last_bible_reading: { bookId: selectedBook.id, chapter: chapter } 
+            })
+            .eq("id", user.id);
+    };
+    saveProgress();
+  }, [selectedBook.id, chapter, user]);
 
   useEffect(() => {
     async function load() {

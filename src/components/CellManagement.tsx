@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "motion/react";
 
 export function CellManagement() {
-  const { user } = useAuth();
+  const { user, deleteProfile, promoteToLeader } = useAuth();
   const [celulas, setCelulas] = useState<KefelCelula[]>([]);
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export function CellManagement() {
       const [celRes, userRes, profileRes] = await Promise.all([
         supabase.from("kefel_celulas").select("*, lider:lider_id(id, nome, avatar_url)").order("nome", { ascending: true }),
         supabase.from("kefel_profiles").select("id, nome").order("nome", { ascending: true }),
-        supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id").order("nome", { ascending: true })
+        supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, role").order("nome", { ascending: true })
       ]);
       
       if (celRes.error) throw celRes.error;
@@ -103,6 +103,24 @@ export function CellManagement() {
     if (!window.confirm("Deseja excluir esta célula?")) return;
     const { error } = await supabase.from("kefel_celulas").delete().eq("id", id);
     if (!error) fetchData();
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    if (!window.confirm("Deseja excluir este membro permanentemente?")) return;
+    const { success } = await deleteProfile(id);
+    if (success) fetchData();
+    else alert("Erro ao excluir membro.");
+  };
+
+  const handlePromote = async (memberId: string, cellId: string) => {
+    if (!window.confirm("Deseja promover este membro a líder desta célula?")) return;
+    const { success } = await promoteToLeader(memberId, cellId);
+    if (success) {
+      alert("Membro promovido a líder com sucesso!");
+      fetchData();
+    } else {
+      alert("Erro ao promover membro.");
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,8 +207,30 @@ export function CellManagement() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                      <p className="text-xs font-black text-gray-800 uppercase italic truncate">{m.nome}</p>
-                                     <p className="text-[9px] font-black text-[#1B3B6B]/40 uppercase tracking-widest">Membro Ativo</p>
+                                     <p className="text-[9px] font-black text-[#1B3B6B]/40 uppercase tracking-widest">
+                                       {m.role === 'lider' ? 'Líder de Célula' : m.role === 'master' ? 'Discipulador' : 'Membro Ativo'}
+                                     </p>
                                   </div>
+                                  {user?.role === 'master' && (
+                                    <div className="flex items-center gap-2">
+                                      {m.role === 'membro' && (
+                                        <button 
+                                          onClick={() => handlePromote(m.id, c.id)}
+                                          title="Promover a Líder"
+                                          className="p-2.5 bg-indigo-50 text-[#1B3B6B] rounded-xl active:scale-90 transition-soft hover:bg-indigo-100"
+                                        >
+                                          <Shield size={14} />
+                                        </button>
+                                      )}
+                                      <button 
+                                        onClick={() => handleDeleteMember(m.id)}
+                                        title="Excluir Membro"
+                                        className="p-2.5 bg-rose-50 text-rose-500 rounded-xl active:scale-90 transition-soft hover:bg-rose-100"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  )}
                                </div>
                              ))
                            )}

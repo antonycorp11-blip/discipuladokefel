@@ -1,9 +1,10 @@
-import { BookOpen, Users, Calendar, Trophy, ArrowRight, Bell, Loader2, CheckCircle2, QrCode, AlertCircle, X, User, Share2, MapPin, Clock } from "lucide-react";
+import { BookOpen, Users, Calendar, Trophy, ArrowRight, Bell, Loader2, CheckCircle2, QrCode, AlertCircle, X, User, Share2, MapPin, Clock, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase, type KefelEvento, type KefelCelula } from "@/lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
+import { SocialFeed } from "./SocialFeed";
 
 const VERSES = [
   { text: "Lâmpada para os meus pés é tua palavra e luz, para o meu caminho.", ref: "Salmos 119:105" },
@@ -126,6 +127,31 @@ export function Home() {
           </div>
         </Link>
       </div>
+
+      {/* Atalhos para Líderes (Novo) */}
+      {(user?.role === 'lider' || user?.role === 'master') && (
+        <section className="mb-10">
+          <div className="flex items-center gap-2 mb-6 px-2">
+             <div className="w-2 h-6 bg-[#1B3B6B] rounded-full" />
+             <h2 className="text-xl font-black text-gray-900 italic uppercase tracking-tighter">Gestão</h2>
+          </div>
+          <Link to="/relatorios" className="bg-white p-6 rounded-[2.8rem] shadow-sm border-2 border-dashed border-[#1B3B6B]/20 flex items-center justify-between group active:scale-95 transition-soft hover:border-[#1B3B6B]/50 hover:bg-[#1B3B6B]/5">
+             <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-[#1B3B6B] text-white rounded-2xl flex items-center justify-center shadow-premium shadow-[#1B3B6B]/20 group-hover:rotate-6 transition-soft">
+                   <FileText size={24} />
+                </div>
+                <div>
+                   <h3 className="font-black text-gray-900 uppercase italic text-base leading-tight">Enviar Relatório</h3>
+                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Célula ou Culto</p>
+                </div>
+             </div>
+             <ArrowRight size={20} className="text-[#1B3B6B] group-hover:translate-x-2 transition-soft" />
+          </Link>
+        </section>
+      )}
+
+      {/* Rede Social */}
+      <SocialFeed />
 
       {/* Eventos */}
       <section className="mb-10">

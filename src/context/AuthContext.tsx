@@ -14,6 +14,8 @@ interface AuthContextType {
   updateReadingTime: (seconds: number, livro: string, capitulo: number) => Promise<void>;
   refreshProfile: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<KefelProfile | null>>;
+  deleteProfile: (id: string) => Promise<{ success: boolean }>;
+  promoteToLeader: (userId: string, celulaId: string) => Promise<{ success: boolean }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -96,6 +98,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }));
           }
           setUser(profile);
+
+          // Sincronizar OneSignal
+          try {
+            (window as any).OneSignal?.push(() => {
+              (window as any).OneSignal.setExternalUserId(profile.id);
+              (window as any).OneSignal.sendTag("role", profile.role);
+              if (profile.celula_id) {
+                (window as any).OneSignal.sendTag("celula_id", profile.celula_id);
+              }
+            });
+          } catch (e) {
+            console.warn("Erro OneSignal Tags:", e);
+          }
         }
       } else {
         setUser(null);
@@ -172,6 +187,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInMember = async (nome: string, celulaId: string): Promise<{ success: boolean; message?: string }> => {
     setLoading(true);
     try {
+      // Verificar duplicidade antes de criar
+      const { data: existingProfiles } = await supabase
+        .from("kefel_profiles")
+        .select("id")
+        .eq("nome", nome)
+        .eq("celula_id", celulaId);
+      
+      if (existingProfiles && (existingProfiles as any[]).length > 0) {
+        setLoading(false);
+        return { success: false, message: "Este nome já está cadastrado nesta célula. Se você já tem uma conta, use o mesmo dispositivo ou procure o líder." };
+      }
+
       const { data, error } = await supabase.auth.signInAnonymously();
       if (error) throw error;
       
@@ -227,8 +254,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ]);
   };
 
+  // ── Deletar Perfil (Master) ──────────────────────────────────
+  const deleteProfile = async (id: string) => {
+    const { error } = await supabase.from("kefel_profiles").delete().eq("id", id);
+    if (error) {
+      console.error("Erro ao deletar perfil:", error);
+      return { success: false };
+    }
+    return { success: true };
+  };
+
+  // ── Promover a Líder (Master) ────────────────────────────────
+  const promoteToLeader = async (userId: string, celulaId: string) => {
+    // 1. Atualiza o papel do usuário para líder
+    const { error: profileError } = await supabase
+      .from("kefel_profiles")
+      .update({ role: 'lider', celula_id: celulaId })
+      .eq("id", userId);
+
+    if (profileError) {
+      console.error("Erro ao atualizar papel:", profileError);
+      return { success: false };
+    }
+
+    // 2. Vincula o líder à célula na tabela de celulas
+    const { error: cellError } = await supabase
+      .from("kefel_celulas")
+      .update({ lider_id: userId })
+      .eq("id", celulaId);
+
+    if (cellError) {
+      console.error("Erro ao vincular líder à célula:", cellError);
+      return { success: false };
+    }
+
+    return { success: true };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, signInMember, updateReadingTime, refreshProfile, setUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      logout, 
+      register, 
+      signInMember, 
+      updateReadingTime, 
+      refreshProfile, 
+      setUser,
+      deleteProfile,
+      promoteToLeader
+    }}>
       {children}
     </AuthContext.Provider>
   );
