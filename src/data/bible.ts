@@ -90,33 +90,31 @@ export async function fetchBibleChapter(bookId: string, chapter: number): Promis
   const cacheKey = `${bookId}:${chapter}`;
   if (chapterCache.has(cacheKey)) return chapterCache.get(cacheKey)!;
 
-  const bookMapping: Record<string, string> = {
-    'genesis': 'Genesis', 'exodus': 'Exodus', 'leviticus': 'Leviticus', 'numbers': 'Numbers', 'deuteronomy': 'Deuteronomy',
-    'joshua': 'Joshua', 'judges': 'Judges', 'ruth': 'Ruth', '1+samuel': '1%20Samuel', '2+samuel': '2%20Samuel',
-    '1+kings': '1%20Kings', '2+kings': '2%20Kings', '1+chronicles': '1%20Chronicles', '2+chronicles': '2%20Chronicles',
-    'ezra': 'Ezra', 'nehemiah': 'Nehemiah', 'esther': 'Esther', 'job': 'Job', 'psalms': 'Psalms',
-    'proverbs': 'Proverbs', 'ecclesiastes': 'Ecclesiastes', 'song+of+solomon': 'Song%20of%20Solomon', 'isaiah': 'Isaiah',
-    'jeremiah': 'Jeremiah', 'lamentations': 'Lamentations', 'ezekiel': 'Ezekiel', 'daniel': 'Daniel',
-    'hosea': 'Hosea', 'joel': 'Joel', 'amos': 'Amos', 'obadiah': 'Obadiah', 'jonah': 'Jonah',
-    'micah': 'Micah', 'nahum': 'Nahum', 'habakkuk': 'Habakkuk', 'zephaniah': 'Zephaniah', 'haggai': 'Haggai',
-    'zechariah': 'Zechariah', 'malachi': 'Malachi', 'matthew': 'Matthew', 'mark': 'Mark', 'luke': 'Luke',
-    'john': 'John', 'acts': 'Acts', 'romans': 'Romans', '1+corinthians': '1%20Corinthians', '2+corinthians': '2%20Corinthians',
-    'galatians': 'Galatians', 'ephesians': 'Ephesians', 'philippians': 'Philippians', 'colossians': 'Colossians',
-    '1+thessalonians': '1%20Thessalonians', '2+thessalonians': '2%20Thessalonians', '1+timothy': '1%20Timothy', '2+timothy': '2%20Timothy',
-    'titus': 'Titus', 'philemon': 'Philemon', 'hebrews': 'Hebrews', 'james': 'James', '1+peter': '1%20Peter',
-    '2+peter': '2%20Peter', '1+john': '1%20John', '2+john': '2%20John', '3+john': '3%20John', 'jude': 'Jude',
-    'revelation': 'Revelation'
+  const bookIndexMap: Record<string, number> = {
+    'genesis': 1, 'exodus': 2, 'leviticus': 3, 'numbers': 4, 'deuteronomy': 5, 'joshua': 6,
+    'judges': 7, 'ruth': 8, '1+samuel': 9, '2+samuel': 10, '1+kings': 11, '2+kings': 12,
+    '1+chronicles': 13, '2+chronicles': 14, 'ezra': 15, 'nehemiah': 16, 'esther': 17,
+    'job': 18, 'psalms': 19, 'proverbs': 20, 'ecclesiastes': 21, 'song+of+solomon': 22,
+    'isaiah': 23, 'jeremiah': 24, 'lamentations': 25, 'ezekiel': 26, 'daniel': 27,
+    'hosea': 28, 'joel': 29, 'amos': 30, 'obadiah': 31, 'jonah': 32, 'micah': 33,
+    'nahum': 34, 'habakkuk': 35, 'zephaniah': 36, 'haggai': 37, 'zechariah': 38,
+    'malachi': 39, 'matthew': 40, 'mark': 41, 'luke': 42, 'john': 43, 'acts': 44,
+    'romans': 45, '1+corinthians': 46, '2+corinthians': 47, 'galatians': 48,
+    'ephesians': 49, 'philippians': 50, 'colossians': 51, '1+thessalonians': 52,
+    '2+thessalonians': 53, '1+timothy': 54, '2+timothy': 55, 'titus': 56,
+    'philemon': 57, 'hebrews': 58, 'james': 59, '1+peter': 60, '2+peter': 61,
+    '1+john': 62, '2+john': 63, '3+john': 64, 'jude': 65, 'revelation': 66
   };
 
   try {
-    const bookName = bookMapping[bookId] || bookId;
-    const url = `https://bible-api.com/${bookName}+${chapter}?translation=almeida`;
+    const bookIdx = bookIndexMap[bookId] || 1;
+    const url = `https://bolls.life/get-text/ACF/${bookIdx}/${chapter}/`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('API Error');
     const data = await res.json();
-    const verses = (data.verses || []).map((v: any) => ({
+    const verses = (data || []).map((v: any) => ({
       book_id: bookId,
-      book_name: data.reference,
+      book_name: '',
       chapter: chapter,
       verse: v.verse,
       text: v.text.trim()
