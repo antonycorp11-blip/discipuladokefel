@@ -29,14 +29,29 @@ export function CellManagement() {
 
   async function fetchData() {
     setLoading(true);
-    const [celRes, userRes] = await Promise.all([
-      supabase.from("kefel_celulas").select("*, kefel_profiles(*)").order("nome", { ascending: true }),
-      supabase.from("kefel_profiles").select("id, nome").order("nome", { ascending: true })
-    ]);
-    
-    if (!celRes.error) setCelulas(celRes.data as any[]);
-    if (!userRes.error) setUsuarios(userRes.data || []);
-    setLoading(false);
+    try {
+      const [celRes, userRes] = await Promise.all([
+        supabase.from("kefel_celulas").select("*, lider:lider_id(id, nome, avatar_url)").order("nome", { ascending: true }),
+        supabase.from("kefel_profiles").select("id, nome").order("nome", { ascending: true })
+      ]);
+      
+      if (celRes.error) {
+        console.error("Erro ao buscar células:", celRes.error);
+        alert("Erro ao carregar células: " + celRes.error.message);
+      } else {
+        setCelulas(celRes.data || []);
+      }
+
+      if (userRes.error) {
+        console.error("Erro ao buscar usuários:", userRes.error);
+      } else {
+        setUsuarios(userRes.data || []);
+      }
+    } catch (err: any) {
+      console.error("Falha na requisição:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleAddCell(e: React.FormEvent) {

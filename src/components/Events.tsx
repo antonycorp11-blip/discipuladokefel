@@ -45,7 +45,9 @@ export default function Events() {
   const [cotaDesc, setCotaDesc] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [bannerPosY, setBannerPosY] = useState(50);
+  const [editId, setEditId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -84,43 +86,71 @@ export default function Events() {
     if (!user) return;
     setSaving(true);
 
-    let imageUrl = "";
-    if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const { data: upData, error: upErr } = await supabase.storage.from("kefel-eventos").upload(fileName, imageFile);
-      if (upData) {
+    try {
+      let finalImageUrl = imageUrl;
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { data: upData, error: upErr } = await supabase.storage.from("kefel-eventos").upload(fileName, imageFile);
+        if (upErr) throw upErr;
+        
         const { data: urlData } = supabase.storage.from("kefel-eventos").getPublicUrl(upData.path);
-        imageUrl = urlData.publicUrl;
+        finalImageUrl = urlData.publicUrl;
       }
-    }
 
-    const { error } = await supabase.from("kefel_eventos").insert({
-      titulo,
-      descricao,
-      data_hora: new Date(`${data}T${hora}`).toISOString(),
-      endereco,
-      preco: tipo === 'pago' ? preco : 0,
-      tipo,
-      pix_key: tipo === 'pago' ? pixKey : null,
-      cota_desc: tipo === 'cota' ? cotaDesc : null,
-      imagem_url: imageUrl,
-      banner_pos_y: bannerPosY,
-      criado_por: user.id
-    });
+      const eventData = {
+        titulo,
+        descricao,
+        data_hora: new Date(`${data}T${hora}`).toISOString(),
+        endereco,
+        preco: tipo === 'pago' ? preco : 0,
+        tipo,
+        pix_key: tipo === 'pago' ? pixKey : null,
+        cota_desc: tipo === 'cota' ? cotaDesc : null,
+        imagem_url: finalImageUrl,
+        banner_pos_y: bannerPosY,
+        criado_por: user.id
+      };
 
-    if (!error) {
+      if (editId) {
+        const { error } = await supabase.from("kefel_eventos").update(eventData).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("kefel_eventos").insert(eventData);
+        if (error) throw error;
+      }
+
       setShowForm(false);
       fetchEvents();
       resetForm();
-    } else alert("Erro: " + error.message);
-    setSaving(false);
+    } catch (err: any) {
+      alert("Erro ao salvar evento: " + err.message);
+    } finally {
+      setSaving(false);
+    }
   }
+
+  const handleEdit = (event: Evento) => {
+    const d = new Date(event.data_hora);
+    setEditId(event.id);
+    setTitulo(event.titulo);
+    setDescricao(event.descricao);
+    setData(d.toISOString().split('T')[0]);
+    setHora(d.toTimeString().split(' ')[0].substring(0, 5));
+    setEndereco(event.endereco);
+    setPreco(event.preco);
+    setTipo(event.tipo);
+    setPixKey(event.pix_key || "");
+    setCotaDesc(event.cota_desc || "");
+    setImageUrl(event.imagem_url);
+    setBannerPosY(event.banner_pos_y || 50);
+    setShowForm(true);
+  };
 
   const resetForm = () => {
     setTitulo(""); setDescricao(""); setData(""); setHora(""); 
     setEndereco(""); setPreco(0); setTipo("gratuito"); setPixKey(""); setCotaDesc("");
-    setImageFile(null); setImagePreview(null); setBannerPosY(50);
+    setImageFile(null); setImagePreview(null); setImageUrl(""); setBannerPosY(50); setEditId(null);
   };
 
   return (
@@ -161,16 +191,21 @@ export default function Events() {
                     )}
                     
                     <div className="absolute top-4 right-4 flex gap-2 z-20">
-                       {user?.id === event.criado_por && (
-                         <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-indigo-600 shadow-xl active:scale-90 transition-soft">
-                           <Users size={18} />
-                         </button>
-                       )}
-                       {(user?.role === 'master' || user?.id === event.criado_por) && (
-                         <button onClick={() => handleDelete(event.id)} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-rose-500 shadow-xl active:scale-90 transition-soft">
-                           <Trash2 size={18} />
-                         </button>
-                       )}
+                        {user?.id === event.criado_por && (
+                          <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-indigo-600 shadow-xl active:scale-90 transition-soft">
+                            <Users size={18} />
+                          </button>
+                        )}
+                        {(user?.role === 'master' || user?.id === event.criado_por) && (
+                          <>
+                            <button onClick={() => handleEdit(event)} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-amber-500 shadow-xl active:scale-90 transition-soft">
+                              <ImageIcon size={18} />
+                            </button>
+                            <button onClick={() => handleDelete(event.id)} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-rose-500 shadow-xl active:scale-90 transition-soft">
+                              <Trash2 size={18} />
+                            </button>
+                          </>
+                        )}
                     </div>
 
                     <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl flex flex-col items-center min-w-[60px] border border-white/10 z-20">
@@ -248,7 +283,7 @@ export default function Events() {
         )}
       </AnimatePresence>
 
-      {/* Modal Criar Evento */}
+      {/* Modal Criar/Editar Evento */}
       <AnimatePresence>
         {showForm && (
           <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md flex items-end">
@@ -261,7 +296,7 @@ export default function Events() {
             >
               <div className="flex justify-between items-center mb-10">
                  <div>
-                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">Novo Evento</h2>
+                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">{editId ? "Editar Evento" : "Novo Evento"}</h2>
                     <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
                  </div>
                  <button onClick={() => setShowForm(false)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
@@ -271,10 +306,10 @@ export default function Events() {
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">Banner Principal</p>
                   <div className="relative h-56 rounded-[3rem] bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center transition-soft hover:border-indigo-300 group">
-                    {imagePreview ? (
+                    {(imagePreview || imageUrl) ? (
                       <>
-                        <img src={imagePreview} className="w-full h-full object-cover" style={{ objectPosition: `center ${bannerPosY}%` }} />
-                        <button type="button" onClick={() => {setImageFile(null); setImagePreview(null);}} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-xl backdrop-blur-md z-10"><X size={16}/></button>
+                        <img src={imagePreview || imageUrl} className="w-full h-full object-cover" style={{ objectPosition: `center ${bannerPosY}%` }} />
+                        <button type="button" onClick={() => {setImageFile(null); setImagePreview(null); setImageUrl("");}} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-xl backdrop-blur-md z-10"><X size={16}/></button>
                       </>
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center p-10 text-center">
@@ -287,7 +322,7 @@ export default function Events() {
                     )}
                   </div>
 
-                  {imagePreview && (
+                  {(imagePreview || imageUrl) && (
                     <div className="space-y-4 px-4">
                       <div className="flex justify-between items-center">
                         <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Ajustar enquadramento vertical</p>
@@ -352,7 +387,7 @@ export default function Events() {
                 </div>
 
                 <button disabled={saving} type="submit" className="w-full bg-indigo-600 text-white py-7 rounded-[2rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
-                  {saving ? <Loader2 className="animate-spin mx-auto" /> : "Publicar Evento na Agenda"}
+                  {saving ? <Loader2 className="animate-spin mx-auto" /> : (editId ? "Salvar Alterações" : "Publicar Evento na Agenda")}
                 </button>
               </form>
             </motion.div>

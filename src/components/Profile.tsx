@@ -51,20 +51,32 @@ export function Profile() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${currentUser.id}_${Date.now()}.${fileExt}`;
       
+      console.log("Iniciando upload para bucket 'avatars'...", fileName);
       const { data: uploadData, error: uploadError } = await supabase.storage.from("avatars").upload(fileName, file);
-      if (uploadError) throw uploadError;
+      
+      if (uploadError) {
+        console.error("Erro no Storage:", uploadError);
+        throw new Error(`Erro no Storage: ${uploadError.message}`);
+      }
 
+      console.log("Obtendo URL pública...");
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
       const publicUrl = urlData.publicUrl;
 
+      console.log("Atualizando perfil com nova URL...");
       const { data: updated, error: updateError } = await supabase.from("kefel_profiles").update({ avatar_url: publicUrl }).eq("id", currentUser.id).select("*").single();
-      if (updateError) throw updateError;
+      
+      if (updateError) {
+        console.error("Erro ao atualizar perfil:", updateError);
+        throw new Error(`Erro ao atualizar perfil: ${updateError.message}`);
+      }
 
       setUser(updated as KefelProfile);
       setProfile(updated as KefelProfile);
-      alert("Foto atualizada!");
+      alert("Foto de perfil atualizada com sucesso!");
     } catch (err: any) {
-      alert("Erro no upload: " + err.message);
+      console.error("Erro completo no upload:", err);
+      alert("Falha no upload: " + err.message);
     }
     setUploading(false);
   };

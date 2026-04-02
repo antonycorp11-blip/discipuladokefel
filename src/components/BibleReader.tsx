@@ -89,16 +89,25 @@ export default function BibleReader() {
     // Otimista
     setFavorites(prev => isFav ? prev.filter(f => f !== v.verse) : [...prev, v.verse]);
 
-    if (isFav) {
-      await supabase.from("kefel_favoritos").delete().eq("user_id", user.id).eq("livro", selectedBook.nome).eq("capitulo", chapter).eq("versiculo", v.verse);
-    } else {
-      await supabase.from("kefel_favoritos").insert({
-        user_id: user.id,
-        livro: selectedBook.nome,
-        capitulo: chapter,
-        versiculo: v.verse,
-        texto: v.text
-      });
+    try {
+      if (isFav) {
+        const { error } = await supabase.from("kefel_favoritos").delete().eq("user_id", user.id).eq("livro", selectedBook.nome).eq("capitulo", chapter).eq("versiculo", v.verse);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("kefel_favoritos").insert({
+          user_id: user.id,
+          livro: selectedBook.nome,
+          capitulo: chapter,
+          versiculo: v.verse,
+          texto: v.text
+        });
+        if (error) throw error;
+      }
+    } catch (error: any) {
+      console.error("Erro ao favoritar:", error);
+      alert("Não foi possível salvar favorito: " + error.message);
+      // Reverter estado se falhar
+      setFavorites(prev => isFav ? [...prev, v.verse] : prev.filter(f => f !== v.verse));
     }
   };
 
