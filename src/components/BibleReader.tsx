@@ -190,7 +190,7 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
   }
 
   return (
-    <div className="flex flex-col bg-[#FDFDFD] pt-10" style={{ height: "calc(100dvh - 80px)" }}>
+    <div className="flex flex-col bg-[#FDFDFD] pt-14" style={{ height: "calc(100dvh - 80px)" }}>
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 px-4 pt-2 pb-3">
         <div className="flex items-center gap-2 mb-3">
           <button

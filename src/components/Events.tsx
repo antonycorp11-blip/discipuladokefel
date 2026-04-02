@@ -223,7 +223,7 @@ export default function Events() {
   };
 
   return (
-    <div className="space-y-6 pb-28 pt-10 px-4">
+    <div className="space-y-6 pb-28 pt-14 px-4">
       <header className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tighter italic uppercase">Eventos</h1>

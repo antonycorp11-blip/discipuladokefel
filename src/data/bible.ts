@@ -106,47 +106,46 @@ export async function fetchBibleChapter(
     return chapterCache.get(cacheKey)!;
   }
 
-  try {
-    // Siglas corretas para API A Bíblia Digital
-    const bookMapping: Record<string, string> = {
-      'genesis': 'gn', 'exodus': 'ex', 'leviticus': 'lv', 'numbers': 'nm', 'deuteronomy': 'dt',
-      'joshua': 'js', 'judges': 'jz', 'ruth': 'rt', '1+samuel': '1sm', '2+samuel': '2sm',
-      '1+kings': '1rs', '2+kings': '2rs', '1+chronicles': '1cr', '2+chronicles': '2cr',
-      'ezra': 'ed', 'nehemiah': 'ne', 'esther': 'et', 'job': 'jb', 'psalms': 'sl',
-      'proverbs': 'pv', 'ecclesiastes': 'ec', 'song+of+solomon': 'ct', 'isaiah': 'is',
-      'jeremiah': 'jr', 'lamentations': 'lm', 'ezekiel': 'ez', 'daniel': 'dn',
-      'hosea': 'os', 'joel': 'jl', 'amos': 'am', 'obadiah': 'ob', 'jonah': 'jn',
-      'micah': 'mq', 'nahum': 'na', 'habakkuk': 'hc', 'zephaniah': 'sf', 'haggai': 'ag',
-      'zechariah': 'zc', 'malachi': 'ml', 'matthew': 'mt', 'mark': 'mc', 'luke': 'lc',
-      'john': 'jo', 'acts': 'at', 'romans': 'rm', '1+corinthians': '1co', '2+corinthians': '2co',
-      'galatians': 'gl', 'ephesians': 'ef', 'philippians': 'fp', 'colossians': 'cl',
-      '1+thessalonians': '1ts', '2+thessalonians': '2ts', '1+timothy': '1tm', '2+timothy': '2tm',
-      'titus': 'tt', 'philemon': 'fm', 'hebrews': 'hb', 'james': 'tg', '1+peter': '1pe',
-      '2+peter': '2pe', '1+john': '1jo', '2+john': '2jo', '3+john': '3jo', 'jude': 'jd',
-      'revelation': 'ap'
-    };
+  // Mapeamento Bolls API: ACF (Almeida Corrigida Fiel)
+  // Atribuindo os IDs da API Bolls para cada livro (1 a 66)
+  const bookIndexMap: Record<string, number> = {
+    'genesis': 1, 'exodus': 2, 'leviticus': 3, 'numbers': 4, 'deuteronomy': 5, 'joshua': 6,
+    'judges': 7, 'ruth': 8, '1+samuel': 9, '2+samuel': 10, '1+kings': 11, '2+kings': 12,
+    '1+chronicles': 13, '2+chronicles': 14, 'ezra': 15, 'nehemiah': 16, 'esther': 17,
+    'job': 18, 'psalms': 19, 'proverbs': 20, 'ecclesiastes': 21, 'song+of+solomon': 22,
+    'isaiah': 23, 'jeremiah': 24, 'lamentations': 25, 'ezekiel': 26, 'daniel': 27,
+    'hosea': 28, 'joel': 29, 'amos': 30, 'obadiah': 31, 'jonah': 32, 'micah': 33,
+    'nahum': 34, 'habakkuk': 35, 'zephaniah': 36, 'haggai': 37, 'zechariah': 38,
+    'malachi': 39, 'matthew': 40, 'mark': 41, 'luke': 42, 'john': 43, 'acts': 44,
+    'romans': 45, '1+corinthians': 46, '2+corinthians': 47, 'galatians': 48,
+    'ephesians': 49, 'philippians': 50, 'colossians': 51, '1+thessalonians': 52,
+    '2+thessalonians': 53, '1+timothy': 54, '2+timothy': 55, 'titus': 56,
+    'philemon': 57, 'hebrews': 58, 'james': 59, '1+peter': 60, '2+peter': 61,
+    '1+john': 62, '2+john': 63, '3+john': 64, 'jude': 65, 'revelation': 66
+  };
 
-    const abrev = bookMapping[bookId] || bookId.slice(0, 2);
-    // Versão: acf (Almeida Corrigida Fiel)
-    const url = `https://www.abibliadigital.com.br/api/verses/acf/${abrev}/${chapter}`;
+  try {
+    const bookIdx = bookIndexMap[bookId] || 1;
+    // Bolls API: ACF (Almeida Corrigida Fiel) em Português
+    const url = `https://bolls.life/get-text/ACF/${bookIdx}/${chapter}/`;
     
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Falha na API');
+    if (!response.ok) throw new Error('Falha na API Bolls');
     
     const data = await response.json();
     
-    const verses: BibleVerse[] = (data.verses || []).map((v: any) => ({
+    const verses: BibleVerse[] = (data || []).map((v: any) => ({
       book_id: bookId,
-      book_name: data.book.name,
-      chapter: data.chapter.number,
-      verse: v.number,
+      book_name: '', // Nome vem da lista local
+      chapter: chapter,
+      verse: v.verse, // ID do versículo
       text: v.text.trim(),
     }));
 
     chapterCache.set(cacheKey, verses);
     return verses;
   } catch (err) {
-    console.error('Erro na Bíblia Digital, tentando fallback:', err);
+    console.error('Erro na Bíblia Bolls:', err);
     return [];
   }
 }
