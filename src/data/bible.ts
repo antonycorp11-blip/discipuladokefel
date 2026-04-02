@@ -1,5 +1,5 @@
-// Cache em memória para performance
-const chapterCache = new Map<string, BibleVerse[]>();
+// Importação dinâmica para não pesar no carregamento inicial do app
+let bibleData: any = null;
 
 export interface BibleVerse {
   book_id: string;
@@ -9,24 +9,24 @@ export interface BibleVerse {
 }
 
 export interface BibleBook {
-  id: string;
+  id: string; // ID numérico (1-66) usado no JSON
   nome: string;
   abrev: string;
   testamento: 'AT' | 'NT';
   capitulos: number;
 }
 
-// Lista oficial de 66 livros com mapeamento Bolls (ACF)
+// Mapeamento de nomes e abreviações da Bíblia ACF (Ordenado por índice 0-65)
 export const BIBLE_BOOKS: BibleBook[] = [
-  { id: '1',  nome: 'Gênesis', abrev: 'Gn', testamento: 'AT', capitulos: 50 },
-  { id: '2',  nome: 'Êxodo', abrev: 'Êx', testamento: 'AT', capitulos: 40 },
-  { id: '3',  nome: 'Levítico', abrev: 'Lv', testamento: 'AT', capitulos: 27 },
-  { id: '4',  nome: 'Números', abrev: 'Nm', testamento: 'AT', capitulos: 36 },
-  { id: '5',  nome: 'Deuteronômio', abrev: 'Dt', testamento: 'AT', capitulos: 34 },
-  { id: '6',  nome: 'Josué', abrev: 'Js', testamento: 'AT', capitulos: 24 },
-  { id: '7',  nome: 'Juízes', abrev: 'Jz', testamento: 'AT', capitulos: 21 },
-  { id: '8',  nome: 'Rute', abrev: 'Rt', testamento: 'AT', capitulos: 4 },
-  { id: '9',  nome: '1 Samuel', abrev: '1Sm', testamento: 'AT', capitulos: 31 },
+  { id: '1', nome: 'Gênesis', abrev: 'Gn', testamento: 'AT', capitulos: 50 },
+  { id: '2', nome: 'Êxodo', abrev: 'Ex', testamento: 'AT', capitulos: 40 },
+  { id: '3', nome: 'Levítico', abrev: 'Lv', testamento: 'AT', capitulos: 27 },
+  { id: '4', nome: 'Números', abrev: 'Nm', testamento: 'AT', capitulos: 36 },
+  { id: '5', nome: 'Deuteronômio', abrev: 'Dt', testamento: 'AT', capitulos: 34 },
+  { id: '6', nome: 'Josué', abrev: 'Js', testamento: 'AT', capitulos: 24 },
+  { id: '7', nome: 'Juízes', abrev: 'Jz', testamento: 'AT', capitulos: 21 },
+  { id: '8', nome: 'Rute', abrev: 'Rt', testamento: 'AT', capitulos: 4 },
+  { id: '9', nome: '1 Samuel', abrev: '1Sm', testamento: 'AT', capitulos: 31 },
   { id: '10', nome: '2 Samuel', abrev: '2Sm', testamento: 'AT', capitulos: 24 },
   { id: '11', nome: '1 Reis', abrev: '1Rs', testamento: 'AT', capitulos: 22 },
   { id: '12', nome: '2 Reis', abrev: '2Rs', testamento: 'AT', capitulos: 25 },
@@ -35,7 +35,7 @@ export const BIBLE_BOOKS: BibleBook[] = [
   { id: '15', nome: 'Esdras', abrev: 'Ed', testamento: 'AT', capitulos: 10 },
   { id: '16', nome: 'Neemias', abrev: 'Ne', testamento: 'AT', capitulos: 13 },
   { id: '17', nome: 'Ester', abrev: 'Et', testamento: 'AT', capitulos: 10 },
-  { id: '18', nome: 'Jó', abrev: 'Jó', testamento: 'AT', capitulos: 42 },
+  { id: '18', nome: 'Jó', abrev: 'Jo', testamento: 'AT', capitulos: 42 },
   { id: '19', nome: 'Salmos', abrev: 'Sl', testamento: 'AT', capitulos: 150 },
   { id: '20', nome: 'Provérbios', abrev: 'Pv', testamento: 'AT', capitulos: 31 },
   { id: '21', nome: 'Eclesiastes', abrev: 'Ec', testamento: 'AT', capitulos: 12 },
@@ -86,30 +86,32 @@ export const BIBLE_BOOKS: BibleBook[] = [
   { id: '66', nome: 'Apocalipse', abrev: 'Ap', testamento: 'NT', capitulos: 22 },
 ];
 
-export async function fetchBibleChapter(bookIndex: string, chapter: number): Promise<BibleVerse[]> {
-  const cacheKey = `${bookIndex}:${chapter}`;
-  if (chapterCache.has(cacheKey)) return chapterCache.get(cacheKey)!;
-
+export async function fetchBibleChapter(bookId: string, chapter: number): Promise<BibleVerse[]> {
   try {
-    // API Bolls.life usando a versão ACF (Almeida Corrigida Fiel)
-    const url = `https://bolls.life/get-text/ACF/${bookIndex}/${chapter}/`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('API Indisponível');
-    
-    const data = await res.json();
-    if (!Array.isArray(data)) return [];
+    // Carrega o JSON local apenas na primeira vez
+    if (!bibleData) {
+      const response = await fetch('/data/bible_acf.json');
+      bibleData = await response.json();
+    }
 
-    const verses: BibleVerse[] = data.map((v: any) => ({
-      book_id: bookIndex,
+    // O arquivo é um array de 66 objetos (um para cada livro)
+    // Usamos o bookId (1 a 66) como índice (0 a 65)
+    const bookIdx = parseInt(bookId) - 1;
+    const book = bibleData[bookIdx];
+
+    if (!book || !book.chapters[chapter - 1]) {
+      return [];
+    }
+
+    // Converte o array de strings em versículos estruturados
+    return book.chapters[chapter - 1].map((text: string, idx: number) => ({
+      book_id: bookId,
       chapter: chapter,
-      verse: v.verse,
-      text: v.text.trim()
+      verse: idx + 1,
+      text: text.trim()
     }));
-
-    chapterCache.set(cacheKey, verses);
-    return verses;
   } catch (err) {
-    console.error('Falha ao carregar Bíblia:', err);
+    console.error('Falha ao carregar Bíblia offline:', err);
     return [];
   }
 }

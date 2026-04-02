@@ -65,15 +65,24 @@ function saveSession(s: Session | null) {
   else localStorage.removeItem(SESSION_KEY);
 }
 
-function getToken(): string {
-  return getSession()?.access_token || SUPABASE_ANON_KEY;
+async function getToken(): Promise<string> {
+  const session = getSession();
+  if (!session) return SUPABASE_ANON_KEY;
+
+  // Se o token expira em menos de 5 minutos, renova agora
+  const isExpired = Date.now() > (session.expires_at - 300000);
+  if (isExpired && session.refresh_token) {
+    const fresh = await supabase.auth._refresh(session.refresh_token);
+    if (fresh) return fresh.access_token;
+  }
+
+  return session.access_token;
 }
 
 // ── Cabeçalhos comuns ────────────────────────────────────────────
 function headers(extra?: Record<string, string>): Record<string, string> {
   return {
     apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${getToken()}`,
     'Content-Type': 'application/json',
     ...extra,
   };
@@ -178,6 +187,33 @@ export const supabase = {
       supabase.auth._notify('SIGNED_OUT', null);
     },
 
+    // Renovação automática de token
+    async _refresh(refreshToken: string) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error('Refresh failed');
+
+        const session: Session = {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: Date.now() + (data.expires_in || 3600) * 1000,
+          user: { id: data.user.id, email: data.user.email },
+        };
+        saveSession(session);
+        return session;
+      } catch {
+        // Se falhar o refresh total, desloga
+        saveSession(null);
+        supabase.auth._notify('SIGNED_OUT', null);
+        return null;
+      }
+    },
+
     // Convite de líder via Magic Link (OTP)
     async signInWithOtp({ email, options }: { email: string; options?: { data?: Record<string, string>; emailRedirectTo?: string; shouldCreateUser?: boolean } }) {
       const res = await fetch(`${SUPABASE_URL}/auth/v1/magiclink`, {
@@ -217,7 +253,7 @@ export const supabase = {
             method: 'POST',
             headers: {
               apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${getToken()}`,
+              Authorization: `Bearer ${await getToken()}`,
               'x-upsert': 'true',
             },
             body: file,
@@ -321,12 +357,16 @@ class QueryBuilder {
   }
 
   // Executa a query — retorna Promise real
-  exec(): Promise<{ data: unknown; error: { message: string } | null }> {
+  async exec(): Promise<{ data: unknown; error: { message: string } | null }> {
     const qs = this._qs.length ? '?' + this._qs.join('&') : '';
     const url = `${SUPABASE_URL}/rest/v1/${this._table}${qs}`;
 
+    // Busca o token de forma assíncrona (com refresh automático se necessário)
+    const token = await getToken();
+
     const reqHeaders: Record<string, string> = {
       ...this._headers,
+      Authorization: `Bearer ${token}`,
       ...(this._prefer.length ? { Prefer: this._prefer.join(',') } : {}),
     };
 
