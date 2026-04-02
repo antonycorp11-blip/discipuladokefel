@@ -224,10 +224,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: data.user.id,
             nome,
             role: 'membro',
-            celula_id: celulaId,
+            celula_id: (celulaId && celulaId.length > 10) ? celulaId : null, // Garante que seja um UUID válido ou nulo
             email: dummyEmail,
             tempo_leitura_total: 0
-          }, { onConflict: 'id' } as any)
+          })
           .select("*")
           .single();
           

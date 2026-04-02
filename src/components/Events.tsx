@@ -250,6 +250,41 @@ export default function Events() {
 
                     <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed italic">"{event.descricao}"</p>
 
+                    {/* Status de Inscrição e Botão para Usuário */}
+                    {(() => {
+                        const isInscribed = event.kefel_eventos_inscritos?.some((i: any) => i.id === user?.id || (i.user_id && i.user_id === user?.id));
+                        
+                        if (isInscribed) {
+                          return (
+                            <div className="w-full bg-green-50 text-green-600 py-4 rounded-2xl flex items-center justify-center gap-2 border border-green-100 mb-2">
+                               <CheckCircle size={18} />
+                               <span className="text-[10px] font-black uppercase tracking-widest">Sua Presença Confirmada!</span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button 
+                            onClick={async () => {
+                               if (!user) return alert("Faça login para se inscrever!");
+                               const { error } = await supabase.from("kefel_eventos_inscritos").insert({ evento_id: event.id, user_id: user.id });
+                               if (!error) {
+                                  alert("Inscrição confirmada! 🚀");
+                                  fetchEvents();
+                               } else {
+                                  alert("Erro ao se inscrever: " + error.message);
+                               }
+                            }}
+                            className="w-full bg-black text-white py-5 rounded-[2rem] flex items-center justify-center gap-3 shadow-lg active:scale-95 transition-soft mb-2 group"
+                          >
+                             <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-[#1B3B6B] transition-soft">
+                                <Plus size={16} />
+                             </div>
+                             <span className="text-[10px] font-black uppercase tracking-widest italic">Quero Participar</span>
+                          </button>
+                        );
+                    })()}
+
                     {/* Botão de Gestão Master/Líder - Mais visível */}
                     {(user?.role === 'master' || user?.role === 'lider') && (
                       <button 
@@ -257,7 +292,7 @@ export default function Events() {
                         className="w-full mt-2 bg-gray-50 border border-dashed border-[#1B3B6B]/20 py-4 rounded-2xl flex items-center justify-center gap-3 text-[#1B3B6B] hover:bg-[#1B3B6B]/5 transition-soft active:scale-95"
                       >
                          <Users size={18} />
-                         <span className="text-[10px] font-black uppercase tracking-widest">Ver Lista de {event.kefel_eventos_inscritos?.length || 0} Inscritos</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Relatório: {event.kefel_eventos_inscritos?.length || 0} Inscritos</span>
                       </button>
                     )}
                  </div>
