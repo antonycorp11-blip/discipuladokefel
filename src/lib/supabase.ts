@@ -46,6 +46,16 @@ export interface KefelInvite {
   status: 'pendente' | 'aceito' | 'expirado';
 }
 
+export interface KefelFavorito {
+  id: string;
+  user_id: string;
+  livro: string;
+  capitulo: number;
+  versiculo: number;
+  texto: string;
+  created_at?: string;
+}
+
 // ── Sessão persistida em localStorage ───────────────────────────
 const SESSION_KEY = 'kefel_sb_session';
 

@@ -69,7 +69,8 @@ export function CellManagement() {
       fetchData();
       alert("Célula criada com sucesso!");
     } else {
-      alert("Erro ao criar: " + error.message);
+      console.error("Erro Supabase ao criar célula:", error);
+      alert("Falha ao criar célula. Verifique sua conexão ou permissão. Detalhe: " + error.message);
     }
     setSaving(false);
   }

@@ -1,6 +1,7 @@
-import { Trophy, Medal, Crown, Loader2, User, Clock } from "lucide-react";
+import { Trophy, Medal, Crown, Loader2, User, Clock, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { Link } from "react-router-dom";
 
 interface RankUser {
   id: string;
@@ -67,8 +68,9 @@ export function Ranking() {
             const isTop3 = index < 3;
             
             return (
-              <div 
+              <Link 
                 key={user.id} 
+                to={`/perfil/${user.id}`}
                 className={`group p-5 rounded-[2.5rem] shadow-sm border border-white/50 flex items-center gap-5 transition-all active:scale-[0.98] relative overflow-hidden ${style.bg} ${isTop3 ? 'ring-1 ring-black/5 scale-[1.02] -mx-1' : ''}`}
               >
                 {/* Efeito de brilho para Top 1 */}
@@ -86,7 +88,7 @@ export function Ranking() {
 
                 <div className="flex-1 min-w-0 z-10">
                    <h3 className={`font-black text-gray-900 truncate uppercase italic tracking-tight ${isTop3 ? 'text-base' : 'text-sm'}`}>
-                     {user.nome?.split(' ')[0] || "Anônimo"}
+                     {user.nome || "Anônimo"}
                    </h3>
                    <div className="flex items-center gap-1.5 mt-1 bg-white/50 w-fit px-2 py-0.5 rounded-lg border border-white/80">
                       <Clock size={11} className="text-indigo-600" />
@@ -94,12 +96,14 @@ export function Ranking() {
                    </div>
                 </div>
 
+                <ChevronRight className="text-gray-200/50 group-hover:text-indigo-600 transition-colors" size={16} />
+
                 {isTop3 && (
                   <div className="absolute -right-4 -bottom-4 opacity-[0.03] rotate-12 group-hover:scale-110 transition-transform">
                     <Trophy size={80} />
                   </div>
                 )}
-              </div>
+              </Link>
             );
           })}
         </div>

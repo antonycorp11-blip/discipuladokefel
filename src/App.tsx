@@ -49,6 +49,7 @@ function AppRoutes() {
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/eventos" element={<Events />} />
         <Route path="/perfil" element={<Profile />} />
+        <Route path="/perfil/:id" element={<Profile />} />
         <Route path="/celulas" element={<CellManagement />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>

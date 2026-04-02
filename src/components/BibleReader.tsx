@@ -17,6 +17,7 @@ export default function BibleReader() {
   const [selectorStep, setSelectorStep] = useState<'book' | 'chapter' | 'verse'>('book');
   
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
   
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const sessionRef = useRef(0);
@@ -25,8 +26,13 @@ export default function BibleReader() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const data = await fetchBibleChapter(selectedBook.id, chapter);
-      setVerses(data);
+      const [bibleData, favsData] = await Promise.all([
+        fetchBibleChapter(selectedBook.id, chapter),
+        user ? supabase.from("kefel_favoritos").select("versiculo").eq("user_id", user.id).eq("livro", selectedBook.nome).eq("capitulo", chapter) : Promise.resolve({ data: [] })
+      ]);
+      
+      setVerses(bibleData);
+      setFavorites(((favsData.data as any[]) || []).map((f: any) => f.versiculo));
       setSelectedVerses([]);
       setLoading(false);
     }
@@ -76,6 +82,26 @@ export default function BibleReader() {
     );
   };
 
+  const toggleFavorite = async (v: BibleVerse) => {
+    if (!user) return;
+    const isFav = favorites.includes(v.verse);
+    
+    // Otimista
+    setFavorites(prev => isFav ? prev.filter(f => f !== v.verse) : [...prev, v.verse]);
+
+    if (isFav) {
+      await supabase.from("kefel_favoritos").delete().eq("user_id", user.id).eq("livro", selectedBook.nome).eq("capitulo", chapter).eq("versiculo", v.verse);
+    } else {
+      await supabase.from("kefel_favoritos").insert({
+        user_id: user.id,
+        livro: selectedBook.nome,
+        capitulo: chapter,
+        versiculo: v.verse,
+        texto: v.text
+      });
+    }
+  };
+
   const shareSelected = () => {
     const text = verses.filter(v => selectedVerses.includes(v.verse)).map(v => `${v.verse}. ${v.text}`).join('\n');
     const msg = `${selectedBook.nome} ${chapter}\n\n${text}\n\nLido no Kefel App`;
@@ -111,11 +137,19 @@ export default function BibleReader() {
           </div>
         ) : (
           <div className="max-w-xl mx-auto space-y-4">
-            {verses.map(v => (
-              <div key={v.verse} id={`v-${v.verse}`} onClick={() => toggleVerse(v.verse)} className={`p-4 rounded-2xl transition-all ${selectedVerses.includes(v.verse) ? 'bg-blue-50 ring-1 ring-blue-100' : 'active:bg-gray-50'}`}>
+             {verses.map(v => (
+              <div key={v.verse} id={`v-${v.verse}`} className={`p-4 rounded-3xl transition-all ${selectedVerses.includes(v.verse) ? 'bg-blue-50/50 ring-1 ring-blue-100' : 'active:bg-gray-50'}`}>
                 <div className="flex gap-4">
-                   <span className="text-xs font-black mt-1 text-gray-300">{v.verse}</span>
-                   <p className="text-lg text-gray-800 leading-relaxed tracking-tight">{v.text}</p>
+                   <div className="flex flex-col items-center gap-3">
+                      <span className="text-xs font-black text-gray-300 h-5 flex items-center justify-center">{v.verse}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(v); }} 
+                        className={`p-2 rounded-xl transition-soft ${favorites.includes(v.verse) ? 'bg-amber-100 text-amber-500 scale-110 shadow-sm' : 'bg-gray-50 text-gray-200'}`}
+                      >
+                        <Star size={14} fill={favorites.includes(v.verse) ? "currentColor" : "none"} />
+                      </button>
+                   </div>
+                   <p onClick={() => toggleVerse(v.verse)} className="text-lg text-gray-800 leading-relaxed tracking-tight flex-1">{v.text}</p>
                 </div>
               </div>
             ))}
