@@ -186,6 +186,31 @@ export const supabase = {
       return { error: null, data: { user: data.user || data } };
     },
 
+    async signInAnonymously() {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          anonymous: true,
+          gotrue_meta_security: {},
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { error: { message: data.error_description || data.msg || 'Erro ao entrar anonimamente' }, data: null };
+      }
+
+      const session: Session = {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: Date.now() + (data.expires_in || 3600) * 1000,
+        user: { id: data.user.id, email: data.user.email || '' },
+      };
+      saveSession(session);
+      supabase.auth._notify('SIGNED_IN', session);
+      return { error: null, data: { user: data.user, session } };
+    },
+
     async signOut() {
       const session = getSession();
       if (session) {

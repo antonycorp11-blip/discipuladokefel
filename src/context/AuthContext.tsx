@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   register: (nome: string, email: string, password: string, celulaId?: string) => Promise<{ success: boolean; message?: string }>;
+  signInMember: (nome: string, celulaId: string) => Promise<{ success: boolean; message?: string }>;
   updateReadingTime: (seconds: number, livro: string, capitulo: number) => Promise<void>;
   refreshProfile: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<KefelProfile | null>>;
@@ -135,6 +136,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     return { success: true };
+  };
+  
+  // ── Login de Membro (Anônimo) ──────────────────────────────────
+  const signInMember = async (nome: string, celulaId: string): Promise<{ success: boolean; message?: string }> => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+      
+      if (data.user) {
+        const dummyEmail = `anon_${data.user.id}@kefel.com`;
+        const { error: profileError } = await supabase
+          .from("kefel_profiles")
+          .upsert({
+            id: data.user.id,
+            nome,
+            role: 'membro',
+            celula_id: celulaId,
+            email: dummyEmail, // NOT NULL constraint
+            tempo_leitura_total: 0
+          });
+          
+        if (profileError) throw profileError;
+        
+        const profile = await loadProfile(data.user.id);
+        setUser(profile);
+      }
+      
+      return { success: true };
+    } catch (err: any) {
+      console.error("Erro no Login Membro:", err);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Salvar tempo de leitura ────────────────────────────────────

@@ -6,7 +6,6 @@ import { Ranking } from "./components/Ranking";
 import Events from "./components/Events";
 import { Profile } from "./components/Profile";
 import { Login } from "./components/Login";
-import { Register } from "./components/Register";
 import { CellManagement } from "./components/CellManagement";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Onboarding } from "./components/Onboarding";
@@ -30,7 +29,6 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     );

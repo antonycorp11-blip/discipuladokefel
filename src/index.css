@@ -43,6 +43,10 @@ h1, h2, h3, .font-heading {
   box-shadow: 0 10px 25px -5px var(--primary-glow), 0 8px 10px -6px var(--primary-glow);
 }
 
+.shadow-soft {
+  box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.05), 0 2px 8px -1px rgba(0, 0, 0, 0.03);
+}
+
 /* Scrollbar invisível */
 ::-webkit-scrollbar { width: 0px; background: transparent; }
 
