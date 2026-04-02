@@ -187,22 +187,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInMember = async (nome: string, celulaId: string): Promise<{ success: boolean; message?: string }> => {
     setLoading(true);
     try {
-      // Verificar duplicidade antes de criar
-      const { data: existingProfiles } = await supabase
+      // 1. Verificar duplicidade de nome na mesma célula
+      const { data: existingData } = await supabase
         .from("kefel_profiles")
         .select("id")
         .eq("nome", nome)
-        .eq("celula_id", celulaId);
+        .eq("celula_id", celulaId)
+        .limit(1);
       
-      if (existingProfiles && (existingProfiles as any[]).length > 0) {
+      const existing = existingData as any[] | null;
+      
+      if (existing && existing.length > 0) {
         setLoading(false);
-        return { success: false, message: "Este nome já está cadastrado nesta célula. Se você já tem uma conta, use o mesmo dispositivo ou procure o líder." };
+        return { success: false, message: "Já existe alguém com este nome nesta célula. Se você já tem conta, procure seu líder." };
       }
 
+      // 2. Login Anônimo
       const { data, error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Erro Auth Anônimo:", error);
+        if (error.status === 406) {
+          return { success: false, message: "O login anônimo está desativado no painel do Supabase. Master, verifique em: Authentication > Providers > Anonymous." };
+        }
+        throw error;
+      }
       
       if (data.user) {
+        // Pequeno delay para propagação do ID no Supabase
+        await new Promise(r => setTimeout(r, 1000));
+
         const dummyEmail = `anon_${data.user.id}@kefel.com`;
         const { data: profile, error: profileError } = await supabase
           .from("kefel_profiles")
@@ -211,13 +225,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             nome,
             role: 'membro',
             celula_id: celulaId,
-            email: dummyEmail, // NOT NULL constraint
+            email: dummyEmail,
             tempo_leitura_total: 0
-          })
+          }, { onConflict: 'id' } as any)
           .select("*")
           .single();
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Erro ao criar perfil após login anônimo:", profileError);
+          throw profileError;
+        }
         
         // Persistência local para membros anônimos
         localStorage.setItem('kefel_member_data', JSON.stringify({ nome, celula_id: celulaId }));
@@ -227,8 +244,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return { success: true };
     } catch (err: any) {
-      console.error("Erro no Login Membro:", err);
-      return { success: false, message: err.message };
+      console.error("Erro fatal no Login Membro:", err);
+      return { success: false, message: "Falha ao criar perfil: " + (err.message || "Erro de conexão") };
     } finally {
       setLoading(false);
     }

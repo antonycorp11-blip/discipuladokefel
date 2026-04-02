@@ -229,7 +229,7 @@ export default function Events() {
                     </div>
                  </div>
 
-                 <div className="px-1 space-y-3">
+                  <div className="px-1 space-y-4">
                     <div className="flex justify-between items-start gap-4">
                        <h3 className="text-xl font-black text-gray-900 italic uppercase tracking-tighter leading-tight flex-1">{event.titulo}</h3>
                        <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${event.tipo === 'pago' ? 'bg-[#1B3B6B]/5 text-[#1B3B6B]' : 'bg-green-50 text-green-600'}`}>
@@ -248,7 +248,18 @@ export default function Events() {
                        </div>
                     </div>
 
-                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{event.descricao}</p>
+                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed italic">"{event.descricao}"</p>
+
+                    {/* Botão de Gestão Master/Líder - Mais visível */}
+                    {(user?.role === 'master' || user?.role === 'lider') && (
+                      <button 
+                        onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} 
+                        className="w-full mt-2 bg-gray-50 border border-dashed border-[#1B3B6B]/20 py-4 rounded-2xl flex items-center justify-center gap-3 text-[#1B3B6B] hover:bg-[#1B3B6B]/5 transition-soft active:scale-95"
+                      >
+                         <Users size={18} />
+                         <span className="text-[10px] font-black uppercase tracking-widest">Ver Lista de {event.kefel_eventos_inscritos?.length || 0} Inscritos</span>
+                      </button>
+                    )}
                  </div>
               </div>
             );

@@ -8,13 +8,10 @@ export function Profile() {
   const { id } = useParams();
   const { user: currentUser, setUser, logout } = useAuth();
   
-  const [profile, setProfile] = useState<KefelProfile | null>(null);
-  const [meuGrupo, setMeuGrupo] = useState<KefelCelula | null>(null);
-  const [favorites, setFavorites] = useState<KefelFavorito[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-
-  const isOwnProfile = !id || id === currentUser?.id;
+  const [showSettings, setShowSettings] = useState(false);
+  const [newName, setNewName] = useState(currentUser?.nome || "");
+  const [pushEnabled, setPushEnabled] = useState(true);
+  const [meusRelatorios, setMeusRelatorios] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -22,15 +19,20 @@ export function Profile() {
       const targetId = id || currentUser?.id;
       if (!targetId) return;
 
-      const [profRes, favRes] = await Promise.all([
+      const [profRes, favRes, relRes] = await Promise.all([
         supabase.from("kefel_profiles").select("*").eq("id", targetId).single(),
-        supabase.from("kefel_favoritos").select("*").eq("user_id", targetId).order('created_at', { ascending: false })
+        supabase.from("kefel_favoritos").select("*").eq("user_id", targetId).order('created_at', { ascending: false }),
+        (currentUser?.role === 'master' || currentUser?.role === 'lider') 
+          ? supabase.from("kefel_relatorios").select("*").eq("lider_id", targetId).order('data', { ascending: false }).limit(10)
+          : Promise.resolve({ data: [] })
       ]);
 
       if (profRes.data) {
         const profData = profRes.data as KefelProfile;
         setProfile(profData);
         setFavorites(favRes.data as KefelFavorito[] || []);
+        setMeusRelatorios(relRes.data || []);
+        setNewName(profData.nome);
         
         if (profData.celula_id) {
           const { data: celData } = await supabase.from("kefel_celulas").select("*").eq("id", profData.celula_id).single();
@@ -40,7 +42,36 @@ export function Profile() {
       setLoading(false);
     }
     loadProfile();
-  }, [id, currentUser?.id]);
+  }, [id, currentUser?.id, currentUser?.role]);
+
+  const handleUpdateName = async () => {
+    if (!profile || !newName) return;
+    const { data, error } = await supabase
+      .from("kefel_profiles")
+      .update({ nome: newName })
+      .eq("id", profile.id)
+      .select("*")
+      .single();
+    
+    if (!error && data) {
+      setProfile(data as KefelProfile);
+      if (isOwnProfile) setUser(data as KefelProfile);
+      setShowSettings(false);
+      alert("Nome atualizado!");
+    }
+  };
+
+  const togglePush = async (enabled: boolean) => {
+    setPushEnabled(enabled);
+    try {
+      const OneSignal = (window as any).OneSignal;
+      if (OneSignal) {
+        await OneSignal.setPushDisabled(!enabled);
+      }
+    } catch (e) {
+      console.error("Erro toggle push:", e);
+    }
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,31 +82,19 @@ export function Profile() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${currentUser.id}_${Date.now()}.${fileExt}`;
       
-      console.log("Iniciando upload para bucket 'avatars'...", fileName);
       const { data: uploadData, error: uploadError } = await supabase.storage.from("avatars").upload(fileName, file);
-      
-      if (uploadError) {
-        console.error("Erro no Storage:", uploadError);
-        throw new Error(`Erro no Storage: ${uploadError.message}`);
-      }
+      if (uploadError) throw uploadError;
 
-      console.log("Obtendo URL pública...");
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
       const publicUrl = urlData.publicUrl;
 
-      console.log("Atualizando perfil com nova URL...");
       const { data: updated, error: updateError } = await supabase.from("kefel_profiles").update({ avatar_url: publicUrl }).eq("id", currentUser.id).select("*").single();
-      
-      if (updateError) {
-        console.error("Erro ao atualizar perfil:", updateError);
-        throw new Error(`Erro ao atualizar perfil: ${updateError.message}`);
-      }
+      if (updateError) throw updateError;
 
       setUser(updated as KefelProfile);
       setProfile(updated as KefelProfile);
-      alert("Foto de perfil atualizada com sucesso!");
+      alert("Foto de perfil atualizada!");
     } catch (err: any) {
-      console.error("Erro completo no upload:", err);
       alert("Falha no upload: " + err.message);
     }
     setUploading(false);
@@ -107,7 +126,7 @@ export function Profile() {
           <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
         </div>
         {isOwnProfile && (
-          <button className="glass-panel p-3.5 rounded-2xl text-[#1B3B6B] active:scale-95 transition-transform shadow-sm"><Settings className="w-5 h-5" /></button>
+          <button onClick={() => setShowSettings(true)} className="glass-panel p-3.5 rounded-2xl text-[#1B3B6B] active:scale-95 transition-transform shadow-sm"><Settings className="w-5 h-5" /></button>
         )}
       </header>
 
@@ -158,8 +177,8 @@ export function Profile() {
         </div>
       </div>
 
-      {/* Seção de Favoritos */}
-      {favorites.length > 0 && (
+      {/* Seção de Favoritos (Ocultar para Master) */}
+      {profile.role !== 'master' && favorites.length > 0 && (
         <div className="flex flex-col gap-6 mb-8">
           <div className="flex items-center gap-3">
              <Star className="text-amber-500" size={18} fill="currentColor" />
@@ -180,25 +199,96 @@ export function Profile() {
         </div>
       )}
 
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-        {isOwnProfile && (currentUser.role === 'master' || currentUser.role === 'lider') && (
-          <Link to="/celulas" className="p-6 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
-             <div className="flex items-center gap-4">
-                <Users className="text-[#1B3B6B]" size={20} />
-                <span className="font-bold text-gray-900 text-sm">Gerenciar Células</span>
-             </div>
-             <ChevronRight className="text-gray-200" size={16} />
-          </Link>
-        )}
-        {isOwnProfile && (
+      {/* Meus Relatórios (Líder / Master) */}
+      {(profile.role === 'master' || profile.role === 'lider') && meusRelatorios.length > 0 && (
+        <div className="flex flex-col gap-6 mb-8">
+           <div className="flex items-center gap-3">
+              <FileText className="text-[#1B3B6B]" size={18} />
+              <h3 className="text-sm font-black text-gray-900 uppercase italic tracking-widest">Relatórios Enviados</h3>
+           </div>
+           <div className="grid gap-3">
+              {meusRelatorios.map(rel => (
+                <div key={rel.id} className="glass-panel p-5 rounded-[2rem] flex items-center justify-between border-white/50">
+                   <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${rel.tipo === 'culto' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                         {rel.tipo === 'culto' ? <Users size={18} /> : <Users size={18} />}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{rel.tipo}</p>
+                        <p className="font-bold text-gray-900 text-sm mt-1">{new Date(rel.data).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Presença</p>
+                      <p className="text-lg font-black text-[#1B3B6B] italic tabular-nums">{rel.presentes}</p>
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+      )}
+
+      {isOwnProfile && (
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col mb-10">
+          {(currentUser.role === 'master' || currentUser.role === 'lider') && (
+            <Link to="/celulas" className="p-6 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
+               <div className="flex items-center gap-4">
+                  <Users className="text-[#1B3B6B]" size={20} />
+                  <span className="font-bold text-gray-900 text-sm">Gerenciar Células</span>
+               </div>
+               <ChevronRight className="text-gray-200" size={16} />
+            </Link>
+          )}
           <button onClick={logout} className="p-6 flex items-center justify-between hover:bg-red-50 active:bg-red-100 transition-colors">
             <div className="flex items-center gap-4">
                 <LogOut className="text-red-500" size={20} />
                 <span className="font-bold text-red-600 text-sm">Sair da Conta</span>
             </div>
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Modal de Configurações */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md flex items-end">
+           <div className="bg-white w-full rounded-t-[3.5rem] p-10 space-y-8 shadow-2xl">
+              <div className="flex justify-between items-center">
+                 <h2 className="text-xl font-black text-gray-900 uppercase italic">Configurações</h2>
+                 <button onClick={() => setShowSettings(false)} className="glass-panel p-2 rounded-full"><X size={20} /></button>
+              </div>
+
+              <div className="space-y-6">
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Editar Nome</p>
+                    <input 
+                      value={newName} 
+                      onChange={e => setNewName(e.target.value)}
+                      className="w-full bg-gray-50 p-5 rounded-2xl font-bold outline-none" 
+                    />
+                 </div>
+
+                 <div className="flex items-center justify-between p-2">
+                    <div>
+                       <p className="font-black text-gray-900 uppercase italic text-sm">Notificações Push</p>
+                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Ativar lembretes e alertas</p>
+                    </div>
+                    <button 
+                      onClick={() => togglePush(!pushEnabled)}
+                      className={`w-14 h-8 rounded-full transition-colors relative ${pushEnabled ? 'bg-[#1B3B6B]' : 'bg-gray-200'}`}
+                    >
+                       <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${pushEnabled ? 'translate-x-7' : 'translate-x-1'}`} />
+                    </button>
+                 </div>
+
+                 <button onClick={handleUpdateName} className="w-full bg-[#1B3B6B] text-white py-5 rounded-[2rem] font-black uppercase italic tracking-widest shadow-lg active:scale-95 transition-soft">
+                    Salvar Alterações
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
+  );
+}
   );
 }

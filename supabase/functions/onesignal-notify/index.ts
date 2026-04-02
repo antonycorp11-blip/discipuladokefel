@@ -5,47 +5,42 @@ const ONESIGNAL_REST_API_KEY = "os_v2_app_hiu2c4ntz5fzviobioabjssfavbyfcogleqejo
 
 serve(async (req) => {
   try {
-    const { record, table, type } = await req.json()
-    console.log(`Notificação recebida para tabela ${table}:`, record)
+    const payload = await req.json()
+    console.log("Recebendo Notificação:", payload)
 
-    let title = "Kefel Discipulado"
-    let message = ""
-    let targetRole = "master" // Por padrão, notifica o Master
+    const { type, title, message, target_id, target_role } = payload
 
-    if (table === 'kefel_profiles' && type === 'INSERT') {
-      message = `🎉 Novo membro se cadastrou: ${record.nome}!`
-    } 
-    else if (table === 'kefel_relatorios') {
-      const tipoRepo = record.tipo === 'celula' ? 'Célula' : 'Culto'
-      message = `📊 Novo relatório de ${tipoRepo} enviado por ${record.lider_id || "um líder"}.`
+    let notificationBody: any = {
+      app_id: ONESIGNAL_APP_ID,
+      headings: { en: title, pt: title },
+      contents: { en: message, pt: message },
     }
 
-    if (message) {
-      const res = await fetch("https://onesignal.com/api/v1/notifications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
-        },
-        body: JSON.stringify({
-          app_id: ONESIGNAL_APP_ID,
-          filters: [
-            { field: "tag", key: "role", relation: "=", value: targetRole }
-          ],
-          headings: { en: title, pt: title },
-          contents: { en: message, pt: message },
-          priority: 10
-        })
-      })
-      const data = await res.json()
-      console.log("OneSignal Response:", data)
+    if (type === 'broadcast') {
+      // Enviar para todos os usuários (estratégia de broadcast)
+      notificationBody.included_segments = ["All"]
+    } else if (target_role === 'master') {
+      // Notificar apenas o Master (ex: novo membro, novo relatório)
+      notificationBody.filters = [
+        { field: "tag", key: "role", relation: "=", value: "master" }
+      ]
+    } else if (target_id) {
+      // Notificar usuário específico
+      notificationBody.include_external_user_ids = [target_id]
     }
 
-    return new Response(JSON.stringify({ ok: true }), { 
-      headers: { "Content-Type": "application/json" } 
+    const res = await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
+      },
+      body: JSON.stringify(notificationBody)
     })
+
+    const data = await res.json()
+    return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } })
   } catch (err) {
-    console.error("Erro na Edge Function:", err)
     return new Response(JSON.stringify({ error: err.message }), { status: 500 })
   }
 })

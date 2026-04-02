@@ -98,10 +98,12 @@ export default function App() {
             } as any
           });
 
-          // Mostrar prompt de permissão automaticamente
-          if ((OneSignal as any).showSlidedownPrompt) {
-            (OneSignal as any).showSlidedownPrompt();
-          }
+          // Mostrar prompt de permissão automaticamente com um pequeno delay para melhor UX
+          setTimeout(() => {
+            if ((OneSignal as any).showSlidedownPrompt) {
+              (OneSignal as any).showSlidedownPrompt();
+            }
+          }, 2000);
         } catch (err) {
           console.error("Erro OneSignal:", err);
         }
