@@ -38,16 +38,20 @@ export function Reports() {
     const dayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
     
     if (reportType === 'culto') {
-      // Último Domingo
+      // Último Domingo (se hoje é domingo, é hoje)
       const d = new Date(now);
       d.setDate(now.getDate() - now.getDay());
       setData(d.toISOString().split('T')[0]);
     } else {
-      // Dia da Célula (última ocorrência)
+      // Dia da Célula (última ocorrência ou hoje)
       const targetIdx = dayNames.indexOf(meetingDay);
-      if (targetIdx === -1) return;
+      if (targetIdx === -1) {
+        setData(now.toISOString().split('T')[0]); // Fallback hoje
+        return;
+      }
       
       const currentIdx = now.getDay();
+      // Se hoje é o dia da célula, diff é 0. Se for amanhã, diff é 1 (ontem).
       const diff = (currentIdx - targetIdx + 7) % 7;
       const d = new Date(now);
       d.setDate(now.getDate() - diff);

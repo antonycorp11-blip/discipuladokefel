@@ -206,31 +206,56 @@ export function Profile() {
         </div>
       )}
 
-      {/* Meus Relatórios (Líder / Master) */}
+      {/* Meus Relatórios (Líder / Master) - Agrupados por Semana */}
       {(profile.role === 'master' || profile.role === 'lider') && meusRelatorios.length > 0 && (
-        <div className="flex flex-col gap-6 mb-8">
+        <div className="flex flex-col gap-8 mb-10">
            <div className="flex items-center gap-3">
               <FileText className="text-[#1B3B6B]" size={18} />
-              <h3 className="text-sm font-black text-gray-900 uppercase italic tracking-widest">Relatórios Enviados</h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase italic tracking-widest">Histórico de Relatórios</h3>
            </div>
-           <div className="grid gap-3">
-              {meusRelatorios.map(rel => (
-                <div key={rel.id} className="glass-panel p-5 rounded-[2rem] flex items-center justify-between border-white/50">
-                   <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${rel.tipo === 'culto' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
-                         {rel.tipo === 'culto' ? <Users size={18} /> : <Users size={18} />}
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{rel.tipo}</p>
-                        <p className="font-bold text-gray-900 text-sm mt-1">{new Date(rel.data).toLocaleDateString('pt-BR')}</p>
-                      </div>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Presença</p>
-                      <p className="text-lg font-black text-[#1B3B6B] italic tabular-nums">{rel.presentes}</p>
-                   </div>
-                </div>
-              ))}
+           
+           <div className="space-y-12">
+              {(() => {
+                // Agrupar por Mês
+                const groupedByMonth: Record<string, any[]> = {};
+                meusRelatorios.forEach(rel => {
+                  const date = new Date(rel.data);
+                  const monthName = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                  if (!groupedByMonth[monthName]) groupedByMonth[monthName] = [];
+                  groupedByMonth[monthName].push(rel);
+                });
+
+                return Object.entries(groupedByMonth).map(([month, reports]) => (
+                  <div key={month} className="space-y-4">
+                    <h4 className="text-[10px] font-black text-[#1B3B6B] uppercase tracking-[0.3em] ml-4 bg-[#1B3B6B]/5 py-2 px-4 rounded-full w-fit italic">{month}</h4>
+                    
+                    <div className="grid gap-3">
+                      {reports.map((rel, idx) => {
+                        const d = new Date(rel.data);
+                        const weekNum = Math.ceil(d.getDate() / 7);
+                        return (
+                          <div key={rel.id} className="glass-panel p-5 rounded-[2rem] flex items-center justify-between border-white/50 relative overflow-hidden">
+                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1B3B6B]/10" />
+                             <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${rel.tipo === 'culto' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                                   <p className="text-[10px] font-black italic">W{weekNum}</p>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none truncate">Semana {weekNum} • {rel.tipo}</p>
+                                  <p className="font-bold text-gray-900 text-sm mt-1">{d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</p>
+                                </div>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Presença</p>
+                                <p className="text-lg font-black text-[#1B3B6B] italic tabular-nums">{rel.presentes}</p>
+                             </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()}
            </div>
         </div>
       )}

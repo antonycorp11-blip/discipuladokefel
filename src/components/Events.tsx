@@ -70,15 +70,29 @@ export default function Events() {
 
   async function fetchInscriptions(eventId: string) {
     setLoadingInsc(true);
-    const { data, error } = await supabase
-      .from("kefel_eventos_inscritos")
-      .select("*, kefel_profiles(*)")
-      .eq("evento_id", eventId);
-    
-    if (!error) {
+    try {
+       const { data, error } = await supabase
+         .from("kefel_eventos_inscritos")
+         .select(`
+            id,
+            confirmado_em,
+            user_id,
+            kefel_profiles (
+               id,
+               nome,
+               avatar_url,
+               celula_id
+            )
+         `)
+         .eq("evento_id", eventId);
+       
+       if (error) throw error;
        setInscribedUsers(data || []);
+    } catch (err) {
+       console.error("Erro fetch inscritos:", err);
+    } finally {
+       setLoadingInsc(false);
     }
-    setLoadingInsc(false);
   }
 
   const handleDelete = async (id: string) => {

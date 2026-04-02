@@ -8,24 +8,36 @@ serve(async (req) => {
     const payload = await req.json()
     console.log("Recebendo Notificação:", payload)
 
-    const { type, title, message, target_id, target_role } = payload
+    const { type, title, message, target_id, target_role, table, record } = payload
+
+    let finalTitle = title || "Notificação Kefel"
+    let finalMessage = message || "Você tem uma nova atualização."
+    let finalType = type
+
+    // Lógica para Triggers de Banco de Dados (Supabase)
+    if (table === 'kefel_relatorios' && type === 'INSERT') {
+      finalTitle = "📑 Novo Relatório de Célula"
+      finalMessage = `Um novo relatório foi enviado para sua conferência.`
+      finalType = 'master_report'
+    } else if (table === 'kefel_profiles' && type === 'INSERT') {
+      finalTitle = "👤 Novo Membro no App"
+      finalMessage = `${record.nome} acabou de entrar no Discipulado Kefel!`
+      finalType = 'broadcast'
+    }
 
     let notificationBody: any = {
       app_id: ONESIGNAL_APP_ID,
-      headings: { en: title, pt: title },
-      contents: { en: message, pt: message },
+      headings: { en: finalTitle, pt: finalTitle },
+      contents: { en: finalMessage, pt: finalMessage },
     }
 
-    if (type === 'broadcast') {
-      // Enviar para todos os usuários (estratégia de broadcast)
+    if (finalType === 'broadcast' || type === 'broadcast') {
       notificationBody.included_segments = ["All"]
-    } else if (target_role === 'master') {
-      // Notificar apenas o Master (ex: novo membro, novo relatório)
+    } else if (target_role === 'master' || finalType === 'master_report') {
       notificationBody.filters = [
         { field: "tag", key: "role", relation: "=", value: "master" }
       ]
     } else if (target_id) {
-      // Notificar usuário específico
       notificationBody.include_external_user_ids = [target_id]
     }
 
