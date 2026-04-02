@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Home } from "./components/Home";
-import { BibleReader } from "./components/BibleReader";
+import BibleReader from "./components/BibleReader";
 import { Ranking } from "./components/Ranking";
 import Events from "./components/Events";
 import { Profile } from "./components/Profile";
@@ -39,7 +39,7 @@ function AppRoutes() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/biblia" element={<BibleReader onFinish={() => {}} />} />
+        <Route path="/biblia" element={<BibleReader />} />
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/eventos" element={<Events />} />
         <Route path="/perfil" element={<Profile />} />
