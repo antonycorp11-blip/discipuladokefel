@@ -10,8 +10,20 @@ import { motion, AnimatePresence } from "motion/react";
 
 export function CellManagement() {
   const { user } = useAuth();
+  const [celulas, setCelulas] = useState<KefelCelula[]>([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [expandedCellId, setExpandedCellId] = useState<string | null>(null);
+
+  // Form states
+  const [nome, setNome] = useState("");
+  const [diaSemana, setDiaSemana] = useState("Terça-feira");
+  const [liderId, setLiderId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File|null>(null);
+  const [imagePreview, setImagePreview] = useState<string|null>(null);
 
   useEffect(() => {
     fetchData();
@@ -27,7 +39,7 @@ export function CellManagement() {
       ]);
       
       if (celRes.error) throw celRes.error;
-      setCelulas(celRes.data || []);
+      setCelulas((celRes.data || []) as KefelCelula[]);
 
       if (userRes.error) throw userRes.error;
       setUsuarios(userRes.data || []);
@@ -43,40 +55,44 @@ export function CellManagement() {
   }
 
   async function handleAddCell(e: React.FormEvent) {
-    // ... mantido o código original de handleAddCell ...
     e.preventDefault();
     if (!user || (user.role !== "master" && user.role !== "lider")) return;
     setSaving(true);
 
-    let imageUrl = "";
-    if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `cell_${Date.now()}.${fileExt}`;
-        const { data: upData } = await supabase.storage.from("kefel-eventos").upload(fileName, imageFile);
-        if (upData) {
-            const { data: urlData } = supabase.storage.from("kefel-eventos").getPublicUrl(upData.path);
-            imageUrl = urlData.publicUrl;
-        }
-    }
+    try {
+      let imageUrl = "";
+      if (imageFile) {
+          const fileExt = imageFile.name.split('.').pop();
+          const fileName = `cell_${Date.now()}.${fileExt}`;
+          const { data: upData, error: upErr } = await supabase.storage.from("kefel-eventos").upload(fileName, imageFile);
+          if (upErr) throw upErr;
+          
+          if (upData) {
+              const { data: urlData } = supabase.storage.from("kefel-eventos").getPublicUrl(upData.path);
+              imageUrl = urlData.publicUrl;
+          }
+      }
 
-    const { error } = await supabase.from("kefel_celulas").insert({
-      nome,
-      dia_semana: diaSemana,
-      lider_id: liderId || null,
-      imagem_url: imageUrl,
-      criado_por: user.id
-    });
+      const { error } = await supabase.from("kefel_celulas").insert({
+        nome,
+        dia_semana: diaSemana,
+        lider_id: liderId || null,
+        imagem_url: imageUrl,
+        criado_por: user.id
+      });
 
-    if (!error) {
+      if (error) throw error;
+
       setShowAddForm(false);
       resetForm();
       fetchData();
       alert("Célula criada com sucesso!");
-    } else {
-      console.error("Erro Supabase ao criar célula:", error);
-      alert("Falha ao criar célula. Verifique sua conexão ou permissão. Detalhe: " + error.message);
+    } catch (err: any) {
+      console.error("Erro ao criar célula:", err);
+      alert("Falha ao criar célula: " + err.message);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   const resetForm = () => {
