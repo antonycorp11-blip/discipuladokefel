@@ -34,31 +34,40 @@ export default function BibleReader() {
   }, [selectedBook, chapter]);
 
   useEffect(() => {
+    // Sincroniza a cada 30 segundos
     timerId.current = setInterval(() => {
       setSessionSeconds(s => {
         const next = s + 1;
         sessionRef.current = next;
-        if (next % 3 === 0) syncLeitura(3); 
+        if (next % 30 === 0) syncLeitura(30); 
         return next;
       });
     }, 1000);
 
     return () => {
       if (timerId.current) clearInterval(timerId.current);
-      const remaining = sessionRef.current % 3;
+      // Salva o tempo restante que não completou um ciclo de 30s
+      const remaining = sessionRef.current % 30;
       if (remaining > 0) syncLeitura(remaining);
     };
   }, []);
 
   const syncLeitura = async (secs: number) => {
     if (!user) return;
+    
+    // Log detalhado da leitura
     await supabase.from("kefel_leitura_logs").insert({
       user_id: user.id,
       livro: selectedBook.nome,
       capitulo: chapter,
       tempo_segundos: secs
     });
-    await supabase.rpc('increment_reading_time', { row_id: user.id, increment_by: secs });
+
+    // Atualiza o tempo total do perfil via RPC (agora que a função existe)
+    await supabase.rpc('increment_reading_time', { 
+      row_id: user.id, 
+      increment_by: secs 
+    });
   };
 
   const toggleVerse = (vNum: number) => {

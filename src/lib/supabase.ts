@@ -23,6 +23,7 @@ export interface KefelCelula {
   dia_semana: string;
   lider_id?: string | null;
   criado_por?: string | null;
+  imagem_url?: string | null;
 }
 
 export interface KefelEvento {
@@ -242,6 +243,29 @@ export const supabase = {
     return new QueryBuilder(table);
   },
 
+  async rpc(name: string, args: Record<string, any> = {}) {
+    const url = `${SUPABASE_URL}/rest/v1/rpc/${name}`;
+    const token = await getToken();
+    
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...headers(),
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(args)
+    });
+
+    if (res.status === 204) return { data: null, error: null };
+    let json: any;
+    try { json = await res.json(); } catch { json = null; }
+    
+    if (!res.ok) {
+      return { data: null, error: { message: json?.message || `HTTP ${res.status}` } };
+    }
+    return { data: json, error: null };
+  },
+
   // ══════════════════════════════════════════════════════════════
   //  STORAGE
   // ══════════════════════════════════════════════════════════════
@@ -260,9 +284,9 @@ export const supabase = {
           });
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            return { error: { message: (err as { message?: string }).message || 'Upload falhou' } };
+            return { error: { message: (err as { message?: string }).message || 'Upload falhou' }, data: null };
           }
-          return { error: null };
+          return { data: { path }, error: null };
         },
         getPublicUrl(path: string) {
           return {

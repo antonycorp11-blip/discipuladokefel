@@ -34,9 +34,9 @@ export function Home() {
     const { data: inscData } = await supabase.from("kefel_eventos_inscritos").select("evento_id").eq("user_id", user?.id);
     const { data: celData } = user?.celula_id ? await supabase.from("kefel_celulas").select("*").eq("id", user.celula_id).single() : { data: null };
 
-    setUpcomingEvents(eventsData || []);
-    setInscribedIds((inscData || []).map((i: any) => i.evento_id));
-    setMeuGrupo(celData as any);
+    setUpcomingEvents((eventsData || []) as any[]);
+    setInscribedIds(((inscData as any[]) || []).map((i: any) => i.evento_id));
+    setMeuGrupo(celData as KefelCelula);
     setLoading(false);
   };
 
@@ -154,19 +154,23 @@ export function Home() {
         <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Users size={18} className="text-blue-600" /> Minha Célula
         </h2>
-        {meuGroup ? (
-          <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
-               {meuGrupo.imagem_url ? <img src={meuGrupo.imagem_url} className="w-full h-full object-cover rounded-2xl" /> : <Users size={24} />}
+        {meuGrupo ? (
+          <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-4 relative overflow-hidden">
+            {meuGrupo.imagem_url && (
+              <img src={meuGrupo.imagem_url} className="absolute inset-0 w-full h-full object-cover opacity-10" alt="" />
+            )}
+            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 relative z-10">
+               <Users size={24} />
             </div>
-            <div>
+            <div className="relative z-10">
               <h4 className="font-bold text-gray-900">{meuGrupo.nome}</h4>
-              <p className="text-gray-400 text-xs">Toda {meuGrupo.dia_semana}</p>
+              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Toda {meuGrupo.dia_semana}</p>
             </div>
           </div>
         ) : (
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 text-center">
-            <p className="text-gray-400 text-xs font-medium">Sem célula vinculada</p>
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 text-center flex flex-col items-center gap-2">
+            <Users size={24} className="text-gray-200" />
+            <p className="text-gray-400 text-xs font-bold uppercase">Sem célula vinculada</p>
           </div>
         )}
       </section>
