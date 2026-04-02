@@ -2,12 +2,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary: #4F46E5;
-  --primary-glow: rgba(79, 70, 229, 0.35);
+  --primary: #1B3B6B;
+  --primary-glow: rgba(27, 59, 107, 0.25);
   --accent: #F43F5E;
-  --bg-gradient: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
-  --glass: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.4);
+  --bg-gradient: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.5);
 }
 
 *, *::before, *::after {

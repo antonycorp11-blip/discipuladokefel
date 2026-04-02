@@ -63,14 +63,14 @@ export function Login() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-blue-100 relative overflow-hidden">
       {/* Background Decor */}
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[40%] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[40%] bg-[#1B3B6B]/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[40%] bg-[#1B3B6B]/5 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Discrete Admin Toggle */}
       <div className="absolute top-12 right-6 z-50">
         <button 
           onClick={() => setStep(step === 'admin' ? 'selection' : 'admin')}
-          className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-md border border-white shadow-sm rounded-full text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-blue-600 transition-all active:scale-95"
+          className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-md border border-white shadow-sm rounded-full text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#1B3B6B] transition-all active:scale-95"
         >
           {step === 'admin' ? <LayoutGrid size={12} /> : <ShieldCheck size={12} />}
           {step === 'admin' ? "Voltar" : "Admin"}
@@ -88,7 +88,7 @@ export function Login() {
           transition={{ type: "spring", damping: 12 }}
           className="relative"
         >
-          <div className="absolute inset-0 bg-blue-600/20 blur-3xl rounded-full" />
+          <div className="absolute inset-0 bg-[#1B3B6B]/20 blur-3xl rounded-full" />
           <img
             src="/logo.png"
             alt="Kefel Discipulado"
@@ -102,12 +102,7 @@ export function Login() {
           animate={{ y: 0, opacity: 1 }}
           className="text-center mt-6"
         >
-          <h1 className="text-3xl font-black text-gray-900 tracking-tighter italic uppercase leading-none">
-            Kefel <span className="text-blue-600">Discipulado</span>
-          </h1>
-          <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mt-2 italic">
-            Cresça na palavra • Avance no discipulado
-          </p>
+          {/* Textos removidos conforme solicitado pois já constam na logo */}
         </motion.div>
       </motion.div>
 
@@ -139,9 +134,9 @@ export function Login() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => selectCell(cell)}
-                      className="group relative flex flex-col items-center bg-white border border-white shadow-premium p-5 rounded-[2.5rem] transition-all hover:border-blue-100 hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden"
+                      className="group relative flex flex-col items-center bg-white border border-white shadow-premium p-5 rounded-[2.5rem] transition-all hover:border-[#1B3B6B]/30 hover:shadow-2xl hover:shadow-[#1B3B6B]/10 overflow-hidden"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#1B3B6B]/0 to-[#1B3B6B]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className="w-16 h-16 rounded-2xl bg-gray-50 mb-3 flex items-center justify-center overflow-hidden border border-gray-50 shadow-inner group-hover:shadow-soft transition-all">
                         {cell.imagem_url ? (
                           <img src={cell.imagem_url} alt={cell.nome} className="w-full h-full object-cover" />
@@ -181,14 +176,14 @@ export function Login() {
                   </div>
                 </div>
                 <h2 className="text-lg font-black italic uppercase text-gray-900">{selectedCell.nome}</h2>
-                <div className="h-1 w-8 bg-blue-600 rounded-full mt-2" />
+                <div className="h-1 w-8 bg-[#1B3B6B] rounded-full mt-2" />
               </div>
 
               <form onSubmit={handleMemberSignup} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Como podemos te chamar?</label>
                   <div className="relative">
-                    <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-[#1B3B6B]" />
                     <input
                       type="text"
                       autoFocus
@@ -196,7 +191,7 @@ export function Login() {
                       placeholder="SEU NOME COMPLETO"
                       value={memberName}
                       onChange={(e) => setMemberName(e.target.value)}
-                      className="w-full bg-white border-2 border-transparent shadow-premium rounded-[1.8rem] py-6 pl-16 pr-6 focus:border-blue-200 focus:outline-none transition-all font-black text-xs uppercase italic text-gray-900 tracking-tight"
+                      className="w-full bg-white border-2 border-transparent shadow-premium rounded-[1.8rem] py-6 pl-16 pr-6 focus:border-[#1B3B6B]/20 focus:outline-none transition-all font-black text-xs uppercase italic text-gray-900 tracking-tight"
                     />
                   </div>
                 </div>
@@ -206,7 +201,7 @@ export function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-blue-600 text-white py-6 rounded-[1.8rem] font-black uppercase italic tracking-[0.2em] shadow-premium shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-70 flex items-center justify-center gap-3"
+                  className="w-full bg-[#1B3B6B] text-white py-6 rounded-[1.8rem] font-black uppercase italic tracking-[0.2em] shadow-premium shadow-[#1B3B6B]/20 active:scale-95 transition-all disabled:opacity-70 flex items-center justify-center gap-3"
                 >
                   {loading ? <Loader2 className="animate-spin" /> : <>Entrar na Célula <ArrowRight size={18} /></>}
                 </button>

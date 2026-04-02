@@ -104,20 +104,20 @@ export function Profile() {
       <header className="mb-8 pt-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-gray-900 italic uppercase">{isOwnProfile ? 'Meu Perfil' : 'Perfil'}</h1>
-          <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
+          <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
         </div>
         {isOwnProfile && (
-          <button className="glass-panel p-3.5 rounded-2xl text-indigo-600 active:scale-95 transition-transform shadow-sm"><Settings className="w-5 h-5" /></button>
+          <button className="glass-panel p-3.5 rounded-2xl text-[#1B3B6B] active:scale-95 transition-transform shadow-sm"><Settings className="w-5 h-5" /></button>
         )}
       </header>
 
       <div className="flex flex-col items-center gap-6 py-10 glass-panel rounded-[3.5rem] shadow-premium shadow-indigo-500/5 mb-8 relative border-white/50">
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
         <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-rose-500 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition-soft"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#1B3B6B] to-[#4F93F5] rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition-soft"></div>
           <div className="relative w-32 h-32 bg-white rounded-[2.8rem] shadow-xl border-4 border-white flex items-center justify-center overflow-hidden transition-soft group-hover:scale-105">
             {uploading ? (
-              <Loader2 className="animate-spin text-indigo-600" />
+              <Loader2 className="animate-spin text-[#1B3B6B]" />
             ) : profile.avatar_url ? (
               <img src={profile.avatar_url} className="w-full h-full object-cover" />
             ) : (
@@ -125,7 +125,7 @@ export function Profile() {
             )}
           </div>
           {isOwnProfile && (
-            <label className="absolute -bottom-2 -right-2 bg-black text-white p-3.5 rounded-2xl shadow-xl cursor-pointer active:scale-90 transition-soft hover:bg-indigo-600">
+            <label className="absolute -bottom-2 -right-2 bg-black text-white p-3.5 rounded-2xl shadow-xl cursor-pointer active:scale-90 transition-soft hover:bg-[#1B3B6B]">
               <Camera size={20} />
               <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
             </label>
@@ -134,16 +134,16 @@ export function Profile() {
         <div className="text-center px-4">
           <h2 className="text-2xl font-black text-gray-900 italic uppercase tracking-tighter leading-tight">{profile.nome}</h2>
           <div className="flex items-center justify-center gap-2 mt-2">
-             <div className="h-0.5 w-4 bg-indigo-600 opacity-20" />
-             <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">{profile.role}</p>
-             <div className="h-0.5 w-4 bg-indigo-600 opacity-20" />
+             <div className="h-0.5 w-4 bg-[#1B3B6B] opacity-20" />
+             <p className="text-[10px] font-black text-[#1B3B6B] uppercase tracking-[0.2em]">{profile.role}</p>
+             <div className="h-0.5 w-4 bg-[#1B3B6B] opacity-20" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-5 mb-8">
         <div className="glass-panel p-6 rounded-[2.5rem] shadow-sm border-white/50 flex flex-col gap-3 transition-soft hover:shadow-lg">
-           <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm"><Clock size={20} /></div>
+           <div className="w-10 h-10 bg-[#1B3B6B]/5 rounded-xl flex items-center justify-center text-[#1B3B6B] shadow-sm"><Clock size={20} /></div>
            <div>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tempo Lido</p>
               <p className="text-xl font-black text-gray-900 italic tracking-tighter">{formatTime(Number(profile.tempo_leitura_total))}</p>
@@ -184,7 +184,7 @@ export function Profile() {
         {isOwnProfile && (currentUser.role === 'master' || currentUser.role === 'lider') && (
           <Link to="/celulas" className="p-6 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
              <div className="flex items-center gap-4">
-                <Users className="text-blue-600" size={20} />
+                <Users className="text-[#1B3B6B]" size={20} />
                 <span className="font-bold text-gray-900 text-sm">Gerenciar Células</span>
              </div>
              <ChevronRight className="text-gray-200" size={16} />

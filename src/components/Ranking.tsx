@@ -56,11 +56,11 @@ export function Ranking() {
            <div className="h-1.5 w-12 bg-indigo-600 rounded-full mt-1"></div>
            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-2">Dedicados à Palavra</p>
         </div>
-        <div className="bg-black p-3.5 rounded-[1.5rem] shadow-xl text-white transform -rotate-3 hover:rotate-0 transition-transform"><Trophy size={22} className="text-indigo-400" /></div>
+        <div className="bg-black p-3.5 rounded-[1.5rem] shadow-xl text-white transform -rotate-3 hover:rotate-0 transition-transform"><Trophy size={22} className="text-[#1B3B6B]" /></div>
       </header>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
+        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
       ) : (
         <div className="grid gap-5 pb-10">
           {ranking.map((user, index) => {
@@ -96,7 +96,7 @@ export function Ranking() {
                    </div>
                 </div>
 
-                <ChevronRight className="text-gray-200/50 group-hover:text-indigo-600 transition-colors" size={16} />
+                <ChevronRight className="text-gray-200/50 group-hover:text-[#1B3B6B] transition-colors" size={16} />
 
                 {isTop3 && (
                   <div className="absolute -right-4 -bottom-4 opacity-[0.03] rotate-12 group-hover:scale-110 transition-transform">
