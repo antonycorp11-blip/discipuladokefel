@@ -37,40 +37,26 @@ function ReadingComplete({
     : `${secs}s`;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center space-y-8 animate-in fade-in duration-700 pt-10">
+    <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center space-y-8 animate-in fade-in duration-700 pt-14">
       <div className="relative">
         <div className="w-28 h-28 bg-blue-50 rounded-full flex items-center justify-center animate-bounce">
           <CheckCircle2 className="w-14 h-14 text-blue-600" />
         </div>
-        <div className="absolute -top-2 -right-2">
-          <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
-        </div>
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-black text-gray-900 tracking-tighter italic uppercase">Leitura Concluída!</h1>
+        <h1 className="text-2xl font-black text-gray-900 tracking-tighter italic uppercase">Concluído!</h1>
         <p className="text-gray-600 font-medium">{book}, Capítulo {chapter}</p>
       </div>
 
-      <div className="bg-white border border-gray-100 shadow-2xl rounded-[2.5rem] p-8 w-full space-y-1">
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Tempo de Leitura</p>
+      <div className="bg-white border border-gray-100 shadow-2xl rounded-[2.5rem] p-8 w-full">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Tempo Gasto</p>
         <p className="text-5xl font-black text-blue-600 tracking-tighter italic">{timeLabel}</p>
-        <p className="text-gray-400 text-xs mt-2 font-bold uppercase tracking-widest">Salvo no seu progresso ✓</p>
       </div>
 
-      <div className="w-full space-y-3">
-        <button
-          onClick={onContinue}
-          className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black shadow-xl shadow-blue-100 active:scale-95 transition-all text-sm uppercase tracking-widest"
-        >
-          Próximo Capítulo
-        </button>
-        <button
-          onClick={onHome}
-          className="w-full bg-gray-100 text-gray-600 py-5 rounded-2xl font-black active:scale-95 transition-all text-sm uppercase tracking-widest"
-        >
-          Voltar ao Início
-        </button>
+      <div className="w-full space-y-3 pb-safe">
+        <button onClick={onContinue} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black shadow-xl shadow-blue-100 italic uppercase text-xs">Próximo Capítulo</button>
+        <button onClick={onHome} className="w-full bg-gray-100 text-gray-600 py-5 rounded-2xl font-black italic uppercase text-xs">Menu Inicial</button>
       </div>
     </div>
   );
@@ -83,7 +69,6 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
   const [selectedChapter, setSelectedChapter] = useState(1);
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   const [showBookSelector, setShowBookSelector] = useState(false);
   const [showChapterSelector, setShowChapterSelector] = useState(false);
@@ -109,12 +94,8 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
 
   const loadChapter = useCallback(async (book: BibleBook, chapter: number) => {
     setLoading(true);
-    setError(null);
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     const data = await fetchBibleChapter(book.id, chapter);
-    if (data.length === 0) {
-      setError("Conteúdo de 1 Reis em diante está sendo sincronizado no momento.");
-    }
     setVerses(data);
     setLoading(false);
   }, []);
@@ -145,7 +126,7 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
     const book = selectedBook.nome;
     const chapter = selectedChapter;
 
-    if (user && readSeconds > 10) {
+    if (user && readSeconds > 5) {
       await supabase.from("kefel_leitura_logs").insert({
         user_id: user.id,
         book_id: selectedBook.id,
@@ -157,14 +138,6 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
     setFinishedData({ seconds: readSeconds, book, chapter });
     setFinished(true);
   };
-
-  const filteredBooks = BIBLE_BOOKS.filter(b => 
-    b.nome.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    b.abrev.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  
-  const atBooks = filteredBooks.filter(b => b.testamento === 'AT');
-  const ntBooks = filteredBooks.filter(b => b.testamento === 'NT');
 
   if (finished && finishedData) {
     return (
@@ -190,29 +163,24 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
   }
 
   return (
-    <div className="flex flex-col bg-[#FDFDFD] pt-14" style={{ height: "calc(100dvh - 80px)" }}>
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 px-4 pt-2 pb-3">
+    <div className="flex flex-col bg-white pt-14" style={{ height: "calc(100dvh - 80px)" }}>
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-100/50 px-4 pt-2 pb-3 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <button
             onClick={() => setShowBookSelector(true)}
-            className="flex-1 flex items-center gap-2 bg-blue-600 text-white px-4 py-3.5 rounded-2xl font-black text-xs shadow-xl shadow-blue-100 active:scale-95 transition-all italic uppercase"
+            className="flex-1 flex items-center gap-2 bg-blue-600 text-white px-4 py-3.5 rounded-2xl font-black text-xs italic uppercase shadow-xl shadow-blue-100"
           >
             <BookOpen className="w-4 h-4" />
             <span className="truncate">{selectedBook.nome}</span>
             <ChevronDown className="w-4 h-4 ml-auto opacity-50" />
           </button>
 
-          <button
-            onClick={() => setShowChapterSelector(true)}
-            className="bg-gray-100 text-gray-900 px-5 py-3.5 rounded-2xl font-black text-xs flex items-center gap-1 active:scale-95 transition-all"
-          >
-            {selectedChapter}
-            <ChevronDown className="w-4 h-4 opacity-30" />
+          <button onClick={() => setShowChapterSelector(true)} className="bg-gray-100 text-gray-900 px-5 py-3.5 rounded-2xl font-black text-xs flex items-center gap-1">
+            {selectedChapter} <ChevronDown className="w-4 h-4 opacity-30" />
           </button>
 
-          <div className="bg-black text-white px-4 py-3.5 rounded-2xl font-mono font-black text-[10px] flex items-center gap-1.5 shadow-xl">
-             <Clock className="w-3.5 h-3.5 text-blue-400" />
-             {formatTime(seconds)}
+          <div className="bg-black text-white px-4 py-3.5 rounded-2xl font-mono font-black text-[10px] flex items-center gap-1.5 shadow-lg">
+             <Clock className="w-3.5 h-3.5 text-blue-400" /> {formatTime(seconds)}
           </div>
         </div>
         
@@ -227,7 +195,7 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
                }
              }
           }} className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            <ChevronLeft size={14} /> Anterior
+            <ChevronLeft size={14} /> Ant
           </button>
           <div className="h-1 flex-1 mx-4 bg-gray-50 rounded-full">
              <div className="h-full bg-blue-600" style={{ width: `${(selectedChapter / selectedBook.capitulos) * 100}%` }} />
@@ -242,7 +210,7 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
                }
              }
           }} className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            Próximo <ChevronRight size={14} />
+            Próx <ChevronRight size={14} />
           </button>
         </div>
       </div>
@@ -251,29 +219,22 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">Ceu Aberto...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-20 px-6 space-y-4">
-             <p className="text-gray-400 font-bold uppercase text-xs tracking-widest">{error}</p>
-             <button onClick={() => loadChapter(selectedBook, selectedChapter)} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-blue-100 uppercase text-[10px]">Tentar novamente</button>
+            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest italic tracking-[0.3em]">Carregando...</p>
           </div>
         ) : (
           <div className="space-y-8 pb-32">
             {verses.map((v) => (
-              <div key={v.verse} className="group relative animate-in fade-in slide-in-from-bottom-1 duration-500">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-[10px] font-black text-blue-600">{v.verse}</span>
-                  <div className="h-[1px] flex-1 bg-gradient-to-r from-blue-50 to-transparent" />
-                  <button onClick={() => handleShare(v)} className="p-2 text-gray-200">
-                    <Share2 size={16} />
-                  </button>
+              <div key={v.verse} className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+                <div className="flex items-center gap-3 mb-2 opacity-30">
+                  <span className="text-[10px] font-black text-blue-600 uppercase">Versículo {v.verse}</span>
+                  <div className="h-[1px] flex-1 bg-blue-600" />
+                  <button onClick={() => handleShare(v)} className="p-1"><Share2 size={14} /></button>
                 </div>
-                <p className="text-gray-800 text-[19px] leading-[1.8] font-medium tracking-tight px-1">{v.text}</p>
+                <p className="text-gray-900 text-[19px] leading-[1.8] font-medium tracking-tight whitespace-pre-wrap">{v.text.trim()}</p>
               </div>
             ))}
-            <button onClick={handleFinish} className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black shadow-2xl flex items-center justify-center gap-3 uppercase text-xs tracking-[0.2em] italic">
-              Concluir este capítulo
+            <button onClick={handleFinish} className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black shadow-2xl flex items-center justify-center gap-3 uppercase text-xs tracking-[0.2em] italic mb-10">
+              Concluir Capítulo
             </button>
           </div>
         )}
@@ -281,27 +242,27 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
 
       {showBookSelector && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg h-[80vh] rounded-[3rem] flex flex-col overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-gray-50 space-y-4 pt-10">
+          <div className="bg-white w-full max-w-lg h-[80vh] rounded-[3rem] flex flex-col overflow-hidden shadow-2xl pt-14">
+            <div className="p-6 border-b border-gray-50 space-y-4">
                <div className="flex items-center justify-between">
-                 <h3 className="text-xl font-black text-gray-900 italic uppercase">BÍBLIA SAGRADA</h3>
+                 <h3 className="text-xl font-black text-gray-900 italic uppercase">Bíblia</h3>
                  <button onClick={() => setShowBookSelector(false)} className="p-3 bg-gray-50 rounded-full font-bold">X</button>
                </div>
                <div className="relative">
                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                 <input type="text" placeholder="Pesquisar..." className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-2xl font-bold" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                 <input type="text" placeholder="Livro..." className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-2xl font-bold" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
               {[
-                { title: "Antigo Testamento", books: atBooks, color: "text-blue-600" },
-                { title: "Novo Testamento", books: ntBooks, color: "text-purple-600" }
+                { title: "AT", books: BIBLE_BOOKS.filter(b => b.testamento === 'AT' && b.nome.toLowerCase().includes(searchQuery.toLowerCase())), color: "text-blue-600" },
+                { title: "NT", books: BIBLE_BOOKS.filter(b => b.testamento === 'NT' && b.nome.toLowerCase().includes(searchQuery.toLowerCase())), color: "text-purple-600" }
               ].map(group => group.books.length > 0 && (
                 <div key={group.title} className="space-y-3">
                   <p className={cn("text-[10px] font-black uppercase tracking-[0.3em] ml-2", group.color)}>{group.title}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {group.books.map(book => (
-                      <button key={book.id} onClick={() => { setSelectedBook(book); setSelectedChapter(1); setShowBookSelector(false); }} className={cn("p-4 rounded-2xl text-left border", selectedBook.id === book.id ? "bg-black text-white border-black" : "bg-white text-gray-700 border-gray-100")}>
+                      <button key={book.id} onClick={() => { setSelectedBook(book); setSelectedChapter(1); setShowBookSelector(false); }} className={cn("p-4 rounded-2xl text-left border", selectedBook.id === book.id ? "bg-black text-white border-black shadow-xl" : "bg-white text-gray-700 border-gray-100")}>
                         <p className="font-bold text-sm truncate">{book.nome}</p>
                       </button>
                     ))}
@@ -315,14 +276,14 @@ export function BibleReader({ onFinish }: BibleReaderProps) {
 
       {showChapterSelector && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-end">
-           <div className="bg-white w-full h-[60vh] rounded-t-[3.5rem] p-6 flex flex-col shadow-2xl pt-10">
+           <div className="bg-white w-full h-[60vh] rounded-t-[3.5rem] p-6 flex flex-col shadow-2xl pt-14 overflow-hidden">
               <div className="flex items-center justify-between mb-8">
-                 <h3 className="text-2xl font-black text-gray-900">Capítulos</h3>
+                 <h3 className="text-2xl font-black text-gray-900 italic uppercase">Capítulos</h3>
                  <button onClick={() => setShowChapterSelector(false)} className="p-4 bg-gray-50 rounded-full font-bold">X</button>
               </div>
-              <div className="grid grid-cols-5 gap-3 overflow-y-auto pr-2 pb-10">
+              <div className="grid grid-cols-5 gap-3 overflow-y-auto pr-2 pb-10 flex-1">
                 {Array.from({ length: selectedBook.capitulos }, (_, i) => i + 1).map(cap => (
-                   <button key={cap} onClick={() => { setSelectedChapter(cap); setShowChapterSelector(false); }} className={cn("h-16 rounded-2xl flex items-center justify-center font-black transition-all", selectedChapter === cap ? "bg-blue-600 text-white" : "bg-gray-50 text-gray-400")}>
+                   <button key={cap} onClick={() => { setSelectedChapter(cap); setShowChapterSelector(false); }} className={cn("h-16 rounded-2xl flex items-center justify-center font-black transition-all", selectedChapter === cap ? "bg-blue-600 text-white shadow-xl shadow-blue-100" : "bg-gray-50 text-gray-400")}>
                      {cap}
                    </button>
                 ))}
