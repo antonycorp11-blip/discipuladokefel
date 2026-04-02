@@ -13,6 +13,7 @@ export function Login() {
   
   // Member states
   const [memberName, setMemberName] = useState("");
+  const [memberPhone, setMemberPhone] = useState("");
   
   // Admin states
   const [email, setEmail] = useState("");
@@ -69,7 +70,7 @@ export function Login() {
     if (!selectedCell || !memberName.trim()) return;
     setError(null);
     setLoading(true);
-    const result = await signInMember(memberName.trim(), selectedCell.id);
+    const result = await signInMember(memberName.trim(), selectedCell.id, memberPhone.trim());
     if (!result.success) {
       setError(result.message || "Erro ao entrar.");
     }
@@ -212,6 +213,21 @@ export function Login() {
                       placeholder="SEU NOME COMPLETO"
                       value={memberName}
                       onChange={(e) => setMemberName(e.target.value)}
+                      className="w-full bg-white border-2 border-transparent shadow-premium rounded-[1.8rem] py-6 pl-16 pr-6 focus:border-[#1B3B6B]/20 focus:outline-none transition-all font-black text-xs uppercase italic text-gray-900 tracking-tight"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-6">Número do seu WhatsApp</label>
+                  <div className="relative">
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-[#1B3B6B]" />
+                    <input
+                      type="tel"
+                      required
+                      placeholder="(00) 00000-0000"
+                      value={memberPhone}
+                      onChange={(e) => setMemberPhone(e.target.value)}
                       className="w-full bg-white border-2 border-transparent shadow-premium rounded-[1.8rem] py-6 pl-16 pr-6 focus:border-[#1B3B6B]/20 focus:outline-none transition-all font-black text-xs uppercase italic text-gray-900 tracking-tight"
                     />
                   </div>

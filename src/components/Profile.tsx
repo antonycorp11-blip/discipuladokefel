@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X } from "lucide-react";
+import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, type KefelCelula, type KefelProfile, type KefelFavorito } from "@/lib/supabase";
 import { Link, useParams } from "react-router-dom";
@@ -60,7 +60,7 @@ export function Profile() {
     setLoadingAllRels(true);
     const { data, error } = await supabase
       .from("kefel_relatorios")
-      .select("*, kefel_profiles(nome, avatar_url), kefel_celulas(nome)")
+      .select("*, kefel_profiles(nome, avatar_url), kefel_celulas(nome, imagem_url)")
       .order('data', { ascending: false });
     
     if (!error) setAllRelatorios(data || []);
@@ -350,15 +350,32 @@ export function Profile() {
                                             <p className="font-bold text-gray-900 text-sm mt-1">{d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</p>
                                          </div>
                                       </div>
-                                      <div className="bg-[#1B3B6B] text-white px-4 py-2 rounded-2xl shadow-lg">
-                                         <p className="text-[9px] font-black uppercase opacity-60 leading-none">Presença</p>
-                                         <p className="text-sm font-black italic mt-0.5">{rel.presentes}</p>
+                                      <div className="bg-[#1B3B6B] text-white px-4 py-2 rounded-2xl shadow-lg flex items-center gap-4">
+                                         <div className="text-right">
+                                            <p className="text-[9px] font-black uppercase opacity-60 leading-none">Presença</p>
+                                            <p className="text-sm font-black italic mt-0.5">{rel.presentes}</p>
+                                         </div>
+                                         <button 
+                                            onClick={async (e) => {
+                                              if (confirm("Deseja realmente excluir este relatório?")) {
+                                                const { error } = await supabase.from("kefel_relatorios").delete().eq("id", rel.id);
+                                                if (!error) fetchAllReports();
+                                              }
+                                            }}
+                                            className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors"
+                                         >
+                                            <Trash2 size={16} className="text-white/80" />
+                                         </button>
                                       </div>
                                    </div>
 
                                    <div className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-dashed border-gray-100">
                                       <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm bg-white p-0.5">
-                                         {rel.kefel_profiles?.avatar_url ? <img src={rel.kefel_profiles.avatar_url} className="w-full h-full object-cover rounded-lg" /> : <User className="w-full h-full p-2 text-gray-200" />}
+                                         {rel.kefel_celulas?.imagem_url ? (
+                                           <img src={rel.kefel_celulas.imagem_url} className="w-full h-full object-cover rounded-lg" />
+                                         ) : (
+                                           <User className="w-full h-full p-2 text-gray-200" />
+                                         )}
                                       </div>
                                       <div className="flex-1 min-w-0">
                                          <p className="text-[12px] font-black text-gray-900 uppercase italic leading-none truncate">{rel.kefel_celulas?.nome || "Culto / Cel. Avulsa"}</p>

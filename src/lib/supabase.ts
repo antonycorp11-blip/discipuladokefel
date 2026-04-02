@@ -13,6 +13,7 @@ export interface KefelProfile {
   email: string;
   role: KefelRole;
   celula_id?: string | null;
+  telefone?: string | null;
   tempo_leitura_total: number;
   avatar_url?: string | null;
 }

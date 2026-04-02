@@ -357,20 +357,23 @@ export default function Events() {
                              </div>
                              
                              <div className="grid gap-3">
-                                {membersInCel.map(insc => (
-                                  <div key={insc.id} className="flex items-center gap-4 p-4 glass-panel rounded-[2rem] border-white/80 shadow-sm ml-2">
-                                    <div className="w-12 h-12 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm p-0.5">
-                                       {insc.kefel_profiles?.avatar_url ? <img src={insc.kefel_profiles.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="w-full h-full p-2 text-gray-200" />}
+                                {membersInCel.map(insc => {
+                                  const prof = Array.isArray(insc.kefel_profiles) ? insc.kefel_profiles[0] : (insc.kefel_profiles as any);
+                                  return (
+                                    <div key={insc.id} className="flex items-center gap-4 p-4 glass-panel rounded-[2rem] border-white/80 shadow-sm ml-2">
+                                      <div className="w-12 h-12 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm p-0.5">
+                                         {prof?.avatar_url ? <img src={prof.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="w-full h-full p-2 text-gray-200" />}
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="font-black text-gray-800 uppercase italic text-xs leading-none">{prof?.nome || "Usuário"}</p>
+                                        <p className="text-[9px] text-[#1B3B6B]/40 font-black uppercase tracking-widest mt-1.5">{new Date(insc.confirmado_em).toLocaleDateString('pt-BR')}</p>
+                                      </div>
+                                      <div className="bg-green-50 text-green-600 p-2 rounded-xl">
+                                         <CheckCircle size={14} />
+                                      </div>
                                     </div>
-                                    <div className="flex-1">
-                                      <p className="font-black text-gray-800 uppercase italic text-xs leading-none">{insc.kefel_profiles?.nome || "Usuário"}</p>
-                                      <p className="text-[9px] text-[#1B3B6B]/40 font-black uppercase tracking-widest mt-1.5">{new Date(insc.confirmado_em).toLocaleDateString('pt-BR')}</p>
-                                    </div>
-                                    <div className="bg-green-50 text-green-600 p-2 rounded-xl">
-                                       <CheckCircle size={14} />
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                              </div>
                           </div>
                        );

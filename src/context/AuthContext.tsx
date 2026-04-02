@@ -10,7 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   register: (nome: string, email: string, password: string, celulaId?: string) => Promise<{ success: boolean; message?: string }>;
-  signInMember: (nome: string, celulaId: string) => Promise<{ success: boolean; message?: string }>;
+  signInMember: (nome: string, celulaId: string, telefone: string) => Promise<{ success: boolean; message?: string }>;
   updateReadingTime: (seconds: number, livro: string, capitulo: number) => Promise<void>;
   refreshProfile: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<KefelProfile | null>>;
@@ -184,72 +184,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   // ── Login de Membro (Anônimo) ──────────────────────────────────
-  const signInMember = async (nome: string, celulaId: string): Promise<{ success: boolean; message?: string }> => {
+  const signInMember = async (nome: string, celulaId: string, telefone: string): Promise<{ success: boolean; message?: string }> => {
     setLoading(true);
     try {
-      // 1. Verificar duplicidade de nome na mesma célula
-      const { data: existingData } = await supabase
+      const telClean = (telefone || "").replace(/\D/g, ''); // Apenas números
+      if (!telClean) return { success: false, message: "Telefone inválido" };
+
+      // 1. Verificar se já existe perfil com este telefone
+      const { data: existingProfile, error: searchError } = await supabase
         .from("kefel_profiles")
-        .select("id")
-        .eq("nome", nome)
-        .eq("celula_id", celulaId)
-        .limit(1);
-      
-      const existing = existingData as any[] | null;
-      
-      if (existing && existing.length > 0) {
-        setLoading(false);
-        return { success: false, message: "Já existe alguém com este nome nesta célula. Se você já tem conta, procure seu líder." };
+        .select("*")
+        .eq("telefone", telClean)
+        .maybeSingle();
+
+      if (existingProfile) {
+        // Se existe, faz o login (reconecta)
+        const profile = existingProfile as KefelProfile;
+        
+        // Opcional: Atualizar o nome ou célula se mudou no "login"
+        await supabase.from("kefel_profiles").update({ nome, celula_id: (celulaId && celulaId.length > 5) ? celulaId : profile.celula_id }).eq("id", profile.id);
+        
+        localStorage.setItem('kefel_member_data', JSON.stringify({ nome, celula_id: celulaId, telefone: telClean }));
+        setUser({ ...profile, nome, celula_id: celulaId });
+        return { success: true };
       }
 
-      // 2. Login Anônimo
-      const { data, error } = await supabase.auth.signInAnonymously();
-      
-      if (error) {
-        console.error("Erro Auth Anônimo:", error);
-        if (error.status === 406) {
-          return { success: false, message: "O login anônimo está desativado no painel do Supabase. Master, verifique em: Authentication > Providers > Anonymous." };
-        }
-        throw error;
-      }
-      
+      // 2. Novo Cadastro (Login Anônimo como base de ID)
+      const { data, error: authError } = await supabase.auth.signInAnonymously();
+      if (authError) throw authError;
+
       if (data.user) {
-        // Pequeno delay para propagação do ID no Supabase
-        await new Promise(r => setTimeout(r, 1000));
-
         const dummyEmail = `anon_${data.user.id}@kefel.com`;
         const { data: profile, error: profileError } = await supabase
           .from("kefel_profiles")
           .upsert({
             id: data.user.id,
             nome,
+            telefone: telClean,
             role: 'membro',
-            celula_id: (celulaId && celulaId.length > 10) ? celulaId : null, // Garante que seja um UUID válido ou nulo
+            celula_id: (celulaId && celulaId.length > 5) ? celulaId : null,
             email: dummyEmail,
             tempo_leitura_total: 0
           })
           .select("*")
           .single();
           
-        if (profileError) {
-          console.error("Erro ao criar perfil após login anônimo:", profileError);
-          throw profileError;
-        }
+        if (profileError) throw profileError;
         
-        // Persistência local para membros anônimos
-        localStorage.setItem('kefel_member_data', JSON.stringify({ nome, celula_id: celulaId }));
-        
+        localStorage.setItem('kefel_member_data', JSON.stringify({ nome, celula_id: celulaId, telefone: telClean }));
         setUser(profile as KefelProfile);
       }
       
       return { success: true };
     } catch (err: any) {
-      console.error("Erro fatal no Login Membro:", err);
-      return { success: false, message: "Falha ao criar perfil: " + (err.message || "Erro de conexão") };
+      console.error("Erro no Auth WhatsApp:", err);
+      return { success: false, message: "Falha ao entrar: " + (err.message || "Erro de conexão") };
     } finally {
       setLoading(false);
     }
   };
+
 
   // ── Salvar tempo de leitura ────────────────────────────────────
   const updateReadingTime = async (seconds: number, livro: string, capitulo: number) => {
