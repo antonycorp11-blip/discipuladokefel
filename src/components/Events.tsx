@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Plus, Calendar, MapPin, Clock, 
-  X, Camera, Loader2, Image as ImageIcon, Trash2, Tag, QrCode, AlertCircle, Users, User, ChevronRight, ArrowRight
+  X, Camera, Loader2, Image as ImageIcon, Trash2, Tag, QrCode, AlertCircle, Users, User, ChevronRight, ArrowRight, CheckCircle
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -49,21 +49,35 @@ export default function Events() {
   const [bannerPosY, setBannerPosY] = useState(50);
   const [editId, setEditId] = useState<string | null>(null);
 
+  const [celulasRepo, setCelulasRepo] = useState<any[]>([]);
+
   useEffect(() => {
     fetchEvents();
+    fetchCellsRepo();
   }, []);
+
+  async function fetchCellsRepo() {
+     const { data } = await supabase.from("kefel_celulas").select("id, nome");
+     setCelulasRepo(data || []);
+  }
 
   async function fetchEvents() {
     setLoading(true);
-    const { data: eventsData, error } = await supabase.from("kefel_eventos").select("*").order("data_hora", { ascending: true });
+    const { data: eventsData, error } = await supabase.from("kefel_eventos").select("*, kefel_eventos_inscritos(id)").order("data_hora", { ascending: true });
     if (!error) setEventos((eventsData || []) as Evento[]);
     setLoading(false);
   }
 
   async function fetchInscriptions(eventId: string) {
     setLoadingInsc(true);
-    const { data, error } = await supabase.from("kefel_eventos_inscritos").select("*, kefel_profiles(*)").eq("evento_id", eventId);
-    if (!error) setInscribedUsers(data || []);
+    const { data, error } = await supabase
+      .from("kefel_eventos_inscritos")
+      .select("*, kefel_profiles(*)")
+      .eq("evento_id", eventId);
+    
+    if (!error) {
+       setInscribedUsers(data || []);
+    }
     setLoadingInsc(false);
   }
 
@@ -175,7 +189,7 @@ export default function Events() {
             const date = new Date(event.data_hora);
             return (
               <div key={event.id} className="glass-panel p-6 rounded-[2.5rem] shadow-sm flex flex-col gap-5 transition-soft group border-white/50 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#1B3B6B]/50/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#1B3B6B]/5 rounded-full -mr-16 -mt-16 blur-2xl" />
                  
                  <div className="relative h-48 w-full rounded-[2rem] overflow-hidden shadow-inner bg-gray-50 border border-black/5">
                     {event.imagem_url ? (
@@ -191,18 +205,19 @@ export default function Events() {
                     )}
                     
                     <div className="absolute top-4 right-4 flex gap-2 z-20">
-                        {user?.id === event.criado_por && (
-                          <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-[#1B3B6B] shadow-xl active:scale-90 transition-soft">
+                        {(user?.role === 'master' || user?.role === 'lider' || user?.id === event.criado_por) && (
+                          <button onClick={() => { setShowInscriptions(event.id); fetchInscriptions(event.id); }} className="bg-[#1B3B6B] p-3 rounded-2xl text-white shadow-xl active:scale-90 transition-soft flex items-center gap-2">
                             <Users size={18} />
+                            <span className="text-[10px] font-black uppercase">{event.kefel_eventos_inscritos?.length || 0}</span>
                           </button>
                         )}
                         {(user?.role === 'master' || user?.id === event.criado_por) && (
                           <>
                             <button onClick={() => handleEdit(event)} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-amber-500 shadow-xl active:scale-90 transition-soft">
-                              <ImageIcon size={18} />
+                               <ImageIcon size={18} />
                             </button>
                             <button onClick={() => handleDelete(event.id)} className="bg-white/90 backdrop-blur p-3 rounded-2xl text-rose-500 shadow-xl active:scale-90 transition-soft">
-                              <Trash2 size={18} />
+                               <Trash2 size={18} />
                             </button>
                           </>
                         )}
@@ -250,33 +265,57 @@ export default function Events() {
                animate={{ y: 0 }}
                exit={{ y: "100%" }}
                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-               className="bg-white w-full h-[85vh] rounded-t-[3.5rem] p-8 flex flex-col shadow-2xl"
+               className="bg-white w-full h-[85vh] rounded-t-[4.5rem] p-8 flex flex-col shadow-2xl"
             >
-               <div className="flex justify-between items-center mb-8">
+               <div className="flex justify-between items-center mb-8 px-2">
                   <div>
                     <h2 className="text-2xl font-black text-gray-900 italic uppercase">Inscritos</h2>
-                    <p className="text-[10px] font-black uppercase text-[#1B3B6B] tracking-widest">Lista de Participantes</p>
+                    <p className="text-[10px] font-black uppercase text-[#1B3B6B] tracking-widest">{inscribedUsers.length} Participantes Confirmados</p>
                   </div>
                   <button onClick={() => setShowInscriptions(null)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
                </div>
                
-               <div className="flex-1 overflow-y-auto space-y-4 pb-10">
-                  {loadingInsc ? <Loader2 className="animate-spin mx-auto text-[#1B3B6B]" /> : inscribedUsers.length === 0 ? (
+               <div className="flex-1 overflow-y-auto space-y-8 pb-32 pr-2">
+                  {loadingInsc ? (
+                    <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-[#1B3B6B]" /></div>
+                   ) : inscribedUsers.length === 0 ? (
                     <div className="py-20 text-center space-y-4">
                        <Users size={48} className="mx-auto text-gray-100" />
                        <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Ninguém inscrito ainda</p>
                     </div>
-                  ) : inscribedUsers.map(insc => (
-                    <div key={insc.id} className="flex items-center gap-4 p-5 glass-panel rounded-3xl border-gray-100 shadow-sm">
-                      <div className="w-14 h-14 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm p-1">
-                         {insc.kefel_profiles?.avatar_url ? <img src={insc.kefel_profiles.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="w-full h-full p-2 text-indigo-100" />}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-black text-gray-900 uppercase italic text-sm">{insc.kefel_profiles?.nome || "Usuário"}</p>
-                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-1">{new Date(insc.confirmado_em).toLocaleString('pt-BR')}</p>
-                      </div>
-                    </div>
-                  ))}
+                  ) : (
+                    // Agrupar por Célula
+                    Array.from(new Set(inscribedUsers.map(i => i.kefel_profiles?.celula_id))).map(celId => {
+                       const celName = celulasRepo.find(c => c.id === celId)?.nome || "Outras / Sem Célula";
+                       const membersInCel = inscribedUsers.filter(i => i.kefel_profiles?.celula_id === celId);
+
+                       return (
+                          <div key={celId || 'null'} className="space-y-4">
+                             <div className="flex items-center justify-between bg-gray-50/80 px-6 py-4 rounded-[2rem] border border-gray-100 border-dashed">
+                                <h4 className="text-[11px] font-black text-gray-900 uppercase italic tracking-tighter">{celName}</h4>
+                                <span className="text-[10px] font-black text-[#1B3B6B] bg-white px-3 py-1 rounded-full shadow-sm">{membersInCel.length}</span>
+                             </div>
+                             
+                             <div className="grid gap-3">
+                                {membersInCel.map(insc => (
+                                  <div key={insc.id} className="flex items-center gap-4 p-4 glass-panel rounded-[2rem] border-white/80 shadow-sm ml-2">
+                                    <div className="w-12 h-12 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm p-0.5">
+                                       {insc.kefel_profiles?.avatar_url ? <img src={insc.kefel_profiles.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="w-full h-full p-2 text-gray-200" />}
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-black text-gray-800 uppercase italic text-xs leading-none">{insc.kefel_profiles?.nome || "Usuário"}</p>
+                                      <p className="text-[9px] text-[#1B3B6B]/40 font-black uppercase tracking-widest mt-1.5">{new Date(insc.confirmado_em).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <div className="bg-green-50 text-green-600 p-2 rounded-xl">
+                                       <CheckCircle size={14} />
+                                    </div>
+                                  </div>
+                                ))}
+                             </div>
+                          </div>
+                       );
+                    })
+                  )}
                </div>
             </motion.div>
           </div>

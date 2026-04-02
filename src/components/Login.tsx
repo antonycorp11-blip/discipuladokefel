@@ -29,7 +29,28 @@ export function Login() {
 
   async function fetchCells() {
     const { data } = await supabase.from("kefel_celulas").select("*").order("nome");
-    if (data) setCells(data as KefelCelula[]);
+    if (data) {
+      const celulas = data as KefelCelula[];
+      setCells(celulas);
+      
+      // Recuperação inteligente de dados locais
+      const savedData = localStorage.getItem('kefel_member_data');
+      if (savedData) {
+         try {
+           const { nome, celula_id } = JSON.parse(savedData);
+           if (nome) setMemberName(nome);
+           if (celula_id) {
+              const cell = celulas.find(c => c.id === celula_id);
+              if (cell) {
+                 setSelectedCell(cell);
+                 setStep('nameInput');
+              }
+           }
+         } catch (e) {
+           console.error("Erro ao recuperar dados locais:", e);
+         }
+      }
+    }
   }
 
   const handleAdminLogin = async (e: React.FormEvent) => {

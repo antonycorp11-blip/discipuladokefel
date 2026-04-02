@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Erro fatal ao carregar perfil:", e);
           return null;
         });
+        
         if (!profile) {
           console.warn("Perfil não encontrado no banco para o ID:", session.user.id);
           // Fallback para o Master conseguir testar se o banco falhar na busca (debug)
@@ -66,8 +67,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false);
             return;
           }
+          
+          // Tentar recuperar dados do localStorage se for um usuário anônimo "perdido"
+          const savedData = localStorage.getItem('kefel_member_data');
+          if (savedData && (session.user as any).is_anonymous) {
+            const { nome, celula_id } = JSON.parse(savedData);
+            // Re-vincular o perfil se necessário (isso ajuda se o perfil não foi criado corretamente)
+            const { data: recoveredProfile } = await supabase
+              .from("kefel_profiles")
+              .upsert({
+                id: session.user.id,
+                nome,
+                role: 'membro',
+                celula_id,
+                email: `anon_${session.user.id}@kefel.com`,
+                tempo_leitura_total: 0
+              })
+              .select("*")
+              .single();
+            if (recoveredProfile) setUser(recoveredProfile as KefelProfile);
+          }
+        } else {
+          // Salvar no localStorage para persistência se for membro
+          if (profile.role === 'membro' && profile.celula_id) {
+            localStorage.setItem('kefel_member_data', JSON.stringify({
+              nome: profile.nome,
+              celula_id: profile.celula_id
+            }));
+          }
+          setUser(profile);
         }
-        setUser(profile);
       } else {
         setUser(null);
       }
@@ -94,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Logout ─────────────────────────────────────────────────────
   const logout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('kefel_member_data');
     setUser(null);
   };
 
@@ -161,6 +191,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
           
         if (profileError) throw profileError;
+        
+        // Persistência local para membros anônimos
+        localStorage.setItem('kefel_member_data', JSON.stringify({ nome, celula_id: celulaId }));
+        
         setUser(profile as KefelProfile);
       }
       

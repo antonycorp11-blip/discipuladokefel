@@ -10,18 +10,8 @@ import { motion, AnimatePresence } from "motion/react";
 
 export function CellManagement() {
   const { user } = useAuth();
-  const [celulas, setCelulas] = useState<KefelCelula[]>([]);
-  const [usuarios, setUsuarios] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // Form states
-  const [nome, setNome] = useState("");
-  const [diaSemana, setDiaSemana] = useState("Terça-feira");
-  const [liderId, setLiderId] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File|null>(null);
-  const [imagePreview, setImagePreview] = useState<string|null>(null);
+  const [members, setMembers] = useState<any[]>([]);
+  const [expandedCellId, setExpandedCellId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -30,31 +20,30 @@ export function CellManagement() {
   async function fetchData() {
     setLoading(true);
     try {
-      const [celRes, userRes] = await Promise.all([
+      const [celRes, userRes, profileRes] = await Promise.all([
         supabase.from("kefel_celulas").select("*, lider:lider_id(id, nome, avatar_url)").order("nome", { ascending: true }),
-        supabase.from("kefel_profiles").select("id, nome").order("nome", { ascending: true })
+        supabase.from("kefel_profiles").select("id, nome").order("nome", { ascending: true }),
+        supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id").order("nome", { ascending: true })
       ]);
       
-      if (celRes.error) {
-        console.error("Erro ao buscar células:", celRes.error);
-        alert("Erro ao carregar células: " + celRes.error.message);
-      } else {
-        setCelulas(celRes.data || []);
-      }
+      if (celRes.error) throw celRes.error;
+      setCelulas(celRes.data || []);
 
-      if (userRes.error) {
-        console.error("Erro ao buscar usuários:", userRes.error);
-      } else {
-        setUsuarios(userRes.data || []);
-      }
+      if (userRes.error) throw userRes.error;
+      setUsuarios(userRes.data || []);
+
+      if (profileRes.error) throw profileRes.error;
+      setMembers(profileRes.data || []);
     } catch (err: any) {
       console.error("Falha na requisição:", err);
+      alert("Erro ao carregar dados: " + (err.message || "Tente novamente"));
     } finally {
       setLoading(false);
     }
   }
 
   async function handleAddCell(e: React.FormEvent) {
+    // ... mantido o código original de handleAddCell ...
     e.preventDefault();
     if (!user || (user.role !== "master" && user.role !== "lider")) return;
     setSaving(true);
@@ -114,8 +103,9 @@ export function CellManagement() {
     <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
       <header className="flex justify-between items-center mb-8 pt-4">
         <div>
-           <h1 className="text-2xl font-black text-gray-900 italic uppercase">Células</h1>
+           <h1 className="text-2xl font-black text-gray-900 italic uppercase">Visão Geral</h1>
            <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
+           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">{celulas.length} Células Ativas</p>
         </div>
         {(user?.role === 'master' || user?.role === 'lider') && (
           <button onClick={() => setShowAddForm(true)} className="bg-black text-white p-3.5 rounded-2xl shadow-premium shadow-black/10 active:scale-95 transition-soft">
@@ -128,28 +118,73 @@ export function CellManagement() {
         <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
       ) : (
         <div className="grid gap-6 pb-10">
-          {celulas.map(c => (
-            <div key={c.id} className="glass-panel p-6 rounded-[2.5rem] shadow-sm flex items-center justify-between border-white/50 group transition-soft hover:shadow-lg">
-              <div className="flex items-center gap-5">
-                 <div className="w-16 h-16 bg-white rounded-[1.8rem] overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-indigo-100 border border-gray-50 p-1 group-hover:scale-110 transition-soft">
-                    {c.imagem_url ? <img src={c.imagem_url} className="w-full h-full object-cover rounded-2xl" /> : <Users size={28} />}
-                 </div>
-                 <div>
-                    <h3 className="font-black text-gray-900 uppercase italic text-base leading-tight">{c.nome}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                       <Clock size={10} className="text-rose-500" />
-                       <p className="text-gray-400 text-[10px] uppercase font-black tracking-widest">{c.dia_semana}</p>
-                    </div>
-                 </div>
+          {celulas.map(c => {
+            const cellMembers = members.filter(m => m.celula_id === c.id);
+            const isExpanded = expandedCellId === c.id;
+
+            return (
+              <div key={c.id} className={`glass-panel p-6 rounded-[2.5rem] shadow-sm flex flex-col gap-5 border-white/50 transition-soft group ${isExpanded ? 'ring-2 ring-[#1B3B6B]/20 bg-white/80' : ''}`}>
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedCellId(isExpanded ? null : c.id)}>
+                   <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 bg-white rounded-[1.8rem] overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-indigo-100 border border-gray-50 p-1 group-hover:scale-110 transition-soft">
+                         {c.imagem_url ? <img src={c.imagem_url} className="w-full h-full object-cover rounded-2xl" /> : <Users size={28} />}
+                      </div>
+                      <div>
+                         <h3 className="font-black text-gray-900 uppercase italic text-base leading-tight">{c.nome}</h3>
+                         <div className="flex items-center gap-4 mt-1.5">
+                            <div className="flex items-center gap-1">
+                               <Users size={10} className="text-[#1B3B6B]" />
+                               <p className="text-gray-400 text-[10px] uppercase font-black tracking-widest">{cellMembers.length} {cellMembers.length === 1 ? 'membro' : 'membros'}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                               <Clock size={10} className="text-rose-500" />
+                               <p className="text-gray-400 text-[10px] uppercase font-black tracking-widest">{c.dia_semana}</p>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                   <div className="flex items-center gap-3">
+                     {user?.role === 'master' && (
+                       <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }} className="bg-rose-50 text-rose-500 p-3 rounded-xl active:scale-90 transition-soft hover:bg-rose-100"><Trash2 size={16} /></button>
+                     )}
+                     <div className={`p-2 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-[#1B3B6B]' : 'text-gray-300'}`}>
+                        <ChevronRight size={20} />
+                     </div>
+                   </div>
+                </div>
+
+                <AnimatePresence>
+                   {isExpanded && (
+                     <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden space-y-4 pt-2"
+                     >
+                        <div className="h-px bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100" />
+                        <div className="grid grid-cols-1 gap-3">
+                           {cellMembers.length === 0 ? (
+                             <p className="text-center py-4 text-[10px] font-black text-gray-300 uppercase tracking-widest">Nenhum membro cadastrado</p>
+                           ) : (
+                             cellMembers.map(m => (
+                               <div key={m.id} className="flex items-center gap-4 bg-white/50 p-3 rounded-2xl border border-white/80">
+                                  <div className="w-10 h-10 bg-white rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
+                                     {m.avatar_url ? <img src={m.avatar_url} className="w-full h-full object-cover" /> : <User className="w-full h-full p-2 text-gray-200" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                     <p className="text-xs font-black text-gray-800 uppercase italic truncate">{m.nome}</p>
+                                     <p className="text-[9px] font-black text-[#1B3B6B]/40 uppercase tracking-widest">Membro Ativo</p>
+                                  </div>
+                               </div>
+                             ))
+                           )}
+                        </div>
+                     </motion.div>
+                   )}
+                </AnimatePresence>
               </div>
-              <div className="flex items-center gap-2">
-                {user?.role === 'master' && (
-                  <button onClick={() => handleDelete(c.id)} className="bg-rose-50 text-rose-500 p-3.5 rounded-2xl active:scale-90 transition-soft hover:bg-rose-100"><Trash2 size={18} /></button>
-                )}
-                <ChevronRight size={20} className="text-gray-200" />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
