@@ -1,13 +1,14 @@
-import { User, Settings, LogOut, Shield, Users, BookOpen, Clock, Crown, Loader2 } from "lucide-react";
+import { User, Settings, LogOut, Shield, Users, BookOpen, Clock, Crown, Loader2, Camera } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase, type KefelCelula } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 
 export function Profile() {
-  const { user, logout } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const [meuGrupo, setMeuGrupo] = useState<KefelCelula | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!user?.celula_id) return;
@@ -18,10 +19,45 @@ export function Profile() {
       .eq("id", user.celula_id)
       .single()
       .then(({ data }) => {
-        setMeuGrupo(data as KefelCelula | null);
+        setMeuGrupo(data as any);
         setLoading(false);
       });
   }, [user?.celula_id]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+    
+    // Upload pro Storage (balde 'avatars')
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, file);
+
+    if (!uploadError && uploadData) {
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
+      const publicUrl = urlData.publicUrl;
+
+      // Atualiza no Perfil
+      const { data: updated, error: updateError } = await supabase
+        .from("kefel_profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id)
+        .select("*")
+        .single();
+
+      if (!updateError) {
+        setUser(updated as any);
+        alert("Foto atualizada!");
+      }
+    } else {
+      alert("Erro no upload: " + uploadError?.message);
+    }
+    setUploading(false);
+  };
 
   if (!user) return null;
 
@@ -32,116 +68,76 @@ export function Profile() {
     return h > 0 ? `${h}h ${m}m` : `${m}min`;
   };
 
-  const roleLabel: Record<string, string> = {
-    master: "Discipulador",
-    lider: "Líder",
-    membro: "Membro",
-  };
-
-  const roleColor: Record<string, string> = {
-    master: "bg-purple-50 text-purple-700",
-    lider: "bg-green-50 text-green-700",
-    membro: "bg-blue-50 text-blue-700",
-  };
-
   return (
     <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 px-6 overflow-y-auto">
       <header className="mb-8 pt-4 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight italic uppercase underline decoration-blue-600 decoration-4">Meu Perfil</h1>
-        <button className="bg-gray-100 p-3 rounded-2xl text-gray-400 active:scale-95 transition-transform">
-          <Settings className="w-5 h-5" />
-        </button>
+        <h1 className="text-2xl font-bold text-gray-900 italic uppercase underline decoration-blue-600 decoration-4">Perfil</h1>
+        <button className="bg-gray-100 p-3 rounded-2xl text-gray-400 active:scale-95 transition-transform"><Settings className="w-5 h-5" /></button>
       </header>
 
-      {/* Avatar */}
-      <div className="flex flex-col items-center gap-3 py-4">
-        <div className="relative">
-          <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center border-4 border-white shadow-xl overflow-hidden">
-            {user.role === "master"
-              ? <Crown className="w-12 h-12 text-amber-500" />
-              : <User className="w-12 h-12 text-blue-400" />
-            }
+      {/* Avatar Central */}
+      <div className="flex flex-col items-center gap-4 py-6">
+        <div className="relative group">
+          <div className="w-28 h-28 bg-white rounded-[2.5rem] shadow-2xl border-4 border-white flex items-center justify-center overflow-hidden">
+            {uploading ? (
+              <Loader2 className="animate-spin text-blue-600" />
+            ) : user.avatar_url ? (
+              <img src={user.avatar_url} className="w-full h-full object-cover" />
+            ) : (
+              <User size={40} className="text-blue-200" />
+            )}
           </div>
-          <div className="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-white" />
+          <label className="absolute bottom-0 right-0 bg-blue-600 p-2.5 rounded-2xl text-white shadow-xl cursor-pointer active:scale-90 transition-transform">
+            <Camera size={18} />
+            <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+          </label>
         </div>
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">{user.nome}</h2>
-          <p className="text-gray-400 text-sm">{user.email}</p>
+          <h2 className="text-2xl font-black text-gray-900 italic uppercase">{user.nome}</h2>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">{user.role}</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${roleColor[user.role] || "bg-gray-100 text-gray-600"}`}>
-          {roleLabel[user.role] || user.role}
-        </span>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-2">
-          <div className="bg-blue-50 w-10 h-10 rounded-2xl flex items-center justify-center text-blue-600">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Leitura Total</p>
-            <p className="text-lg font-black text-gray-900">{formatTime(user.tempo_leitura_total)}</p>
-          </div>
+      {/* Estatísticas */}
+      <div className="grid grid-cols-2 gap-4 mb-10">
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col gap-2">
+           <Clock size={20} className="text-blue-600" />
+           <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Tempo de Leitura</p>
+           <p className="text-xl font-black text-gray-900 italic">{formatTime(user.tempo_leitura_total)}</p>
         </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-2">
-          <div className="bg-green-50 w-10 h-10 rounded-2xl flex items-center justify-center text-green-600">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Minha Célula</p>
-            <p className="text-base font-black text-gray-900 truncate">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : meuGrupo ? meuGrupo.nome : "—"}
-            </p>
-          </div>
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col gap-2">
+           <Users size={20} className="text-green-600" />
+           <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Célula</p>
+           <p className="text-sm font-black text-gray-900 truncate italic">{meuGrupo?.nome || "Sem Célula"}</p>
         </div>
       </div>
 
       {/* Menu */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-        {(user.role === "master" || user.role === "lider") && (
-          <Link
-            to="/celulas"
-            className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-purple-50 w-10 h-10 rounded-2xl flex items-center justify-center text-purple-600">
-                <Crown className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-gray-900">
-                {user.role === "master" ? "Painel de Células" : "Minha Célula"}
-              </h4>
-            </div>
-            <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        {(user.role === 'master' || user.role === 'lider') && (
+          <Link to="/celulas" className="p-6 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
+             <div className="flex items-center gap-4">
+                <Users className="text-blue-600" />
+                <span className="font-bold text-gray-900">Gerenciar Células</span>
+             </div>
+             <ChevronRight className="text-gray-200" />
           </Link>
         )}
-
-        <button className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
-          <div className="flex items-center gap-4">
-            <div className="bg-orange-50 w-10 h-10 rounded-2xl flex items-center justify-center text-orange-600">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-gray-900">Histórico de Leitura</h4>
-          </div>
-          <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        <button className="w-full flex items-center justify-between p-5 hover:bg-red-50 transition-colors group"
-          onClick={logout}
-        >
-          <div className="flex items-center gap-4">
-            <div className="bg-red-50 w-10 h-10 rounded-2xl flex items-center justify-center text-red-500 group-hover:bg-red-100">
-              <LogOut className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-gray-900 group-hover:text-red-600">Sair da Conta</h4>
-          </div>
+        <button onClick={logout} className="p-6 flex items-center justify-between hover:bg-red-50">
+           <div className="flex items-center gap-4">
+              <LogOut className="text-red-500" />
+              <span className="font-bold text-red-600">Sair da Conta</span>
+           </div>
         </button>
       </div>
     </div>
+  );
+}
+
+function ChevronRight({ className }: { className?: string }) {
+  return (
+    <svg className={`w-4 h-4 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
   );
 }

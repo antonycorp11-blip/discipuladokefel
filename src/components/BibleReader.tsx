@@ -19,7 +19,7 @@ export default function BibleReader() {
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
   
-  // Cronômetro de Luxo e Acumulativo
+  // Cronômetro Instantâneo por Segundos
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const sessionRef = useRef(0);
   const timerId = useRef<NodeJS.Timeout | null>(null);
@@ -36,28 +36,40 @@ export default function BibleReader() {
   }, [selectedBook, chapter]);
 
   useEffect(() => {
+    // Inicia o contador
     timerId.current = setInterval(() => {
       setSessionSeconds(s => {
         const next = s + 1;
         sessionRef.current = next;
+        
+        // Sincroniza a cada 3 segundos ou ao fechar para garantir o ranking em tempo real
+        if (next % 3 === 0) {
+          syncLeitura(3); 
+        }
         return next;
       });
     }, 1000);
 
     return () => {
       if (timerId.current) clearInterval(timerId.current);
-      if (sessionRef.current > 2) syncLeitura(sessionRef.current);
+      // Salva o resto que sobrou
+      const remaining = sessionRef.current % 3;
+      if (remaining > 0) syncLeitura(remaining);
     };
   }, []);
 
   const syncLeitura = async (secs: number) => {
     if (!user) return;
+    // Incrementa na tabela de logs para o ranking total
     await supabase.from("kefel_leitura_logs").insert({
       user_id: user.id,
       livro: selectedBook.nome,
       capitulo: chapter,
       tempo_segundos: secs
     });
+    
+    // Atualiza o total no perfil do usuário imediatamente
+    await supabase.rpc('increment_reading_time', { row_id: user.id, increment_by: secs });
   };
 
   const toggleVerse = (vNum: number) => {
@@ -100,27 +112,22 @@ export default function BibleReader() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-6 py-10 scroll-smooth">
+      <div className="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
              <Loader2 className="animate-spin text-blue-600" />
              <p className="text-[10px] font-black text-gray-400 uppercase italic">Iniciando leitura...</p>
           </div>
         ) : (
-          <div className="max-w-xl mx-auto space-y-8">
+          <div className="max-w-xl mx-auto space-y-2">
             {verses.map(v => (
               <div 
                 key={v.verse} id={`v-${v.verse}`} onClick={() => toggleVerse(v.verse)}
-                className={`p-4 rounded-[2rem] transition-all duration-300 relative ${selectedVerses.includes(v.verse) ? 'bg-blue-50/80 ring-1 ring-blue-100' : 'active:bg-gray-50'}`}
+                className={`p-3 rounded-2xl transition-all duration-200 relative ${selectedVerses.includes(v.verse) ? 'bg-blue-50 ring-1 ring-blue-100' : 'active:bg-gray-50'}`}
               >
                 <div className="flex gap-4">
-                  <div className="flex flex-col items-center gap-3 pt-1">
-                    <span className={`text-[11px] font-black ${selectedVerses.includes(v.verse) ? 'text-blue-600' : 'text-gray-300'}`}>{v.verse}</span>
-                    <button onClick={(e) => { e.stopPropagation(); setFavorites(p => p.includes(v.verse) ? p.filter(f => f !== v.verse) : [...p, v.verse]); }} className={favorites.includes(v.verse) ? 'text-amber-500' : 'text-gray-100'}>
-                      <Star size={14} fill={favorites.includes(v.verse) ? "currentColor" : "none"} />
-                    </button>
-                  </div>
-                  <p className="text-lg font-medium text-gray-800 leading-relaxed tracking-tight">{v.text}</p>
+                   <span className={`text-[11px] font-black mt-1 ${selectedVerses.includes(v.verse) ? 'text-blue-600' : 'text-gray-300'}`}>{v.verse}</span>
+                   <p className="text-lg font-medium text-gray-800 leading-relaxed tracking-tight">{v.text}</p>
                 </div>
               </div>
             ))}
@@ -142,10 +149,6 @@ export default function BibleReader() {
               <button onClick={() => setShowSelector(false)} className="bg-gray-50 p-3 rounded-full"><X size={20} /></button>
             </div>
             
-            <div className="flex gap-2 h-1">
-              {['book','chapter','verse'].map(s => <div key={s} className={`h-full flex-1 rounded-full ${selectorStep === s ? 'bg-blue-600' : 'bg-gray-100'}`} />)}
-            </div>
-
             <div className="flex-1 overflow-y-auto pr-2 pt-2">
               {selectorStep === 'book' && (
                 <div className="grid grid-cols-2 gap-3 pb-10">

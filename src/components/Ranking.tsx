@@ -1,103 +1,82 @@
-import { Trophy, Medal, Award, User, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/context/AuthContext";
+import { Trophy, Medal, Crown, Loader2, User, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase, type KefelProfile } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+
+interface RankUser {
+  id: string;
+  nome: string;
+  avatar_url: string;
+  tempo_leitura_total: number;
+}
 
 export function Ranking() {
-  const { user: currentUser } = useAuth();
-  const [ranking, setRanking] = useState<KefelProfile[]>([]);
+  const [ranking, setRanking] = useState<RankUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tab, setTab] = useState<'users' | 'cells'>('users');
-  const [cellRanking, setCellRanking] = useState<{ id: string; nome: string; tempo: number }[]>([]);
-
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      // 1) Ranking de Usuários
-      const { data: userData } = await supabase.from("kefel_profiles").select("*").order("tempo_leitura_total", { ascending: false }).limit(50);
-      const users = (userData || []) as KefelProfile[];
-      setRanking(users);
+    fetchRanking();
+  }, []);
 
-      // 2) Ranking de Células (Agregação)
-      const { data: cellData } = await supabase.from("kefel_celulas").select("id, nome") as { data: { id: string; nome: string }[] | null };
-      if (cellData) {
-        const cellScores = cellData.map(c => {
-          const total = users.filter(u => u.celula_id === c.id).reduce((acc, curr) => acc + curr.tempo_leitura_total, 0);
-          return { id: c.id, nome: c.nome, tempo: total };
-        });
-        setCellRanking(cellScores.sort((a, b) => b.tempo - a.tempo));
-      }
-      setLoading(false);
-    };
-    fetchData();
-  }, [currentUser]);
+  async function fetchRanking() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("kefel_profiles")
+      .select("id, nome, avatar_url, tempo_leitura_total")
+      .order("tempo_leitura_total", { ascending: false })
+      .limit(20);
+    
+    if (!error) setRanking(data as RankUser[]);
+    setLoading(false);
+  }
 
   const formatTime = (seconds: number) => {
-    if (!seconds) return "0m";
+    if (!seconds) return "0s";
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    const s = Math.floor(seconds % 60);
+    
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
+
+  const getRankStyle = (index: number) => {
+    if (index === 0) return { bg: 'bg-amber-50', text: 'text-amber-600', icon: <Crown size={24} className="text-amber-500" /> };
+    if (index === 1) return { bg: 'bg-gray-50', text: 'text-gray-400', icon: <Medal size={24} className="text-gray-400" /> };
+    if (index === 2) return { bg: 'bg-orange-50', text: 'text-orange-400', icon: <Medal size={24} className="text-orange-400" /> };
+    return { bg: 'bg-white', text: 'text-gray-300', icon: <span className="font-bold text-xs">{index + 1}</span> };
   };
 
   return (
     <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 px-6 overflow-y-auto">
       <header className="mb-8 pt-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Ranking</h1>
-          <p className="text-gray-400 text-sm font-medium">Os mais dedicados à Palavra.</p>
+           <h1 className="text-2xl font-bold text-gray-900 italic uppercase underline decoration-blue-600 decoration-4">Ranking</h1>
+           <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Dedicados à Palavra</p>
         </div>
-        
-        <div className="bg-gray-100 p-1 rounded-xl flex gap-1">
-          <button 
-            onClick={() => setTab('users')}
-            className={cn("px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all", tab === 'users' ? "bg-white text-blue-600 shadow-sm" : "text-gray-400")}
-          >Pessoas</button>
-          <button 
-            onClick={() => setTab('cells')}
-            className={cn("px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all", tab === 'cells' ? "bg-white text-blue-600 shadow-sm" : "text-gray-400")}
-          >Células</button>
-        </div>
+        <div className="bg-blue-600 p-3 rounded-2xl shadow-xl text-white"><Trophy size={20} /></div>
       </header>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-        </div>
-      ) : tab === 'users' ? (
-        <div className="space-y-4">
-           {ranking.map((u, i) => (
-              <div key={u.id} className="bg-white p-4 rounded-3xl border border-gray-100 flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                    <span className="text-lg font-black text-gray-200 w-6">#{i+1}</span>
-                    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center">
-                       <User className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <p className="font-bold text-gray-900">{u.nome}</p>
-                 </div>
-                 <p className="font-black text-blue-600">{formatTime(u.tempo_leitura_total)}</p>
+      {loading ? <Loader2 className="animate-spin mx-auto text-blue-600" /> : (
+        <div className="grid gap-4">
+          {ranking.map((user, index) => {
+            const style = getRankStyle(index);
+            return (
+              <div key={user.id} className={`p-4 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-4 transition-transform active:scale-[0.98] ${style.bg}`}>
+                <div className="flex-shrink-0 w-8 flex justify-center">{style.icon}</div>
+                <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border-2 border-white flex items-center justify-center overflow-hidden">
+                   {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" /> : <User className="text-blue-200" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                   <h3 className="font-bold text-gray-900 truncate uppercase italic">{user.nome}</h3>
+                   <div className="flex items-center gap-1.5 mt-0.5">
+                      <Clock size={10} className="text-blue-600" />
+                      <p className="text-[10px] font-black text-blue-600 tabular-nums uppercase">{formatTime(user.tempo_leitura_total)}</p>
+                   </div>
+                </div>
               </div>
-           ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {cellRanking.map((c, i) => (
-             <div key={c.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                   <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black", i===0 ? "bg-amber-400" : i===1 ? "bg-slate-300" : "bg-orange-300")}>
-                      {i+1}
-                   </div>
-                   <div>
-                      <h3 className="font-black text-gray-900 text-lg leading-none">{c.nome}</h3>
-                      <p className="text-gray-400 text-xs font-bold uppercase mt-1">Tempo Total</p>
-                   </div>
-                </div>
-                <div className="text-right">
-                   <p className="text-xl font-black text-blue-600">{formatTime(c.tempo)}</p>
-                </div>
-             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
