@@ -15,7 +15,8 @@ import { PDFViewer } from "./components/PDFViewer";
 import { Reports } from "./components/Reports";
 import { WhatsAppRequired } from "./components/WhatsAppRequired";
 import { UserManagement } from "./components/UserManagement";
-import OneSignal from 'react-onesignal';
+import { supabase } from "./lib/supabase";
+// import OneSignal from 'react-onesignal'; // Removido em favor da v16 nativa
 
 // ── Tela de loading global ──────────────────────────────────────
 function LoadingScreen() {
@@ -71,59 +72,61 @@ function AppRoutes() {
   );
 }
 
-export default function App() {
+function OneSignalHandler() {
+  const { user } = useAuth();
+
   useEffect(() => {
-    // Inicialização do OneSignal
-    const initOneSignal = async () => {
+    // Inicialização do OneSignal v16 Nativa (Espelhado do projeto de referência)
+    const OneSignal = (window as any).OneSignal || [];
+    
+    OneSignal.push(() => {
       const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
+      
       if (appId) {
-        try {
-          await OneSignal.init({ 
-            appId, 
-            allowLocalhostAsSecureOrigin: true,
-            notifyButton: { 
-              enable: true,
-              position: 'bottom-right',
-              size: 'medium',
-              theme: 'default',
-              prenotify: true,
-              showCredit: false,
-              text: {
-                'tip.state.unsubscribed': 'Inscrever-se para notificações',
-                'tip.state.subscribed': 'Você está inscrito',
-                'tip.state.blocked': 'Você bloqueou as notificações',
-                'message.prenotify': 'Clique para se inscrever',
-                'message.action.subscribed': 'Obrigado por se inscrever!',
-                'message.action.resubscribed': 'Você está inscrito novamente!',
-                'message.action.unsubscribed': 'Você não receberá mais notificações',
-                'message.action.subscribing': 'Inscrevendo...',
-                'dialog.main.title': 'Gerenciar Notificações',
-                'dialog.main.button.subscribe': 'INSCREVER',
-                'dialog.main.button.unsubscribe': 'REMOVER',
-                'dialog.blocked.title': 'Notificações Bloqueadas',
-                'dialog.blocked.message': 'Por favor, desbloqueie as notificações nas configurações do seu navegador.'
-              }
-            } as any
-          });
+        OneSignal.init({
+          appId,
+          allowLocalhostAsSecureOrigin: true,
+          notifyButton: {
+            enable: true,
+            position: 'bottom-right',
+            size: 'medium',
+            theme: 'default'
+          }
+        });
 
-          // Mostrar prompt de permissão automaticamente com um pequeno delay para melhor UX
-          setTimeout(() => {
-            if ((OneSignal as any).showSlidedownPrompt) {
-              (OneSignal as any).showSlidedownPrompt();
+        // Sincronizar token se o usuário já estiver logado
+        const syncToken = async () => {
+          try {
+            const pushId = OneSignal.User?.PushSubscription?.id;
+            if (pushId && user?.id) {
+              console.log("Sincronizando OneSignal Token:", pushId);
+              await supabase.from('profiles').update({ push_token: pushId }).eq('id', user.id);
             }
-          }, 2000);
-        } catch (err) {
-          console.error("Erro OneSignal:", err);
-        }
-      } else {
-        console.warn("OneSignal App ID não configurado no .env");
-      }
-    };
-    initOneSignal();
-  }, []);
+          } catch (e) {
+            console.error("Erro ao sincronizar token OneSignal:", e);
+          }
+        };
 
+        // Tenta sincronizar após 5 segundos
+        setTimeout(syncToken, 5000);
+
+        // Ouvir mudanças de permissão
+        OneSignal.Notifications?.addEventListener("permissionChange", (permission: boolean) => {
+          console.log("Mudança de permissão OneSignal:", permission);
+          if (permission) syncToken();
+        });
+      }
+    });
+
+  }, [user?.id]);
+
+  return null;
+}
+
+export default function App() {
   return (
     <AuthProvider>
+      <OneSignalHandler />
       <Router>
         <AppRoutes />
       </Router>
