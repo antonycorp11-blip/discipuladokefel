@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
   ChevronLeft, ChevronRight, BookOpen, Clock, 
-  Share2, Loader2, Star, X
+  Share2, Loader2, Star, X, CheckCircle2
 } from "lucide-react";
 import { BIBLE_BOOKS, fetchBibleChapter, BibleVerse } from "@/data/bible";
 import { supabase } from "@/lib/supabase";
@@ -138,12 +138,64 @@ export default function BibleReader() {
         });
         if (error) throw error;
         showToast("Versículo favoritado!");
+
+        // 🔔 Disparar PUSH de teste (OneSignal REST API)
+        const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
+        const appKey = (import.meta as any).env.VITE_ONESIGNAL_REST_API_KEY;
+        const pushToken = (user as any).push_token;
+
+        if (appId && appKey && pushToken) {
+           fetch("https://onesignal.com/api/v1/notifications", {
+             method: "POST",
+             headers: {
+               "Content-Type": "application/json; charset=utf-8",
+               "Authorization": `Basic ${appKey}`
+             },
+             body: JSON.stringify({
+               app_id: appId,
+               include_subscription_ids: [pushToken],
+               contents: { "en": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨`, "pt": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨` },
+               headings: { "en": "Favorito salvo", "pt": "Oba! Favorito salvo" }
+             })
+           }).catch(e => console.error("Erro Push:", e));
+        }
       }
     } catch (error: any) {
       console.error("Erro ao favoritar:", error);
       showToast("Não foi possível salvar favorito", "error");
       // Reverter estado se falhar
       setFavorites(prev => isFav ? [...prev, v.verse] : prev.filter(f => f !== v.verse));
+    }
+  };
+
+  const handleFinishChapter = async () => {
+    if (!user) return;
+    
+    try {
+      const chapterId = `${selectedBook.id}_${chapter}`;
+      const currentProgress = (user as any).bible_progress || [];
+      
+      if (!currentProgress.includes(chapterId)) {
+        const newProgress = [...currentProgress, chapterId];
+        await supabase.from('kefel_profiles').update({ 
+          bible_progress: newProgress,
+          last_bible_reading: { bookId: selectedBook.id, chapter: chapter }
+        }).eq('id', user.id);
+        
+        showToast("Capítulo concluído! 🏆", "success");
+        
+        // Se houver próximo capítulo, vai para ele
+        if (chapter < selectedBook.capitulos) {
+          setChapter(c => c + 1);
+          window.scrollTo(0, 0);
+        } else {
+          showToast("Você terminou este livro! 🎉");
+        }
+      } else {
+        showToast("Capítulo já lido", "info");
+      }
+    } catch (err) {
+      showToast("Erro ao concluir", "error");
     }
   };
 
@@ -198,6 +250,22 @@ export default function BibleReader() {
                 </div>
               </div>
             ))}
+
+            {/* BOTÃO CONCLUIR CAPÍTULO */}
+            <div className="pt-10 pb-20">
+               <button 
+                 onClick={handleFinishChapter}
+                 className="w-full bg-black text-white p-8 rounded-[2.5rem] shadow-premium shadow-black/20 flex flex-col items-center gap-4 group active:scale-95 transition-soft"
+               >
+                 <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-soft">
+                    <CheckCircle2 className="text-blue-400" size={32} />
+                 </div>
+                 <div className="text-center">
+                    <p className="text-xl font-black italic uppercase tracking-tighter">Concluir Capítulo</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Marcar progresso na Bíblia</p>
+                 </div>
+               </button>
+            </div>
           </div>
         )}
       </div>

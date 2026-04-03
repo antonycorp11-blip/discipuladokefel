@@ -86,35 +86,72 @@ function OneSignalHandler() {
         OneSignal.init({
           appId,
           allowLocalhostAsSecureOrigin: true,
+          welcomeNotification: {
+            disable: false,
+            title: "Kefel App",
+            message: "Obrigado por ativar as notificações! 🙌"
+          },
           notifyButton: {
             enable: true,
             position: 'bottom-right',
             size: 'medium',
-            theme: 'default'
+            theme: 'default',
+            text: {
+              'tip.state.unsubscribed': 'Receber Notificações',
+              'tip.state.subscribed': 'Notificações Ativas',
+              'tip.state.blocked': 'Bloqueado pelo Navegador',
+              'message.prenotify': 'Clique para permitir notificações',
+              'message.action.subscribed': 'Inscrito com sucesso!',
+              'message.action.resubscribed': 'Inscrito novamente!',
+              'message.action.unsubscribed': 'Você não receberá mais alertas',
+              'dialog.main.title': 'Gerenciar Alertas',
+              'dialog.main.button.subscribe': 'INSCREVER',
+              'dialog.main.button.unsubscribe': 'REMOVER',
+              'dialog.blocked.title': 'Acesso Negado',
+              'dialog.blocked.message': 'Por favor, libere as notificações nas configurações do seu navegador.'
+            }
+          },
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  type: 'push',
+                  autoPrompt: true,
+                  text: {
+                    actionMessage: "Deseja receber avisos de novas lições e eventos?",
+                    acceptButton: "Permitir",
+                    cancelButton: "Agora não"
+                  },
+                  delay: {
+                    pageViews: 1,
+                    timeDelay: 3
+                  }
+                }
+              ]
+            }
           }
         });
 
         // Sincronizar token se o usuário já estiver logado
         const syncToken = async () => {
           try {
-            const pushId = OneSignal.User?.PushSubscription?.id;
+            const pushId = await OneSignal.User?.PushSubscription?.id;
             if (pushId && user?.id) {
               console.log("Sincronizando OneSignal Token:", pushId);
-              await supabase.from('profiles').update({ push_token: pushId }).eq('id', user.id);
+              await supabase.from('kefel_profiles').update({ push_token: pushId }).eq('id', user.id);
             }
           } catch (e) {
             console.error("Erro ao sincronizar token OneSignal:", e);
           }
         };
 
-        // Tenta sincronizar após 5 segundos
-        setTimeout(syncToken, 5000);
-
-        // Ouvir mudanças de permissão
-        OneSignal.Notifications?.addEventListener("permissionChange", (permission: boolean) => {
-          console.log("Mudança de permissão OneSignal:", permission);
-          if (permission) syncToken();
+        // Ouvir mudanças de inscrição
+        OneSignal.User?.PushSubscription?.addEventListener("change", (event: any) => {
+          if (event.current.token) syncToken();
         });
+
+        // Tenta sincronizar após 3 segundos
+        setTimeout(syncToken, 3000);
       }
     });
 

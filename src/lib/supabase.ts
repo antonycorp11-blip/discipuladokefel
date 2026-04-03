@@ -16,6 +16,9 @@ export interface KefelProfile {
   telefone?: string | null;
   tempo_leitura_total: number;
   avatar_url?: string | null;
+  bible_progress?: string[] | null;
+  last_bible_reading?: any | null;
+  push_token?: string | null;
 }
 
 export interface KefelCelula {

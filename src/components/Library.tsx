@@ -29,23 +29,13 @@ export function Library() {
 
   // Cálculo de progressão real (1189 capítulos no total)
   const bibleProgress = React.useMemo(() => {
-    if (!user?.last_bible_reading) return 0;
-    const { bookId, chapter } = user.last_bible_reading as { bookId: string, chapter: number };
+    const completedChapters = (user as any)?.bible_progress || [];
+    const totalChapters = 1189; // Total de capítulos da Bíblia
     
-    const totalChapters = BIBLE_BOOKS.reduce((acc, b) => acc + b.capitulos, 0);
-    let chaptersRead = 0;
-    
-    for (const book of BIBLE_BOOKS) {
-      if (book.id === bookId) {
-        chaptersRead += chapter;
-        break;
-      }
-      chaptersRead += book.capitulos;
-    }
-    
-    const percentage = (chaptersRead / totalChapters) * 100;
+    // Agora o progresso é baseado no que o usuário CLICOU em concluir
+    const percentage = (completedChapters.length / totalChapters) * 100;
     return Math.min(Math.round(percentage * 10) / 10, 100); // 1 casa decimal, max 100
-  }, [user?.last_bible_reading]);
+  }, [(user as any)?.bible_progress]);
 
   async function fetchBooks() {
     setLoading(true);
