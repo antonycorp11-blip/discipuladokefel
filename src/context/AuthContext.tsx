@@ -3,7 +3,7 @@ import { supabase, type KefelProfile } from "@/lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
 
 // ── Email do master fixo (não precisa de convite) ──────────────
-const MASTER_EMAIL = "aquilles@kefel.com";
+const MASTER_EMAIL = "antonycorp11@gmail.com";
 
 interface AuthContextType {
   user: KefelProfile | null;
