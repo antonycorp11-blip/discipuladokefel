@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
+import { BIBLE_BOOKS } from "@/data/bible";
 
 export function Library() {
   const { user, showToast } = useAuth();
@@ -25,6 +26,26 @@ export function Library() {
   useEffect(() => {
     fetchBooks();
   }, []);
+
+  // Cálculo de progressão real (1189 capítulos no total)
+  const bibleProgress = React.useMemo(() => {
+    if (!user?.last_bible_reading) return 0;
+    const { bookId, chapter } = user.last_bible_reading as { bookId: string, chapter: number };
+    
+    const totalChapters = BIBLE_BOOKS.reduce((acc, b) => acc + b.capitulos, 0);
+    let chaptersRead = 0;
+    
+    for (const book of BIBLE_BOOKS) {
+      if (book.id === bookId) {
+        chaptersRead += chapter;
+        break;
+      }
+      chaptersRead += book.capitulos;
+    }
+    
+    const percentage = (chaptersRead / totalChapters) * 100;
+    return Math.min(Math.round(percentage * 10) / 10, 100); // 1 casa decimal, max 100
+  }, [user?.last_bible_reading]);
 
   async function fetchBooks() {
     setLoading(true);
@@ -107,9 +128,9 @@ export function Library() {
                 <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-2">Palavra de Deus</p>
                 <div className="flex items-center gap-2 mt-4">
                     <div className="h-1 flex-1 bg-white/10 rounded-full">
-                        <div className="h-full w-full bg-blue-500 rounded-full" />
+                        <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${bibleProgress}%` }} />
                     </div>
-                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none">100%</span>
+                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none">{bibleProgress}%</span>
                 </div>
             </div>
         </div>

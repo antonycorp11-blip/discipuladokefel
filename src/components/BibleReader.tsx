@@ -27,19 +27,26 @@ export default function BibleReader() {
   // Carrega posição inicial do usuário
   useEffect(() => {
     if (user?.last_bible_reading && isInitialLoad.current) {
-        const { bookId, chapter } = user.last_bible_reading as { bookId: string, chapter: number };
+        const { bookId, chapter: savedChapter } = user.last_bible_reading as { bookId: string, chapter: number };
         const book = BIBLE_BOOKS.find(b => b.id === bookId);
         if (book) setSelectedBook(book);
-        if (chapter) setChapter(chapter);
-        isInitialLoad.current = false;
+        if (savedChapter) setChapter(savedChapter);
+        
+        // Pequeno delay para garantir que o estado do capítulo foi refletido antes de liberar o salvamento
+        setTimeout(() => {
+          isInitialLoad.current = false;
+        }, 1000);
+    } else if (user && !user.last_bible_reading) {
+      isInitialLoad.current = false;
     }
-  }, [user]);
+  }, [user?.id]);
 
-  // Salva posição sempre que mudar
+  // Salva posição sempre que mudar (APENAS após o load inicial)
   useEffect(() => {
     if (!user || isInitialLoad.current) return;
     
     const saveProgress = async () => {
+        console.log("Salvando progresso da Bíblia:", selectedBook.nome, chapter);
         await supabase
             .from("kefel_profiles")
             .update({ 
@@ -48,7 +55,7 @@ export default function BibleReader() {
             .eq("id", user.id);
     };
     saveProgress();
-  }, [selectedBook.id, chapter, user]);
+  }, [selectedBook.id, chapter, user?.id]);
 
   useEffect(() => {
     async function load() {
