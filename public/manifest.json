@@ -28,5 +28,6 @@
       "purpose": "any"
     }
   ],
-  "categories": ["lifestyle", "education", "social"]
+  "categories": ["lifestyle", "education", "social"],
+  "gcm_sender_id": "482941778795"
 }
