@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 export function Profile() {
   const { id } = useParams();
-  const { user: currentUser, setUser, logout } = useAuth();
+  const { user: currentUser, setUser, logout, showToast } = useAuth();
   
   const [profile, setProfile] = useState<KefelProfile | null>(null);
   const [meuGrupo, setMeuGrupo] = useState<KefelCelula | null>(null);
@@ -94,9 +94,9 @@ export function Profile() {
       setProfile(updated);
       if (isOwnProfile) setUser(updated);
       setShowSettings(false);
-      alert("Perfil atualizado!");
+      showToast("Perfil atualizado!");
     } else {
-      alert("Erro ao atualizar: " + (error?.message || "Erro desconhecido"));
+      showToast("Erro ao atualizar", "error");
     }
   };
 
@@ -132,9 +132,9 @@ export function Profile() {
 
       setUser(updated as KefelProfile);
       setProfile(updated as KefelProfile);
-      alert("Foto de perfil atualizada!");
+      showToast("Foto de perfil atualizada!");
     } catch (err: any) {
-      alert("Falha no upload: " + err.message);
+      showToast("Falha no upload", "error");
     }
     setUploading(false);
   };
@@ -312,6 +312,15 @@ export function Profile() {
                <ChevronRight className="text-gray-200" size={16} />
             </button>
           )}
+          {currentUser.role === 'master' && (
+            <Link to="/usuarios" className="p-6 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
+               <div className="flex items-center gap-4">
+                  <Users className="text-[#1B3B6B]" size={20} />
+                  <span className="font-bold text-gray-900 text-sm">Lista de Usuários Cadastrados</span>
+               </div>
+               <ChevronRight className="text-gray-200" size={16} />
+            </Link>
+          )}
           <button onClick={logout} className="p-6 flex items-center justify-between hover:bg-red-50 active:bg-red-100 transition-colors">
             <div className="flex items-center gap-4">
                 <LogOut className="text-red-500" size={20} />
@@ -375,7 +384,12 @@ export function Profile() {
                                             onClick={async (e) => {
                                               if (confirm("Deseja realmente excluir este relatório?")) {
                                                 const { error } = await supabase.from("kefel_relatorios").delete().eq("id", rel.id);
-                                                if (!error) fetchAllReports();
+                                                if (!error) {
+                                                  showToast("Relatório excluído!");
+                                                  fetchAllReports();
+                                                } else {
+                                                  showToast("Erro ao excluir", "error");
+                                                }
                                               }
                                             }}
                                             className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors"

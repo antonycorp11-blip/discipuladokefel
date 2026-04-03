@@ -24,7 +24,7 @@ interface Evento {
 }
 
 export default function Events() {
-  const { user } = useAuth();
+  const { user, showToast } = useAuth();
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -150,7 +150,7 @@ export default function Events() {
       fetchEvents();
       resetForm();
     } catch (err: any) {
-      alert("Erro ao salvar evento: " + err.message);
+      showToast("Erro ao salvar evento", "error");
     } finally {
       setSaving(false);
     }
@@ -278,13 +278,13 @@ export default function Events() {
                         return (
                           <button 
                             onClick={async () => {
-                               if (!user) return alert("Faça login para se inscrever!");
+                               if (!user) return showToast("Faça login para se inscrever!", "info");
                                const { error } = await supabase.from("kefel_eventos_inscritos").insert({ evento_id: event.id, user_id: user.id });
                                if (!error) {
-                                  alert("Inscrição confirmada! 🚀");
+                                  showToast("Inscrição confirmada! 🚀");
                                   fetchEvents();
                                } else {
-                                  alert("Erro ao se inscrever: " + error.message);
+                                  showToast("Erro ao se inscrever", "error");
                                }
                             }}
                             className="w-full bg-black text-white py-5 rounded-[2rem] flex items-center justify-center gap-3 shadow-lg active:scale-95 transition-soft mb-2 group"
@@ -365,8 +365,8 @@ export default function Events() {
                                          {prof?.avatar_url ? <img src={prof.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="w-full h-full p-2 text-gray-200" />}
                                       </div>
                                       <div className="flex-1">
-                                        <p className="font-black text-gray-800 uppercase italic text-xs leading-none">{prof?.nome || "Usuário"}</p>
-                                        <p className="text-[9px] text-[#1B3B6B]/40 font-black uppercase tracking-widest mt-1.5">{new Date(insc.confirmado_em).toLocaleDateString('pt-BR')}</p>
+                                        <p className="font-black text-gray-800 uppercase italic text-xs leading-none">{prof?.nome || "Membro"}</p>
+                                        <p className="text-[9px] text-[#1B3B6B]/40 font-black uppercase tracking-widest mt-1.5">{insc.confirmado_em ? new Date(insc.confirmado_em).toLocaleDateString('pt-BR') : 'Agora'}</p>
                                       </div>
                                       <div className="bg-green-50 text-green-600 p-2 rounded-xl">
                                          <CheckCircle size={14} />

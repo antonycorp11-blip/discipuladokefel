@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 export default function BibleReader() {
-  const { user } = useAuth();
+  const { user, showToast } = useAuth();
   const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === '1') || BIBLE_BOOKS[0]);
   const [chapter, setChapter] = useState(1);
   const [verses, setVerses] = useState<BibleVerse[]>([]);
@@ -120,6 +120,7 @@ export default function BibleReader() {
       if (isFav) {
         const { error } = await supabase.from("kefel_favoritos").delete().eq("user_id", user.id).eq("livro", selectedBook.nome).eq("capitulo", chapter).eq("versiculo", v.verse);
         if (error) throw error;
+        showToast("Removido dos favoritos");
       } else {
         const { error } = await supabase.from("kefel_favoritos").insert({
           user_id: user.id,
@@ -129,10 +130,11 @@ export default function BibleReader() {
           texto: v.text
         });
         if (error) throw error;
+        showToast("Versículo favoritado!");
       }
     } catch (error: any) {
       console.error("Erro ao favoritar:", error);
-      alert("Não foi possível salvar favorito: " + error.message);
+      showToast("Não foi possível salvar favorito", "error");
       // Reverter estado se falhar
       setFavorites(prev => isFav ? [...prev, v.verse] : prev.filter(f => f !== v.verse));
     }
@@ -142,7 +144,7 @@ export default function BibleReader() {
     const text = verses.filter(v => selectedVerses.includes(v.verse)).map(v => `${v.verse}. ${v.text}`).join('\n');
     const msg = `${selectedBook.nome} ${chapter}\n\n${text}\n\nLido no Kefel App`;
     if (navigator.share) navigator.share({ text: msg });
-    else { navigator.clipboard.writeText(msg); alert("Copiado!"); }
+    else { navigator.clipboard.writeText(msg); showToast("Copiado!", "info"); }
   };
 
   return (

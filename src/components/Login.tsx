@@ -199,7 +199,7 @@ export function Login() {
             </motion.div>
           )}
 
-          {step === 'nameInput' && selectedCell && (
+          {step === 'nameInput' && (selectedCell || isExistingMember) && (
             <motion.div
               key="nameInput"
               initial={{ opacity: 0, scale: 0.95 }}

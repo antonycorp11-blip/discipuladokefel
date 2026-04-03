@@ -14,6 +14,7 @@ import { Library } from "./components/Library";
 import { PDFViewer } from "./components/PDFViewer";
 import { Reports } from "./components/Reports";
 import { WhatsAppRequired } from "./components/WhatsAppRequired";
+import { UserManagement } from "./components/UserManagement";
 import OneSignal from 'react-onesignal';
 
 // ── Tela de loading global ──────────────────────────────────────
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/perfil/:id" element={<Profile />} />
         <Route path="/celulas" element={<CellManagement />} />
         <Route path="/relatorios" element={<Reports />} />
+        <Route path="/usuarios" element={<UserManagement />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
     </Routes>

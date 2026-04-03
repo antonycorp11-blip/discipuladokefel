@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase, type KefelProfile } from "@/lib/supabase";
+import { motion, AnimatePresence } from "motion/react";
 
 // ── Email do master fixo (não precisa de convite) ──────────────
 const MASTER_EMAIL = "aquilles@kefel.com";
@@ -16,6 +17,7 @@ interface AuthContextType {
   setUser: React.Dispatch<React.SetStateAction<KefelProfile | null>>;
   deleteProfile: (id: string) => Promise<{ success: boolean }>;
   promoteToLeader: (userId: string, celulaId: string) => Promise<{ success: boolean }>;
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +25,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<KefelProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   // Carrega perfil do usuário autenticado
   const loadProfile = useCallback(async (userId: string): Promise<KefelProfile | null> => {
@@ -48,8 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        // Garante que o perfil existe (pode ter sido criado pelo trigger)
-        await new Promise((r) => setTimeout(r, 500));
+        // Busca imediata do perfil (removido delay de 500ms)
         const profile = await loadProfile(session.user.id).catch(e => {
           console.error("Erro fatal ao carregar perfil:", e);
           return null;
@@ -193,10 +200,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 1. Verificar se já existe perfil com este telefone
       // Como o telefone é único, buscamos por ele primeiro.
       // Se o usuário forneceu um nome, validamos se o nome no banco "contém" o que ele digitou (flexível).
-      const { data: existingProfiles, error: searchError } = await supabase
+      const { data: rawProfiles, error: searchError } = await supabase
         .from("kefel_profiles")
         .select("*")
         .eq("telefone", telClean);
+      
+      const existingProfiles = rawProfiles as KefelProfile[] | null;
 
       if (searchError) throw searchError;
 
@@ -333,9 +342,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile, 
       setUser,
       deleteProfile,
-      promoteToLeader
+      promoteToLeader,
+      showToast
     }}>
       {children}
+      
+      {/* Toast Render System */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-24 left-6 right-6 z-[200] pointer-events-none flex justify-center"
+          >
+            <div className={`px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-md border flex items-center gap-3 max-w-sm w-full ${
+              toast.type === 'success' ? 'bg-green-50/90 border-green-100 text-green-700' :
+              toast.type === 'error' ? 'bg-rose-50/90 border-rose-100 text-rose-700' :
+              'bg-blue-50/90 border-blue-100 text-blue-700'
+            }`}>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${
+                toast.type === 'success' ? 'bg-green-500' :
+                toast.type === 'error' ? 'bg-rose-500' :
+                'bg-blue-500'
+              }`} />
+              <p className="text-[11px] font-black uppercase tracking-widest italic">{toast.message}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AuthContext.Provider>
   );
 }

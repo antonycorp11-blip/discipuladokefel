@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "motion/react";
 
 export function CellManagement() {
-  const { user, deleteProfile, promoteToLeader } = useAuth();
+  const { user, deleteProfile, promoteToLeader, showToast } = useAuth();
   const [celulas, setCelulas] = useState<KefelCelula[]>([]);
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,7 @@ export function CellManagement() {
       setMembers(profileRes.data || []);
     } catch (err: any) {
       console.error("Falha na requisição:", err);
-      alert("Erro ao carregar dados: " + (err.message || "Tente novamente"));
+      showToast("Erro ao carregar dados", "error");
     } finally {
       setLoading(false);
     }
@@ -86,10 +86,10 @@ export function CellManagement() {
       setShowAddForm(false);
       resetForm();
       fetchData();
-      alert("Célula criada com sucesso!");
+      showToast("Célula criada com sucesso!");
     } catch (err: any) {
       console.error("Erro ao criar célula:", err);
-      alert("Falha ao criar célula: " + err.message);
+      showToast("Falha ao criar célula", "error");
     } finally {
       setSaving(false);
     }
@@ -108,18 +108,21 @@ export function CellManagement() {
   const handleDeleteMember = async (id: string) => {
     if (!window.confirm("Deseja excluir este membro permanentemente?")) return;
     const { success } = await deleteProfile(id);
-    if (success) fetchData();
-    else alert("Erro ao excluir membro.");
+    if (success) {
+      showToast("Membro removido");
+      fetchData();
+    }
+    else showToast("Erro ao excluir membro", "error");
   };
 
   const handlePromote = async (memberId: string, cellId: string) => {
     if (!window.confirm("Deseja promover este membro a líder desta célula?")) return;
     const { success } = await promoteToLeader(memberId, cellId);
     if (success) {
-      alert("Membro promovido a líder com sucesso!");
+      showToast("Membro promovido a líder!");
       fetchData();
     } else {
-      alert("Erro ao promover membro.");
+      showToast("Erro ao promover membro", "error");
     }
   };
 

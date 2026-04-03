@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
 export function Reports() {
-  const { user } = useAuth();
+  const { user, showToast } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState<'celula' | 'culto'>('celula');
@@ -76,11 +76,11 @@ export function Reports() {
       });
 
       if (error) throw error;
-      alert("Relatório enviado com sucesso! 🚀");
-      navigate("/");
+      showToast("Relatório enviado com sucesso! 🚀");
+      setTimeout(() => navigate("/"), 1500);
     } catch (err: any) {
-      console.error("Erro Relatório:", err);
-      alert("Erro ao enviar: " + err.message);
+      console.error("Erro ao enviar:", err);
+      showToast("Erro ao enviar relatório", "error");
     } finally {
       setLoading(false);
     }

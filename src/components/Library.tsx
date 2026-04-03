@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
 
 export function Library() {
-  const { user } = useAuth();
+  const { user, showToast } = useAuth();
   const navigate = useNavigate();
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,11 +66,11 @@ export function Library() {
       });
       if (dbErr) throw dbErr;
 
+      showToast("Livro adicionado com sucesso!");
       setShowAddModal(false);
       fetchBooks();
-      alert("Livro adicionado com sucesso!");
     } catch (err: any) {
-      alert("Erro ao enviar: " + err.message);
+      showToast("Erro ao enviar: " + err.message, "error");
     } finally {
       setUploading(false);
     }

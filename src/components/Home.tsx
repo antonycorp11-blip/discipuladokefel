@@ -16,7 +16,7 @@ const VERSES = [
 const VERSE = VERSES[Math.floor(Math.random() * VERSES.length)];
 
 export function Home() {
-  const { user } = useAuth();
+  const { user, showToast } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [meuGrupo, setMeuGrupo] = useState<KefelCelula | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,8 +52,9 @@ export function Home() {
     if (!error) {
       setInscribedIds(prev => [...prev, selectedEvent.id]);
       setSelectedEvent(null);
+      showToast("Inscrição confirmada! 🚀");
     } else {
-      alert("Erro: " + error.message);
+      showToast("Erro ao se inscrever", "error");
     }
     setSubscribing(false);
   };
@@ -61,7 +62,7 @@ export function Home() {
   const shareVerse = () => {
     const msg = `Versículo do Dia:\n\n"${VERSE.text}"\n(${VERSE.ref})\n\nLido no Kefel App`;
     if (navigator.share) navigator.share({ text: msg });
-    else { navigator.clipboard.writeText(msg); alert("Copiado!"); }
+    else { navigator.clipboard.writeText(msg); showToast("Copiado!", "info"); }
   };
 
   return (

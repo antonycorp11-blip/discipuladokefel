@@ -1,8 +1,8 @@
 // ── Cliente Supabase usando fetch nativo — sem npm install necessário ──
 // Implementa auth, database (PostgREST) e storage via REST API pura.
 
-const SUPABASE_URL = 'https://wayigtlilhvutbfvxgae.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndheWlndGxpbGh2dXRiZnZ4Z2FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDUwODQsImV4cCI6MjA4NDA4MTA4NH0.T26a6WAF4R7UlxN8lRHqoh_QEpc3SZqa97NhOlXQfbI';
+const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
 // ── Tipos ────────────────────────────────────────────────────────
 export type KefelRole = 'master' | 'lider' | 'membro';

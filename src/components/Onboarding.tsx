@@ -4,7 +4,7 @@ import { supabase, type KefelCelula } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 export function Onboarding() {
-  const { user, setUser } = useAuth();
+  const { user, showToast, setUser } = useAuth();
   const [celulas, setCelulas] = useState<KefelCelula[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,8 +34,9 @@ export function Onboarding() {
 
     if (!error) {
       setUser(updated as any);
+      showToast("Tudo pronto! Bem-vindo.");
     } else {
-      alert("Erro ao salvar: " + error.message);
+      showToast("Erro ao salvar: " + error.message, "error");
     }
     setSaving(false);
   };
