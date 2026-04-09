@@ -1,27 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { 
   FileText, Users, Home, 
-  CheckCircle, Loader2, Calendar, ChevronLeft,
-  Trophy, ShieldCheck
+  CheckCircle, Loader2, Calendar, ChevronLeft
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 
 export function Reports() {
   const { user, showToast } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState(new Date().toISOString().split('T')[0]); // Fallback para hoje
-  const [activeTab, setActiveTab] = useState<'enviar' | 'dashboard'>(
-    user?.role === 'master' ? 'dashboard' : 'enviar'
-  );
   
-  // Dashboard states
-  const [loadingDashboard, setLoadingDashboard] = useState(false);
-  const [relatoriosDia, setRelatoriosDia] = useState<any[]>([]);
-  const [celulasConfig, setCelulasConfig] = useState<any[]>([]);
-
   // Forms state
   const [presentesCelula, setPresentesCelula] = useState<string>("");
   const [presentesCulto, setPresentesCulto] = useState<string>("");
@@ -32,7 +23,7 @@ export function Reports() {
 
   // Verificacao de status de envio para a data selecionada
   useEffect(() => {
-    if (user && activeTab === 'enviar') {
+    if (user) {
       supabase.from("kefel_relatorios")
         .select("*")
         .eq("lider_id", user.id)
@@ -52,25 +43,10 @@ export function Reports() {
            else setPresentesCulto("");
         });
     }
-  }, [user, data, activeTab]);
-
-  // Carrega painel do discipulador (Master)
-  useEffect(() => {
-    if (activeTab === 'dashboard' && user?.role === 'master') {
-      setLoadingDashboard(true);
-      Promise.all([
-        supabase.from("kefel_celulas").select("id, nome, lider:lider_id(id, nome)"),
-        supabase.from("kefel_relatorios").select("*, lider:lider_id(id, nome)").eq("data", data)
-      ]).then(([resCel, resRel]) => {
-         setCelulasConfig(resCel.data || []);
-         setRelatoriosDia(resRel.data || []);
-         setLoadingDashboard(false);
-      });
-    }
-  }, [activeTab, data, user]);
+  }, [user, data]);
 
   if (user?.role !== 'lider' && user?.role !== 'master') {
-    return <div className="p-10 text-center font-black uppercase text-gray-400">Acesso Restrito a Líderes</div>;
+    return <div className="p-10 text-center font-black uppercase text-gray-400">Acesso Restrito a Líderes e Discipuladores</div>;
   }
 
   async function handleSendReport(tipo: 'celula' | 'culto') {
@@ -123,28 +99,10 @@ export function Reports() {
       <header className="flex items-center gap-4 mb-6 pt-4">
         <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-2xl shadow-sm"><ChevronLeft size={20} className="text-[#1B3B6B]" /></button>
         <div>
-           <h1 className="text-2xl font-black text-gray-900 italic uppercase tracking-tight">Gestão</h1>
+           <h1 className="text-2xl font-black text-gray-900 italic uppercase tracking-tight">Relatórios</h1>
            <p className="text-[10px] font-black uppercase tracking-widest text-[#1B3B6B]">Frequência e Metas</p>
         </div>
       </header>
-
-      {/* Abas Master vs Lider */}
-      {user?.role === 'master' && (
-        <div className="flex bg-white p-1.5 rounded-[2rem] gap-1.5 mb-8 border border-gray-100 shadow-sm">
-           <button 
-             onClick={() => setActiveTab('enviar')}
-             className={`flex-1 py-3.5 rounded-[1.5rem] font-black uppercase italic text-[10px] tracking-widest transition-soft ${activeTab === 'enviar' ? 'bg-[#1B3B6B] text-white shadow-lg shadow-[#1B3B6B]/20' : 'text-gray-400 hover:bg-gray-50'}`}
-           >
-             Enviar
-           </button>
-           <button 
-             onClick={() => setActiveTab('dashboard')}
-             className={`flex-1 py-3.5 rounded-[1.5rem] font-black uppercase italic text-[10px] tracking-widest transition-soft ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-gray-400 hover:bg-gray-50'}`}
-           >
-             Dashboard Geral
-           </button>
-        </div>
-      )}
 
       {/* Seletor de Data Universal */}
       <div className="bg-white rounded-3xl p-5 border border-gray-100 mb-6 shadow-sm flex flex-col">
@@ -156,7 +114,6 @@ export function Reports() {
             value={data} 
             onChange={(e) => {
               setData(e.target.value);
-              // Reset visual de envio pra nova data se na aba enviar
               setEnviadoCelula(false);
               setEnviadoCulto(false);
               setPresentesCelula("");
@@ -167,143 +124,74 @@ export function Reports() {
         </div>
       </div>
 
-      {activeTab === 'enviar' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pb-10">
-          
-          {/* Card Célula */}
-          <div className="bg-white rounded-[32px] p-8 border border-gray-100 relative shadow-sm overflow-hidden">
-            {enviadoCelula && (
-               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1B3B6B]/95 backdrop-blur-md transition-all duration-500 text-white animate-in zoom-in">
-                 <div className="text-5xl mb-2">✅</div>
-                 <h3 className="text-xl font-black uppercase mb-1">RELATÓRIO SALVO</h3>
-                 <p className="text-[10px] uppercase tracking-widest font-bold opacity-80 text-center">Para alterar, escolha outra data e volte</p>
-               </div>
-            )}
-            <div className="flex justify-between items-center mb-6">
-              <p className="text-[10px] font-black text-[#1B3B6B] uppercase tracking-widest flex items-center gap-2">
-                 <Home size={14} /> PRESENÇA CÉLULA
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-[24px] py-10 flex items-center justify-center mb-6 border-2 border-dashed border-gray-200 focus-within:border-[#1B3B6B] transition-soft">
-              <input 
-                type="number" 
-                disabled={enviadoCelula || enviandoCelula} 
-                value={presentesCelula} 
-                onChange={(e) => setPresentesCelula(e.target.value)} 
-                placeholder="0" 
-                className="bg-transparent text-6xl font-black text-center w-full focus:outline-none text-gray-900 tracking-tighter" 
-              />
-            </div>
-            <button 
-              onClick={() => handleSendReport('celula')} 
-              disabled={enviandoCelula || !presentesCelula} 
-              className="w-full bg-[#1B3B6B] text-white font-black uppercase italic tracking-widest py-5 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30 disabled:active:scale-100"
-            >
-              {enviandoCelula ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'ENVIAR AGORA'}
-            </button>
-          </div>
-
-          {/* Card Culto */}
-          <div className="bg-white rounded-[32px] p-8 border border-gray-100 relative shadow-sm overflow-hidden">
-            {enviadoCulto && (
-               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-indigo-600/95 backdrop-blur-md transition-all duration-500 text-white animate-in zoom-in">
-                 <div className="text-5xl mb-2">✅</div>
-                 <h3 className="text-xl font-black uppercase mb-1">RELATÓRIO SALVO</h3>
-               </div>
-            )}
-            <div className="flex justify-between items-center mb-6">
-              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
-                 <Users size={14} /> PRESENÇA CULTO
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-[24px] py-10 flex items-center justify-center mb-6 border-2 border-dashed border-gray-200 focus-within:border-indigo-400 transition-soft">
-              <input 
-                type="number" 
-                disabled={enviadoCulto || enviandoCulto} 
-                value={presentesCulto} 
-                onChange={(e) => setPresentesCulto(e.target.value)} 
-                placeholder="0" 
-                className="bg-transparent text-6xl font-black text-center w-full focus:outline-none text-gray-900 tracking-tighter" 
-              />
-            </div>
-            <button 
-              onClick={() => handleSendReport('culto')} 
-              disabled={enviandoCulto || !presentesCulto} 
-              className="w-full bg-indigo-600 text-white font-black uppercase italic tracking-widest py-5 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30 disabled:active:scale-100 shadow-indigo-600/20"
-            >
-              {enviandoCulto ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'ENVIAR AGORA'}
-            </button>
-          </div>
-
-        </motion.div>
-      )}
-
-      {activeTab === 'dashboard' && user?.role === 'master' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pb-10">
-          
-          {/* Big Numbers da Rede */}
-          <div className="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-[32px] p-8 text-white mb-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-            <div className="relative z-10">
-              <h2 className="font-bold opacity-80 mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
-                 <ShieldCheck size={18} /> Resultados na Data
-              </h2>
-              <div className="flex justify-between gap-4">
-                <div>
-                  <p className="text-[10px] font-black opacity-60 uppercase mb-1">TOTAL CÉLULA</p>
-                  <p className="text-4xl font-black">{relatoriosDia.filter(r => r.tipo === 'celula').reduce((acc, r) => acc + (r.presentes || 0), 0)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black opacity-60 uppercase mb-1">TOTAL CULTO</p>
-                  <p className="text-4xl font-black text-emerald-300">{relatoriosDia.filter(r => r.tipo === 'culto').reduce((acc, r) => acc + (r.presentes || 0), 0)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <h3 className="font-black text-xl text-gray-900 italic uppercase mb-4">Relatórios Entregues</h3>
-          
-          {loadingDashboard ? (
-             <div className="flex justify-center p-10"><Loader2 className="animate-spin text-indigo-600" /></div>
-          ) : (
-             <div className="space-y-4">
-               {relatoriosDia.length === 0 ? (
-                 <p className="text-[10px] uppercase font-black tracking-widest text-center text-gray-400 py-10">Nenhum relatório nesta data.</p>
-               ) : (
-                 // Agrupar por Lider/Celula
-                 Object.values(
-                   relatoriosDia.reduce((acc, r) => {
-                     if (!acc[r.lider_id]) acc[r.lider_id] = { lider: r.lider?.nome || 'Desconhecido', celulaCount: 0, cultoCount: 0 };
-                     if (r.tipo === 'celula') acc[r.lider_id].celulaCount = r.presentes;
-                     if (r.tipo === 'culto') acc[r.lider_id].cultoCount = r.presentes;
-                     return acc;
-                   }, {})
-                 ).map((group: any, idx) => (
-                   <div key={idx} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
-                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-500 font-black flex items-center justify-center text-xl shadow-inner">
-                         {group.lider.charAt(0)}
-                       </div>
-                       <h4 className="font-black text-gray-900 italic uppercase truncate flex-1">{group.lider}</h4>
-                     </div>
-                     <div className="grid grid-cols-2 gap-3">
-                       <div className="bg-[#1B3B6B]/5 p-3 rounded-2xl">
-                         <p className="text-[10px] font-black uppercase text-[#1B3B6B] tracking-widest">Célula</p>
-                         <p className="text-2xl font-black text-[#1B3B6B]">{group.celulaCount}</p>
-                       </div>
-                       <div className="bg-indigo-600/5 p-3 rounded-2xl">
-                         <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Culto</p>
-                         <p className="text-2xl font-black text-indigo-600">{group.cultoCount}</p>
-                       </div>
-                     </div>
-                   </div>
-                 ))
-               )}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pb-10">
+        
+        {/* Card Célula */}
+        <div className="bg-white rounded-[32px] p-8 border border-gray-100 relative shadow-sm overflow-hidden">
+          {enviadoCelula && (
+             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1B3B6B]/95 backdrop-blur-md transition-all duration-500 text-white animate-in zoom-in">
+               <div className="text-5xl mb-2">✅</div>
+               <h3 className="text-xl font-black uppercase mb-1">RELATÓRIO SALVO</h3>
+               <p className="text-[10px] uppercase tracking-widest font-bold opacity-80 text-center">Para alterar, escolha outra data e volte</p>
              </div>
           )}
-        </motion.div>
-      )}
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-[10px] font-black text-[#1B3B6B] uppercase tracking-widest flex items-center gap-2">
+               <Home size={14} /> PRESENÇA CÉLULA
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-[24px] py-10 flex items-center justify-center mb-6 border-2 border-dashed border-gray-200 focus-within:border-[#1B3B6B] transition-soft">
+            <input 
+              type="number" 
+              disabled={enviadoCelula || enviandoCelula} 
+              value={presentesCelula} 
+              onChange={(e) => setPresentesCelula(e.target.value)} 
+              placeholder="0" 
+              className="bg-transparent text-6xl font-black text-center w-full focus:outline-none text-gray-900 tracking-tighter" 
+            />
+          </div>
+          <button 
+            onClick={() => handleSendReport('celula')} 
+            disabled={enviandoCelula || !presentesCelula} 
+            className="w-full bg-[#1B3B6B] text-white font-black uppercase italic tracking-widest py-5 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30 disabled:active:scale-100"
+          >
+            {enviandoCelula ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'ENVIAR AGORA'}
+          </button>
+        </div>
 
+        {/* Card Culto */}
+        <div className="bg-white rounded-[32px] p-8 border border-gray-100 relative shadow-sm overflow-hidden">
+          {enviadoCulto && (
+             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-indigo-600/95 backdrop-blur-md transition-all duration-500 text-white animate-in zoom-in">
+               <div className="text-5xl mb-2">✅</div>
+               <h3 className="text-xl font-black uppercase mb-1">RELATÓRIO SALVO</h3>
+             </div>
+          )}
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
+               <Users size={14} /> PRESENÇA CULTO
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-[24px] py-10 flex items-center justify-center mb-6 border-2 border-dashed border-gray-200 focus-within:border-indigo-400 transition-soft">
+            <input 
+              type="number" 
+              disabled={enviadoCulto || enviandoCulto} 
+              value={presentesCulto} 
+              onChange={(e) => setPresentesCulto(e.target.value)} 
+              placeholder="0" 
+              className="bg-transparent text-6xl font-black text-center w-full focus:outline-none text-gray-900 tracking-tighter" 
+            />
+          </div>
+          <button 
+            onClick={() => handleSendReport('culto')} 
+            disabled={enviandoCulto || !presentesCulto} 
+            className="w-full bg-indigo-600 text-white font-black uppercase italic tracking-widest py-5 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30 disabled:active:scale-100 shadow-indigo-600/20"
+          >
+            {enviandoCulto ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'ENVIAR AGORA'}
+          </button>
+        </div>
+
+      </motion.div>
     </div>
   );
 }

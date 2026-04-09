@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Users, Plus, X, 
   Loader2, Trash2, Shield, User,
-  Camera, CheckCircle, Clock, ChevronRight
+  Camera, CheckCircle, Clock, ChevronRight, Home
 } from "lucide-react";
 import { supabase, type KefelCelula } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -24,6 +24,10 @@ export function CellManagement() {
   const [liderId, setLiderId] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File|null>(null);
   const [imagePreview, setImagePreview] = useState<string|null>(null);
+
+  // Relatorios State (Dashboard Master)
+  const [dataAlvo, setDataAlvo] = useState(new Date().toISOString().split('T')[0]);
+  const [relatoriosData, setRelatoriosData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -53,6 +57,13 @@ export function CellManagement() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    supabase.from("kefel_relatorios")
+      .select("*")
+      .eq("data", dataAlvo)
+      .then(({data}) => setRelatoriosData(data || []));
+  }, [dataAlvo]);
 
   async function handleAddCell(e: React.FormEvent) {
     e.preventDefault();
@@ -138,7 +149,7 @@ export function CellManagement() {
 
   return (
     <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
-      <header className="flex justify-between items-center mb-8 pt-4">
+      <header className="flex justify-between items-center pt-4">
         <div>
            <h1 className="text-2xl font-black text-gray-900 italic uppercase">Visão Geral</h1>
            <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
@@ -150,6 +161,39 @@ export function CellManagement() {
           </button>
         )}
       </header>
+
+      {user?.role === 'master' && (
+        <div className="mt-6 mb-8 space-y-4">
+          <div className="bg-white rounded-[2rem] p-4 border border-gray-100 shadow-sm flex flex-col relative z-20">
+            <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60 text-gray-500 ml-2">Filtrar Relatórios por Data</p>
+            <input 
+              type="date" 
+              value={dataAlvo} 
+              onChange={e => setDataAlvo(e.target.value)}
+              className="w-full bg-gray-50 p-4 rounded-2xl font-black italic text-gray-900 uppercase text-xs outline-none border border-transparent focus:border-[#1B3B6B]/20 transition-soft" 
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+             <div className="bg-[#1B3B6B] rounded-[2rem] p-5 shadow-lg shadow-[#1B3B6B]/20 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1 relative z-10">Total Célula</p>
+                <div className="flex items-center gap-2 relative z-10">
+                   <Home size={18} className="opacity-80"/>
+                   <span className="text-3xl font-black">{relatoriosData.filter(r => r.tipo === 'celula').reduce((acc, r) => acc + (r.presentes || 0), 0)}</span>
+                </div>
+             </div>
+             <div className="bg-indigo-600 rounded-[2rem] p-5 shadow-lg shadow-indigo-600/20 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1 relative z-10">Total Culto</p>
+                <div className="flex items-center gap-2 relative z-10">
+                   <Users size={18} className="opacity-80"/>
+                   <span className="text-3xl font-black">{relatoriosData.filter(r => r.tipo === 'culto').reduce((acc, r) => acc + (r.presentes || 0), 0)}</span>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
@@ -165,8 +209,7 @@ export function CellManagement() {
                    <div className="flex items-center gap-5">
                       <div className="w-16 h-16 bg-white rounded-[1.8rem] overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-indigo-100 border border-gray-50 p-1 group-hover:scale-110 transition-soft">
                          {c.imagem_url ? <img src={c.imagem_url} className="w-full h-full object-cover rounded-2xl" /> : <Users size={28} />}
-                      </div>
-                      <div>
+                                        <div>
                          <h3 className="font-black text-gray-900 uppercase italic text-base leading-tight">{c.nome}</h3>
                          <div className="flex items-center gap-4 mt-1.5">
                             <div className="flex items-center gap-1">
@@ -180,14 +223,34 @@ export function CellManagement() {
                          </div>
                       </div>
                    </div>
-                   <div className="flex items-center gap-3">
-                     {user?.role === 'master' && (
-                       <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }} className="bg-rose-50 text-rose-500 p-3 rounded-xl active:scale-90 transition-soft hover:bg-rose-100"><Trash2 size={16} /></button>
-                     )}
-                     <div className={`p-2 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-[#1B3B6B]' : 'text-gray-300'}`}>
-                        <ChevronRight size={20} />
+                   <div className="flex flex-col items-end gap-2">
+                     <div className="flex gap-2">
+                       {(() => {
+                         const relCel = relatoriosData.find(r => r.lider_id === c.lider_id && r.tipo === 'celula');
+                         const relCul = relatoriosData.find(r => r.lider_id === c.lider_id && r.tipo === 'culto');
+                         if (user?.role !== 'master') return null;
+                         
+                         return (
+                           <div className="flex flex-col gap-1 items-end mr-2">
+                             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${relCel ? 'bg-green-100 text-green-700' : 'bg-rose-50 text-rose-500'}`}>
+                               <Home size={8}/> {relCel ? `${relCel.presentes} P` : 'Pendente'}
+                             </div>
+                             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${relCul ? 'bg-green-100 text-green-700' : 'bg-rose-50 text-rose-500'}`}>
+                               <Users size={8}/> {relCul ? `${relCul.presentes} P` : 'Pendente'}
+                             </div>
+                           </div>
+                         );
+                       })()}
                      </div>
-                   </div>
+                     <div className="flex items-center gap-3">
+                       {user?.role === 'master' && (
+                         <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }} className="bg-rose-50 text-rose-500 p-2 rounded-xl active:scale-90 transition-soft hover:bg-rose-100"><Trash2 size={16} /></button>
+                       )}
+                       <div className={`p-2 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-[#1B3B6B]' : 'text-gray-300'}`}>
+                          <ChevronRight size={20} />
+                       </div>
+                     </div>
+                   </div>      </div>
                 </div>
 
                 <AnimatePresence>
