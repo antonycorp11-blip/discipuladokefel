@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { motion } from "motion/react";
 
 export function WhatsAppRequired() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,9 +100,21 @@ export function WhatsAppRequired() {
           </button>
         </form>
 
-        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-8">
-          Sua conta será blindada e acessível em qualquer lugar
-        </p>
+        <div className="flex flex-col items-center gap-4 mt-8">
+          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+            Sua conta será blindada e acessível em qualquer lugar
+          </p>
+          <button
+            onClick={() => {
+              if (window.confirm("Deseja realmente sair desta conta?")) {
+                logout();
+              }
+            }}
+            className="text-[10px] font-black text-rose-400 uppercase tracking-widest hover:text-rose-500 transition-colors"
+          >
+            Sair da Conta
+          </button>
+        </div>
       </motion.div>
     </div>
   );

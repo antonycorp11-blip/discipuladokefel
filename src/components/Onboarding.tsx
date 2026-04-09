@@ -4,7 +4,7 @@ import { supabase, type KefelCelula } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 export function Onboarding() {
-  const { user, showToast, setUser } = useAuth();
+  const { user, showToast, setUser, logout } = useAuth();
   const [celulas, setCelulas] = useState<KefelCelula[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -95,6 +95,17 @@ export function Onboarding() {
         className="w-full bg-black text-white py-8 rounded-[2.5rem] font-black shadow-2xl mt-10 active:scale-95 disabled:opacity-20 uppercase text-xs tracking-[0.2em] italic"
       >
         {saving ? <Loader2 className="animate-spin" /> : "Concluir Cadastro"}
+      </button>
+
+      <button
+        onClick={() => {
+          if (window.confirm("Deseja realmente sair desta conta?")) {
+            logout();
+          }
+        }}
+        className="mt-6 text-[10px] font-black text-rose-400 uppercase tracking-widest hover:text-rose-500 transition-colors mx-auto block"
+      >
+        Sair da Conta
       </button>
     </div>
   );
