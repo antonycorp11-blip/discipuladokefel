@@ -13,7 +13,9 @@ export function Reports() {
   const { user, showToast } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState(new Date().toISOString().split('T')[0]); // Fallback para hoje
-  const [activeTab, setActiveTab] = useState<'enviar' | 'dashboard'>('enviar');
+  const [activeTab, setActiveTab] = useState<'enviar' | 'dashboard'>(
+    user?.role === 'master' ? 'dashboard' : 'enviar'
+  );
   
   // Dashboard states
   const [loadingDashboard, setLoadingDashboard] = useState(false);
