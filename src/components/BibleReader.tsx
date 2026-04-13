@@ -142,9 +142,8 @@ export default function BibleReader() {
         // 🔔 Disparar PUSH de teste (OneSignal REST API)
         const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
         const appKey = (import.meta as any).env.VITE_ONESIGNAL_REST_API_KEY;
-        const pushToken = (user as any).push_token;
 
-        if (appId && appKey && pushToken) {
+        if (appId && appKey && user?.id) {
            fetch("https://onesignal.com/api/v1/notifications", {
              method: "POST",
              headers: {
@@ -153,7 +152,7 @@ export default function BibleReader() {
              },
              body: JSON.stringify({
                app_id: appId,
-               include_subscription_ids: [pushToken],
+               include_external_user_ids: [user.id],
                contents: { "en": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨`, "pt": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨` },
                headings: { "en": "Favorito salvo", "pt": "Oba! Favorito salvo" }
              })
