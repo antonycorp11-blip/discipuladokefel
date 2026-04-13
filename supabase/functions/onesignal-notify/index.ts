@@ -27,6 +27,7 @@ serve(async (req) => {
 
     let notificationBody: any = {
       app_id: ONESIGNAL_APP_ID,
+      target_channel: "push",
       headings: { en: finalTitle, pt: finalTitle },
       contents: { en: finalMessage, pt: finalMessage },
     }

@@ -55,6 +55,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           app_id: ONESIGNAL_APP_ID,
+          target_channel: "push",
           include_external_user_ids: targetUserIds,
           headings: { en: notificationTitle, pt: notificationTitle },
           contents: { en: notificationMessage, pt: notificationMessage },

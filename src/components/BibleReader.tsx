@@ -152,6 +152,7 @@ export default function BibleReader() {
              },
              body: JSON.stringify({
                app_id: appId,
+               target_channel: "push",
                include_external_user_ids: [user.id],
                contents: { "en": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨`, "pt": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨` },
                headings: { "en": "Favorito salvo", "pt": "Oba! Favorito salvo" }
