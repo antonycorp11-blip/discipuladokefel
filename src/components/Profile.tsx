@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X, Trash2, Moon, Sun, Award, BookOpen } from "lucide-react";
+import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X, Trash2, Moon, Sun, Award, BookOpen, Send, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { supabase, type KefelCelula, type KefelProfile, type KefelFavorito } from "@/lib/supabase";
@@ -37,6 +37,8 @@ export function Profile() {
   const [allRelatorios, setAllRelatorios] = useState<any[]>([]);
   const [loadingAllRels, setLoadingAllRels] = useState(false);
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
+  const [badgeRequests, setBadgeRequests] = useState<Record<string, string>>({}); // key -> status
+  const [requesting, setRequesting] = useState<string | null>(null);
 
   const isOwnProfile = !id || id === currentUser?.id;
 
@@ -46,12 +48,14 @@ export function Profile() {
       const targetId = id || currentUser?.id;
       if (!targetId) return;
 
-      const [profRes, favRes, relRes] = await Promise.all([
+      const [profRes, favRes, relRes, reqRes] = await Promise.all([
         supabase.from("kefel_profiles").select("*").eq("id", targetId).single(),
         supabase.from("kefel_favoritos").select("*").eq("user_id", targetId).order('created_at', { ascending: false }),
         (currentUser?.role === 'master' || currentUser?.role === 'lider') 
           ? supabase.from("kefel_relatorios").select("*").eq("lider_id", targetId).order('data', { ascending: false }).limit(10)
-          : Promise.resolve({ data: [] })
+          : Promise.resolve({ data: [] }),
+        // Carrega solicitações existentes do próprio usuário
+        supabase.from("kefel_badge_requests").select("badge_key, status").eq("user_id", targetId)
       ]);
 
       if (profRes.data) {
@@ -66,6 +70,14 @@ export function Profile() {
           setMeuGrupo(celData as KefelCelula);
         }
       }
+
+      // Mapeia status das solicitações
+      if (reqRes.data) {
+        const map: Record<string, string> = {};
+        (reqRes.data as any[]).forEach(r => { map[r.badge_key] = r.status; });
+        setBadgeRequests(map);
+      }
+
       setLoading(false);
     }
     loadProfile();
@@ -82,6 +94,23 @@ export function Profile() {
     if (!error) setAllRelatorios(data || []);
     setLoadingAllRels(false);
   }
+
+  const handleRequestBadge = async (badgeKey: 'lider' | 'discipulador') => {
+    if (!currentUser || requesting) return;
+    setRequesting(badgeKey);
+    const { error } = await supabase.from("kefel_badge_requests").insert({
+      user_id: currentUser.id,
+      badge_key: badgeKey,
+      status: 'pendente'
+    });
+    if (!error) {
+      setBadgeRequests(prev => ({ ...prev, [badgeKey]: 'pendente' }));
+      showToast("✅ Solicitação enviada! Aguarde aprovação do Discipulador.");
+    } else {
+      showToast("Você já possui uma solicitação pendente.", "error");
+    }
+    setRequesting(null);
+  };
 
   const formatPhone = (val: string) => {
     const clean = val.replace(/\D/g, "");
@@ -259,13 +288,15 @@ export function Profile() {
       </div>
 
       {/* Seção de Badges / Conquistas */}
-      {effectiveBadges.length > 0 && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Award size={18} className="text-amber-500" />
-            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase italic tracking-widest">Conquistas</h3>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
+      <section className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Award size={18} className="text-amber-500" />
+          <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase italic tracking-widest">Conquistas</h3>
+        </div>
+
+        {/* Badges já conquistados */}
+        {effectiveBadges.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-4">
             {effectiveBadges.map((badgeKey) => {
               const badge = BADGE_MAP[badgeKey];
               if (!badge) return null;
@@ -283,8 +314,41 @@ export function Profile() {
               );
             })}
           </div>
-          {/* Badge tooltip */}
-          <AnimatePresence>
+        )}
+
+        {/* Solicitações de Badge (lider / discipulador) — apenas no próprio perfil */}
+        {isOwnProfile && (['lider', 'discipulador'] as const).map((badgeKey) => {
+          const hasBadge = effectiveBadges.includes(badgeKey);
+          if (hasBadge) return null;
+          const status = badgeRequests[badgeKey];
+          const badge = BADGE_MAP[badgeKey];
+          return (
+            <div key={badgeKey} className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 mb-3">
+              <img src={badge.img} className="w-10 h-10 object-cover rounded-xl opacity-50" />
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest">{badge.label}</p>
+                <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">{badge.desc}</p>
+              </div>
+              {status === 'pendente' ? (
+                <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-1.5 rounded-full uppercase tracking-widest">Aguardando</span>
+              ) : status === 'rejeitado' ? (
+                <span className="text-[9px] font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-3 py-1.5 rounded-full uppercase tracking-widest">Recusado</span>
+              ) : (
+                <button
+                  onClick={() => handleRequestBadge(badgeKey)}
+                  disabled={requesting === badgeKey}
+                  className="flex items-center gap-1.5 text-[9px] font-black text-[#1B3B6B] dark:text-blue-400 bg-[#1B3B6B]/10 dark:bg-blue-400/10 px-3 py-1.5 rounded-full uppercase tracking-widest active:scale-95 transition-soft disabled:opacity-50"
+                >
+                  {requesting === badgeKey ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />}
+                  Solicitar
+                </button>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Badge tooltip */}
+        <AnimatePresence>
             {activeBadge && BADGE_MAP[activeBadge] && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
@@ -301,7 +365,6 @@ export function Profile() {
             )}
           </AnimatePresence>
         </section>
-      )}
 
       {/* Versículos Favoritos */}
       {profile.role !== 'master' && favorites.length > 0 && (
