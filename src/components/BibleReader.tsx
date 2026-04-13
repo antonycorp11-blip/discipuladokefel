@@ -138,27 +138,6 @@ export default function BibleReader() {
         });
         if (error) throw error;
         showToast("Versículo favoritado!");
-
-        // 🔔 Disparar PUSH de teste (OneSignal REST API)
-        const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
-        const appKey = (import.meta as any).env.VITE_ONESIGNAL_REST_API_KEY;
-
-        if (appId && appKey && user?.id) {
-           fetch("https://onesignal.com/api/v1/notifications", {
-             method: "POST",
-             headers: {
-               "Content-Type": "application/json; charset=utf-8",
-               "Authorization": `Basic ${appKey}`
-             },
-             body: JSON.stringify({
-               app_id: appId,
-               target_channel: "push",
-               include_external_user_ids: [user.id],
-               contents: { "en": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨`, "pt": `Você favoritou: ${selectedBook.nome} ${chapter}:${v.verse}! ✨` },
-               headings: { "en": "Favorito salvo", "pt": "Oba! Favorito salvo" }
-             })
-           }).catch(e => console.error("Erro Push:", e));
-        }
       }
     } catch (error: any) {
       console.error("Erro ao favoritar:", error);
