@@ -108,11 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // Sincronizar OneSignal
           try {
-            (window as any).OneSignal?.push(() => {
-              (window as any).OneSignal.setExternalUserId(profile.id);
-              (window as any).OneSignal.sendTag("role", profile.role);
+            const OneSignal = (window as any).OneSignalDeferred || [];
+            OneSignal.push(async (OneSignalObj: any) => {
+              await OneSignalObj.login(profile.id);
+              OneSignalObj.User.addTag("role", profile.role);
               if (profile.celula_id) {
-                (window as any).OneSignal.sendTag("celula_id", profile.celula_id);
+                OneSignalObj.User.addTag("celula_id", profile.celula_id);
               }
             });
           } catch (e) {
