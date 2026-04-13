@@ -19,6 +19,10 @@ export interface KefelProfile {
   bible_progress?: string[] | null;
   last_bible_reading?: any | null;
   push_token?: string | null;
+  cultos_presenca?: number;
+  celulas_presenca?: number;
+  last_culto_claim?: string | null;
+  badges?: string[] | null;
 }
 
 export interface KefelCelula {

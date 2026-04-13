@@ -9,6 +9,7 @@ import { Profile } from "./components/Profile";
 import { Login } from "./components/Login";
 import { CellManagement } from "./components/CellManagement";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { DarkModeProvider } from "./context/DarkModeContext";
 import { Onboarding } from "./components/Onboarding";
 import { Library } from "./components/Library";
 import { PDFViewer } from "./components/PDFViewer";
@@ -154,11 +155,13 @@ function OneSignalHandler() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <OneSignalHandler />
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <DarkModeProvider>
+      <AuthProvider>
+        <OneSignalHandler />
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </DarkModeProvider>
   );
 }

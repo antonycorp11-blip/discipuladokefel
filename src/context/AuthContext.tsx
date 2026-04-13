@@ -278,15 +278,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateReadingTime = async (seconds: number, livro: string, capitulo: number) => {
     if (!user) return;
 
-    // Atualiza estado local imediatamente
-    const updated = { ...user, tempo_leitura_total: user.tempo_leitura_total + seconds };
+    const updated = { 
+      ...user, 
+      tempo_leitura_total: user.tempo_leitura_total + seconds,
+      last_bible_reading: { book: livro, chapter: capitulo }
+    };
     setUser(updated);
 
-    // Persiste no banco
     await Promise.all([
       supabase
         .from("kefel_profiles")
-        .update({ tempo_leitura_total: updated.tempo_leitura_total })
+        .update({ 
+          tempo_leitura_total: updated.tempo_leitura_total,
+          last_bible_reading: { book: livro, chapter: capitulo }
+        })
         .eq("id", user.id),
       supabase
         .from("kefel_leitura_logs")

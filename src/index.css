@@ -10,6 +10,23 @@
   --glass-border: rgba(255, 255, 255, 0.5);
 }
 
+/* ── Dark Mode ─────────────────────────────────────── */
+.dark {
+  --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  --glass: rgba(30, 41, 59, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --primary-glow: rgba(79, 147, 245, 0.25);
+}
+
+.dark body {
+  color: #E2E8F0;
+}
+
+.dark .glass-panel {
+  background: var(--glass);
+  border-color: var(--glass-border);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -24,6 +41,16 @@ body {
   background: var(--bg-gradient);
   color: #1E293B;
   overflow-x: hidden;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+.dark body {
+  background: #0F172A;
+  color: #E2E8F0;
+}
+
+html.dark {
+  background: #0F172A;
 }
 
 h1, h2, h3, .font-heading {
@@ -72,3 +99,16 @@ h1, h2, h3, .font-heading {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* Badge shimmer animation */
+@keyframes badge-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.badge-shine {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.4) 50%, transparent 75%);
+  background-size: 200% auto;
+  animation: badge-shine 2.5s linear infinite;
+}
+
