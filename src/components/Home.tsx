@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { supabase, type KefelEvento, type KefelCelula } from "@/lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
 import { SocialFeed } from "./SocialFeed";
+import { BIBLE_BOOKS } from "@/data/bible";
 
 const VERSES = [
   { text: "Lâmpada para os meus pés é tua palavra e luz, para o meu caminho.", ref: "Salmos 119:105" },
@@ -16,7 +17,7 @@ const VERSES = [
 const VERSE = VERSES[Math.floor(Math.random() * VERSES.length)];
 
 export function Home() {
-  const { user, showToast } = useAuth();
+  const { user, showToast, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [meuGrupo, setMeuGrupo] = useState<KefelCelula | null>(null);
@@ -99,16 +100,20 @@ export function Home() {
     const newCount = (user.cultos_presenca || 0) + 1;
     const now = new Date().toISOString();
 
+    // Adiciona 'culto' ao array de badges se ainda não tiver
+    const currentBadges: string[] = Array.isArray(user.badges) ? [...user.badges] : [];
+    if (!currentBadges.includes('culto')) currentBadges.push('culto');
+
     const { error } = await supabase.from("kefel_profiles").update({
       cultos_presenca: newCount,
-      last_culto_claim: now
+      last_culto_claim: now,
+      badges: currentBadges
     }).eq("id", user.id);
 
     if (!error) {
       setCanClaimCulto(false);
-      showToast("🪙 Selo do Culto resgatado com sucesso!");
-      // O profile seria atualizado via context refresh na vida real, aqui o reload cuida:
-      window.location.reload(); 
+      showToast("🪙 Selo do Culto resgatado!");
+      await refreshProfile();
     } else {
       showToast("Erro ao resgatar selo", "error");
     }
@@ -174,23 +179,31 @@ export function Home() {
         )}
       </AnimatePresence>
 
-      {/* Atalho Continuidade Leitura (Novo) */}
-      {user?.last_bible_reading && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8">
-           <Link to="/leitura" className="glass-panel p-4 rounded-3xl flex items-center justify-between group active:scale-95 transition-soft border border-[#1B3B6B]/10 dark:border-white/10 dark:bg-slate-800/50">
-             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#1B3B6B]/10 dark:bg-white/10 rounded-2xl flex items-center justify-center text-[#1B3B6B] dark:text-white group-hover:rotate-12 transition-soft">
-                  <BookOpen size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">Continuar Lendo</p>
-                  <h4 className="font-black text-gray-900 dark:text-white italic uppercase">{user.last_bible_reading.book} {user.last_bible_reading.chapter}</h4>
-                </div>
-             </div>
-             <Navigation size={18} className="text-[#1B3B6B]/50 dark:text-white/50 group-hover:text-[#1B3B6B] dark:group-hover:text-white transition-soft -rotate-45" />
-           </Link>
-        </motion.div>
-      )}
+      {user?.last_bible_reading && (() => {
+        const br = user.last_bible_reading as { bookId?: string; book?: string; chapter?: number };
+        const bookId = br.bookId || null;
+        const bookName = bookId
+          ? (BIBLE_BOOKS.find(b => b.id === bookId)?.nome ?? br.book ?? "")
+          : (br.book ?? "");
+        const chapter = br.chapter ?? 1;
+        if (!bookName) return null;
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8">
+             <Link to="/biblia-leitura" className="glass-panel p-4 rounded-3xl flex items-center justify-between group active:scale-95 transition-soft border border-[#1B3B6B]/10 dark:border-white/10 dark:bg-slate-800/50">
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#1B3B6B]/10 dark:bg-white/10 rounded-2xl flex items-center justify-center text-[#1B3B6B] dark:text-white group-hover:rotate-12 transition-soft">
+                    <BookOpen size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">Continuar Lendo</p>
+                    <h4 className="font-black text-gray-900 dark:text-white italic uppercase">{bookName} {chapter}</h4>
+                  </div>
+               </div>
+               <Navigation size={18} className="text-[#1B3B6B]/50 dark:text-white/50 group-hover:text-[#1B3B6B] dark:group-hover:text-white transition-soft -rotate-45" />
+             </Link>
+          </motion.div>
+        );
+      })()}
 
       {/* Card da Palavra - Ultra Premium */}
       <div className="relative group mb-10">

@@ -77,77 +77,81 @@ function OneSignalHandler() {
   const { user } = useAuth();
   const initDone = React.useRef(false);
 
+  // Helper para obter o objeto OneSignal — tenta o padrão do v16
+  const getOS = (): Promise<any> => new Promise((resolve) => {
+    if ((window as any).OneSignal?.initialized) {
+      return resolve((window as any).OneSignal);
+    }
+    const deferred = (window as any).OneSignalDeferred || [];
+    (window as any).OneSignalDeferred = deferred;
+    deferred.push((os: any) => resolve(os));
+  });
+
   // Inicialização apenas uma vez
   useEffect(() => {
     if (initDone.current) return;
     initDone.current = true;
-    
-    // Inicialização do OneSignal v16 Nativa
-    const OneSignal = (window as any).OneSignalDeferred || [];
-    (window as any).OneSignalDeferred = OneSignal;
-    
-    OneSignal.push(async function(OneSignalObj: any) {
-      const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
-      if (!appId) return;
 
-      await OneSignalObj.init({
-        appId,
-        allowLocalhostAsSecureOrigin: true,
-        notifyButton: {
-          enable: true,
-          position: 'bottom-right',
-          size: 'medium',
-          theme: 'default',
-        }
-      });
+    const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
+    if (!appId) return;
 
-      // Solicitar permissão (promptOptions nativo)
-      if (OneSignalObj.Notifications.permission !== 'granted') {
-          setTimeout(() => {
-             OneSignalObj.Notifications.requestPermission();
-          }, 3000);
+    const init = async () => {
+      try {
+        const os = await getOS();
+        await os.init({
+          appId,
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerPath: '/OneSignalSDKWorker.js',
+          notifyButton: { enable: false }, // Usamos nosso próprio UI
+        });
+        console.log('[OneSignal] Inicializado com sucesso');
+      } catch (e) {
+        console.warn('[OneSignal] Erro na inicialização:', e);
       }
-    });
-
+    };
+    init();
   }, []);
 
-  // Sincronizar usuário e tags
+  // Sincronizar usuário, solicitar permissão e salvar token
   useEffect(() => {
     if (!user?.id) return;
 
-    const OneSignal = (window as any).OneSignalDeferred || [];
-    OneSignal.push(async function(OneSignalObj: any) {
+    const sync = async () => {
       try {
-        // Logar o usuário no OneSignal para vincular o external_id
-        await OneSignalObj.login(user.id);
-        
-        // Adicionar tag para role-based filters (necessário para 'master')
-        if (user.role) {
-          OneSignalObj.User.addTag("role", user.role);
+        const os = await getOS();
+
+        // Login do usuário no OneSignal (external_id)
+        await os.login(user.id);
+
+        // Tags para filtros de notificação
+        os.User.addTag('role', user.role);
+        if (user.celula_id) os.User.addTag('celula_id', user.celula_id);
+
+        // Pedir permissão se ainda não tiver
+        if (os.Notifications.permission !== 'granted') {
+          setTimeout(() => os.Notifications.requestPermission(), 2500);
         }
 
-        // Sincronizar token
-        const syncToken = async () => {
+        // Salvar push token no banco
+        const saveToken = async () => {
           try {
-            const pushId = await OneSignalObj.User.PushSubscription.id;
-            if (pushId && user?.id) {
-              console.log("Sincronizando OneSignal Token:", pushId);
+            const pushId = os.User.PushSubscription.id;
+            if (pushId) {
               await supabase.from('kefel_profiles').update({ push_token: pushId }).eq('id', user.id);
+              console.log('[OneSignal] Token sincronizado:', pushId);
             }
           } catch (e) {
-            console.error("Erro ao sincronizar token OneSignal:", e);
+            console.warn('[OneSignal] Erro ao salvar token:', e);
           }
         };
 
-        // Tenta sincronizar agora
-        syncToken();
-
-        // Ouvir mudanças de inscrição
-        OneSignalObj.User.PushSubscription.addEventListener("change", syncToken);
+        saveToken();
+        os.User.PushSubscription.addEventListener('change', saveToken);
       } catch (e) {
-        console.error("Erro no OneSignal sync:", e);
+        console.warn('[OneSignal] Erro na sincronização do usuário:', e);
       }
-    });
+    };
+    sync();
   }, [user?.id, user?.role]);
 
   return null;

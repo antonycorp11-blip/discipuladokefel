@@ -186,17 +186,17 @@ export default function BibleReader() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#FDFDFD] pt-14 pb-24 overflow-hidden">
-      <header className="px-6 py-4 flex items-center justify-between bg-white border-b border-gray-100 shadow-sm z-30">
-        <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-black text-white px-4 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform shadow-xl">
+    <div className="flex flex-col h-screen bg-[#FDFDFD] dark:bg-slate-900 pt-14 pb-24 overflow-hidden">
+      <header className="px-6 py-4 flex items-center justify-between bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-white/10 shadow-sm z-30">
+        <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-black dark:bg-slate-700 text-white px-4 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform shadow-xl">
           <BookOpen size={14} className="text-blue-400" />
           <span className="text-[10px] font-black uppercase italic tracking-widest">{selectedBook.nome} {chapter}</span>
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="bg-blue-50 px-3 py-1.5 rounded-xl flex items-center gap-2">
-            <Clock size={12} className="text-[#1B3B6B]" />
-            <span className="text-[10px] font-black text-[#1B3B6B] tabular-nums">{Math.floor(sessionSeconds/60)}:{(sessionSeconds%60).toString().padStart(2,'0')}</span>
+          <div className="bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-xl flex items-center gap-2">
+            <Clock size={12} className="text-[#1B3B6B] dark:text-blue-400" />
+            <span className="text-[10px] font-black text-[#1B3B6B] dark:text-blue-400 tabular-nums">{Math.floor(sessionSeconds/60)}:{(sessionSeconds%60).toString().padStart(2,'0')}</span>
           </div>
           {selectedVerses.length > 0 && (
             <button onClick={shareSelected} className="bg-[#1B3B6B] text-white p-2.5 rounded-xl shadow-lg animate-in zoom-in">
@@ -214,18 +214,18 @@ export default function BibleReader() {
         ) : (
           <div className="max-w-xl mx-auto space-y-4">
              {verses.map(v => (
-              <div key={v.verse} id={`v-${v.verse}`} className={`p-4 rounded-3xl transition-all ${selectedVerses.includes(v.verse) ? 'bg-blue-50/50 ring-1 ring-blue-100' : 'active:bg-gray-50'}`}>
+              <div key={v.verse} id={`v-${v.verse}`} className={`p-4 rounded-3xl transition-all ${selectedVerses.includes(v.verse) ? 'bg-blue-50/50 dark:bg-blue-900/20 ring-1 ring-blue-100 dark:ring-blue-800' : 'active:bg-gray-50 dark:active:bg-slate-800'}`}>
                 <div className="flex gap-4">
                    <div className="flex flex-col items-center gap-3">
-                      <span className="text-xs font-black text-gray-300 h-5 flex items-center justify-center">{v.verse}</span>
+                      <span className="text-xs font-black text-gray-300 dark:text-slate-600 h-5 flex items-center justify-center">{v.verse}</span>
                       <button 
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(v); }} 
-                        className={`p-2 rounded-xl transition-soft ${favorites.includes(v.verse) ? 'bg-amber-100 text-amber-500 scale-110 shadow-sm' : 'bg-gray-50 text-gray-200'}`}
+                        className={`p-2 rounded-xl transition-soft ${favorites.includes(v.verse) ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-500 scale-110 shadow-sm' : 'bg-gray-50 dark:bg-slate-800 text-gray-200 dark:text-slate-600'}`}
                       >
                         <Star size={14} fill={favorites.includes(v.verse) ? "currentColor" : "none"} />
                       </button>
                    </div>
-                   <p onClick={() => toggleVerse(v.verse)} className="text-lg text-gray-800 leading-relaxed tracking-tight flex-1">{v.text}</p>
+                   <p onClick={() => toggleVerse(v.verse)} className="text-lg text-gray-800 dark:text-slate-200 leading-relaxed tracking-tight flex-1">{v.text}</p>
                 </div>
               </div>
             ))}
@@ -234,14 +234,14 @@ export default function BibleReader() {
             <div className="pt-10 pb-20">
                <button 
                  onClick={handleFinishChapter}
-                 className="w-full bg-black text-white p-8 rounded-[2.5rem] shadow-premium shadow-black/20 flex flex-col items-center gap-4 group active:scale-95 transition-soft"
+                 className="w-full bg-black dark:bg-slate-800 text-white p-8 rounded-[2.5rem] shadow-premium shadow-black/20 flex flex-col items-center gap-4 group active:scale-95 transition-soft"
                >
                  <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-soft">
                     <CheckCircle2 className="text-blue-400" size={32} />
                  </div>
                  <div className="text-center">
                     <p className="text-xl font-black italic uppercase tracking-tighter">Concluir Capítulo</p>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Marcar progresso na Bíblia</p>
+                    <p className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Marcar progresso na Bíblia</p>
                  </div>
                </button>
             </div>
@@ -249,25 +249,25 @@ export default function BibleReader() {
         )}
       </div>
 
-      <nav className="p-6 grid grid-cols-2 gap-4 bg-white/80 backdrop-blur-md border-t border-gray-100">
-        <button disabled={chapter === 1} onClick={() => setChapter(c => c - 1)} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-center"><ChevronLeft className="text-gray-400" /></button>
-        <button disabled={chapter >= selectedBook.capitulos} onClick={() => setChapter(c => c + 1)} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-center"><ChevronRight className="text-gray-400" /></button>
+      <nav className="p-6 grid grid-cols-2 gap-4 bg-white/80 dark:bg-slate-800/90 backdrop-blur-md border-t border-gray-100 dark:border-white/10">
+        <button disabled={chapter === 1} onClick={() => setChapter(c => c - 1)} className="bg-white dark:bg-slate-700 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 flex justify-center disabled:opacity-30"><ChevronLeft className="text-gray-400 dark:text-slate-400" /></button>
+        <button disabled={chapter >= selectedBook.capitulos} onClick={() => setChapter(c => c + 1)} className="bg-white dark:bg-slate-700 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 flex justify-center disabled:opacity-30"><ChevronRight className="text-gray-400 dark:text-slate-400" /></button>
       </nav>
 
       {showSelector && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-end">
-          <div className="bg-white w-full h-[85vh] rounded-t-[3rem] p-8 flex flex-col space-y-6 animate-in slide-in-from-bottom duration-500">
+          <div className="bg-white dark:bg-slate-900 w-full h-[85vh] rounded-t-[3rem] p-8 flex flex-col space-y-6 animate-in slide-in-from-bottom duration-500">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold italic uppercase underline decoration-blue-600 decoration-4">Bíblia</h2>
-              <button onClick={() => setShowSelector(false)} className="bg-gray-100 p-3 rounded-full"><X size={20} /></button>
+              <h2 className="text-xl font-bold italic uppercase underline decoration-blue-600 decoration-4 dark:text-white">Bíblia</h2>
+              <button onClick={() => setShowSelector(false)} className="bg-gray-100 dark:bg-slate-800 p-3 rounded-full"><X size={20} className="dark:text-white" /></button>
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2 pb-10">
               {selectorStep === 'book' && (
                 <div className="grid grid-cols-2 gap-3">
                   {BIBLE_BOOKS.map(b => (
-                    <button key={b.id} onClick={() => { setSelectedBook(b); setSelectorStep('chapter'); }} className={`p-5 rounded-[2rem] text-left border-2 transition-all ${selectedBook.id === b.id ? 'border-blue-600 bg-blue-50' : 'border-transparent bg-gray-50'}`}>
-                       <p className="font-bold italic uppercase text-[10px]">{b.nome}</p>
+                    <button key={b.id} onClick={() => { setSelectedBook(b); setSelectorStep('chapter'); }} className={`p-5 rounded-[2rem] text-left border-2 transition-all ${selectedBook.id === b.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-transparent bg-gray-50 dark:bg-slate-800'}`}>
+                       <p className="font-bold italic uppercase text-[10px] dark:text-white">{b.nome}</p>
                     </button>
                   ))}
                 </div>
@@ -275,14 +275,14 @@ export default function BibleReader() {
               {selectorStep === 'chapter' && (
                 <div className="grid grid-cols-4 gap-3">
                   {Array.from({ length: selectedBook.capitulos }, (_, i) => i + 1).map(c => (
-                    <button key={c} onClick={() => { setChapter(c); setSelectorStep('verse'); }} className={`p-4 rounded-2xl font-bold text-sm ${chapter === c ? 'bg-[#1B3B6B] text-white' : 'bg-gray-50 text-gray-400'}`}>{c}</button>
+                    <button key={c} onClick={() => { setChapter(c); setSelectorStep('verse'); }} className={`p-4 rounded-2xl font-bold text-sm ${chapter === c ? 'bg-[#1B3B6B] text-white' : 'bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-400'}`}>{c}</button>
                   ))}
                 </div>
               )}
               {selectorStep === 'verse' && (
                 <div className="grid grid-cols-4 gap-3">
                   {verses.map(v => (
-                    <button key={v.verse} onClick={() => { setShowSelector(false); setTimeout(() => { document.getElementById(`v-${v.verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }} className="p-4 bg-gray-50 rounded-2xl font-bold text-sm text-gray-400">{v.verse}</button>
+                    <button key={v.verse} onClick={() => { setShowSelector(false); setTimeout(() => { document.getElementById(`v-${v.verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }} className="p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl font-bold text-sm text-gray-400 dark:text-slate-400">{v.verse}</button>
                   ))}
                 </div>
               )}

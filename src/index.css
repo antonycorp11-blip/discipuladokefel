@@ -1,63 +1,70 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap');
 
+/* ── Light Mode Variables ──────────────────────────── */
 :root {
   --primary: #1B3B6B;
   --primary-glow: rgba(27, 59, 107, 0.25);
   --accent: #F43F5E;
-  --bg-gradient: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
   --glass: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.5);
+  --surface: #F8FAFC;
+  --surface-2: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
 }
 
-/* ── Dark Mode ─────────────────────────────────────── */
+/* ── Dark Mode Variables ───────────────────────────── */
 .dark {
-  --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-  --glass: rgba(30, 41, 59, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --primary-glow: rgba(79, 147, 245, 0.25);
+  --primary-glow: rgba(79, 147, 245, 0.20);
+  --glass: rgba(15, 23, 42, 0.90);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --surface: #0F172A;
+  --surface-2: #1E293B;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
 }
 
-.dark body {
-  color: #E2E8F0;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
-.dark .glass-panel {
-  background: var(--glass);
-  border-color: var(--glass-border);
-}
+html, body, #root { height: 100%; }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-html, body, #root {
-  height: 100%;
-}
-
+/* ── Base Body ─────────────────────────────────────── */
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: var(--bg-gradient);
-  color: #1E293B;
+  background: var(--surface);
+  color: var(--text-primary);
   overflow-x: hidden;
-  transition: background 0.4s ease, color 0.4s ease;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-.dark body {
+html.dark body {
   background: #0F172A;
-  color: #E2E8F0;
+  color: #F1F5F9;
 }
 
-html.dark {
+/* ── #root ─────────────────────────────────────────── */
+#root {
+  background: var(--surface);
+  transition: background 0.3s ease;
+}
+
+html.dark #root {
   background: #0F172A;
+}
+
+/* Desktop: fundo cinza ao redor do app */
+@media (min-width: 430px) {
+  html, body { background: #e5e7eb; }
+  html.dark, html.dark body { background: #020617; }
 }
 
 h1, h2, h3, .font-heading {
   font-family: 'Outfit', sans-serif;
 }
 
-/* Glassmorphism Utility */
+/* ── Glass Panel ───────────────────────────────────── */
 .glass-panel {
   background: var(--glass);
   backdrop-filter: blur(12px);
@@ -65,50 +72,71 @@ h1, h2, h3, .font-heading {
   border: 1px solid var(--glass-border);
 }
 
-/* Botão Premium Shadow */
+/* ── Dark Mode Global Overrides ────────────────────── */
+/* Superfícies */
+.dark .bg-white       { background-color: #1E293B !important; }
+.dark .bg-gray-50     { background-color: #0F172A !important; }
+.dark .bg-white\/80   { background-color: rgba(30, 41, 59, 0.88) !important; }
+.dark .bg-white\/90   { background-color: rgba(30, 41, 59, 0.95) !important; }
+
+/* Textos */
+.dark .text-gray-900  { color: #F1F5F9 !important; }
+.dark .text-gray-800  { color: #E2E8F0 !important; }
+.dark .text-gray-700  { color: #CBD5E1 !important; }
+.dark .text-gray-600  { color: #94A3B8 !important; }
+.dark .text-gray-500  { color: #64748B !important; }
+.dark .text-gray-400  { color: #475569 !important; }
+
+/* Bordas */
+.dark .border-gray-100  { border-color: rgba(255,255,255,0.08) !important; }
+.dark .border-gray-200  { border-color: rgba(255,255,255,0.1) !important; }
+.dark .border-gray-50   { border-color: rgba(255,255,255,0.05) !important; }
+
+/* Nav escura */
+.dark nav.fixed.bottom-6 {
+  background: rgba(15, 23, 42, 0.97) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Header / Bíblia */
+.dark .bg-\[\#FDFDFD\] { background-color: #0F172A !important; }
+
+/* Inputs no dark */
+.dark input, .dark textarea, .dark select {
+  background-color: #1E293B !important;
+  color: #F1F5F9 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+/* ── Box Shadows ───────────────────────────────────── */
 .shadow-premium {
   box-shadow: 0 10px 25px -5px var(--primary-glow), 0 8px 10px -6px var(--primary-glow);
 }
-
 .shadow-soft {
   box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.05), 0 2px 8px -1px rgba(0, 0, 0, 0.03);
 }
 
-/* Scrollbar invisível */
+/* ── Utilities ─────────────────────────────────────── */
 ::-webkit-scrollbar { width: 0px; background: transparent; }
-
-/* Tap highlight removido */
 * { -webkit-tap-highlight-color: transparent; }
 
-/* Safe area iOS */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-/* Animações suaves */
-.transition-soft {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+.transition-soft { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
 }
+.animate-float { animation: float 3s ease-in-out infinite; }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Badge shimmer animation */
 @keyframes badge-shine {
-  0% { background-position: -200% center; }
+  0%   { background-position: -200% center; }
   100% { background-position: 200% center; }
 }
-
 .badge-shine {
   background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.4) 50%, transparent 75%);
   background-size: 200% auto;
   animation: badge-shine 2.5s linear infinite;
 }
-
