@@ -202,78 +202,78 @@ export default function BibleReader() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#FDFDFD] dark:bg-slate-900 pt-14 pb-24 overflow-hidden">
-      <header className="px-6 py-4 flex items-center justify-between bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-white/10 shadow-sm z-30">
+    <div className="flex flex-col h-screen bg-[#F8FAFC] dark:bg-[#121212] pt-12 pb-20 overflow-hidden">
+      {/* Barra superior estilo YouVersion */}
+      <header className="px-4 py-3 flex items-center justify-between z-30 border-b border-gray-200 dark:border-white/5 bg-[#F8FAFC] dark:bg-[#121212]">
         <div className="flex gap-2">
-          <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-black dark:bg-slate-700 text-white px-4 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform shadow-xl">
-            <BookOpen size={14} className="text-blue-400" />
-            <span className="text-[10px] font-black uppercase italic tracking-widest">{selectedBook.nome} {chapter}</span>
+          <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-[#E5E5EA] dark:bg-[#2C2C2E] text-gray-900 dark:text-white px-3 py-1.5 rounded-md flex items-center gap-2 active:opacity-70 transition-opacity">
+            <span className="text-[14px] font-semibold">{selectedBook.nome} {chapter}</span>
           </button>
-          <button onClick={() => { setSelectorStep('version'); setShowSelector(true); }} className="bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white px-3 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform">
-            <span className="text-[10px] font-black uppercase italic tracking-widest">{version.toUpperCase()}</span>
+          <button onClick={() => { setSelectorStep('version'); setShowSelector(true); }} className="bg-[#E5E5EA] dark:bg-[#2C2C2E] text-gray-900 dark:text-white px-3 py-1.5 rounded-md flex items-center gap-2 active:opacity-70 transition-opacity">
+            <span className="text-[14px] font-semibold">{version.toUpperCase()}</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-xl flex items-center gap-2">
-            <Clock size={12} className="text-[#1B3B6B] dark:text-blue-400" />
-            <span className="text-[10px] font-black text-[#1B3B6B] dark:text-blue-400 tabular-nums">{Math.floor(sessionSeconds/60)}:{(sessionSeconds%60).toString().padStart(2,'0')}</span>
-          </div>
-          {selectedVerses.length > 0 && (
-            <button onClick={shareSelected} className="bg-[#1B3B6B] text-white p-2.5 rounded-xl shadow-lg animate-in zoom-in">
-              <Share2 size={16} />
-            </button>
-          )}
+        <div className="flex items-center gap-4 text-gray-900 dark:text-white">
+          <button className="active:opacity-50"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button>
+          <button className="active:opacity-50"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
+          <button className="active:opacity-50"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-6 py-8 scroll-smooth">
+      <div className="flex-1 overflow-y-auto px-5 py-8 scroll-smooth relative">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
              <Loader2 className="animate-spin text-[#1B3B6B]" />
           </div>
         ) : (
           <div className="max-w-xl mx-auto space-y-4">
-             {verses.map(v => (
-              <div key={v.verse} id={`v-${v.verse}`} className={`p-4 rounded-3xl transition-all ${selectedVerses.includes(v.verse) ? 'bg-blue-50/50 dark:bg-blue-900/20 ring-1 ring-blue-100 dark:ring-blue-800' : 'active:bg-gray-50 dark:active:bg-slate-800'}`}>
-                <div className="flex gap-4">
-                   <div className="flex flex-col items-center gap-3">
-                      <span className="text-xs font-black text-gray-300 dark:text-slate-600 h-5 flex items-center justify-center">{v.verse}</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(v); }} 
-                        className={`p-2 rounded-xl transition-soft ${favorites.includes(v.verse) ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-500 scale-110 shadow-sm' : 'bg-gray-50 dark:bg-slate-800 text-gray-200 dark:text-slate-600'}`}
-                      >
-                        <Star size={14} fill={favorites.includes(v.verse) ? "currentColor" : "none"} />
-                      </button>
-                   </div>
-                   <p onClick={() => toggleVerse(v.verse)} className="text-lg text-gray-800 dark:text-slate-200 leading-relaxed tracking-tight flex-1">{v.text}</p>
-                </div>
-              </div>
-            ))}
+             <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-6" style={{ fontFamily: "'Lora', 'Merriweather', 'PT Serif', serif" }}>
+               {selectedBook.nome} {chapter}
+             </h1>
+             
+             <div className="text-[19px] leading-[1.8] text-gray-900 dark:text-gray-200" style={{ fontFamily: "'Lora', 'Merriweather', 'PT Serif', serif" }}>
+               {verses.map((v, i) => (
+                 <span key={v.verse} id={`v-${v.verse}`} className={`inline rounded break-words ${favorites.includes(v.verse) ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100' : ''}`}>
+                    <sup 
+                       onClick={(e) => { e.stopPropagation(); toggleFavorite(v); }} 
+                       className="text-[11px] font-bold text-gray-400 dark:text-gray-500 mr-1 ml-2 cursor-pointer active:scale-125 transition-transform"
+                    >
+                      {v.verse}
+                    </sup>
+                    <span onClick={() => toggleVerse(v.verse)} className={`cursor-pointer ${selectedVerses.includes(v.verse) ? 'bg-blue-200/50 dark:bg-blue-800/40' : ''}`}>
+                       {v.text}{' '}
+                    </span>
+                 </span>
+               ))}
+             </div>
 
-            {/* BOTÃO CONCLUIR CAPÍTULO */}
-            <div className="pt-10 pb-20">
-               <button 
-                 onClick={handleFinishChapter}
-                 className="w-full bg-black dark:bg-slate-800 text-white p-8 rounded-[2.5rem] shadow-premium shadow-black/20 flex flex-col items-center gap-4 group active:scale-95 transition-soft"
-               >
-                 <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-soft">
-                    <CheckCircle2 className="text-blue-400" size={32} />
-                 </div>
-                 <div className="text-center">
-                    <p className="text-xl font-black italic uppercase tracking-tighter">Concluir Capítulo</p>
-                    <p className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Marcar progresso na Bíblia</p>
-                 </div>
-               </button>
-            </div>
-          </div>
-        )}
+             <div className="pt-16 pb-24 text-center">
+                 <button onClick={handleFinishChapter} className="mx-auto border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white px-6 py-2.5 rounded-full font-bold text-[13px] active:bg-gray-100 dark:active:bg-white/10 transition-colors">
+                     ✔ Concluir Capítulo
+                 </button>
+             </div>
+           </div>
+         )}
       </div>
 
-      <nav className="p-6 grid grid-cols-2 gap-4 bg-white/80 dark:bg-slate-800/90 backdrop-blur-md border-t border-gray-100 dark:border-white/10">
-        <button disabled={chapter === 1} onClick={() => setChapter(c => c - 1)} className="bg-white dark:bg-slate-700 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 flex justify-center disabled:opacity-30"><ChevronLeft className="text-gray-400 dark:text-slate-400" /></button>
-        <button disabled={chapter >= selectedBook.capitulos} onClick={() => setChapter(c => c + 1)} className="bg-white dark:bg-slate-700 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 flex justify-center disabled:opacity-30"><ChevronRight className="text-gray-400 dark:text-slate-400" /></button>
-      </nav>
+      {/* Floating Play and Navigate block */}
+      <div className="fixed bottom-20 left-0 right-0 flex justify-center items-center gap-4 z-40 pointer-events-none px-6">
+         <div className="flex-1" />
+         <button onClick={() => setChapter(c => c > 1 ? c - 1 : c)} className="w-[52px] h-[52px] bg-[#424242]/90 backdrop-blur-md rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 shadow-lg hidden">
+            <ChevronLeft size={24} />
+         </button>
+         
+         <button className="w-[72px] h-[72px] bg-[#424242]/95 backdrop-blur-md rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 shadow-xl border border-white/10">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+         </button>
+         
+         <div className="flex-1 flex justify-start">
+            <button onClick={() => setChapter(c => c < selectedBook.capitulos ? c + 1 : c)} className="w-[46px] h-[46px] bg-[#424242]/90 backdrop-blur-md rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 shadow-lg border border-white/10 ml-2">
+               <ChevronRight size={24} />
+            </button>
+         </div>
+      </div>
 
       {showSelector && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-end">

@@ -131,26 +131,46 @@ export function Home() {
     else { navigator.clipboard.writeText(msg); showToast("Copiado!", "info"); }
   };
 
+  const [activeTab, setActiveTab] = useState<'hoje' | 'comunidade'>('hoje');
+
   return (
-    <div className="min-h-screen bg-transparent dark:bg-[#0F172A] pt-14 pb-20 px-6 overflow-y-auto transition-colors duration-500">
-      <header className="flex items-center justify-between py-6">
-        <Link to={user?.id ? `/perfil/${user.id}` : "/login"} className="flex items-center gap-4 group">
-          <div className="w-14 h-14 bg-white dark:bg-slate-800 p-1 rounded-2xl shadow-premium shadow-black/5 ring-1 ring-white/50 flex items-center justify-center overflow-hidden transition-soft group-hover:scale-105">
-             {user?.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="text-[#1B3B6B] dark:text-blue-400" size={28} />}
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white leading-tight italic uppercase tracking-tighter italic">Olá, {user?.nome?.split(' ')[0]}</h1>
-            <div className="flex items-center gap-1.5 opacity-60">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Membro Ativo</p>
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#121212] pt-4 pb-24 transition-colors duration-500">
+      <header className="px-5 pt-8 flex items-center justify-between border-b border-gray-200 dark:border-white/5 bg-[#F8FAFC] dark:bg-[#121212] z-40 sticky top-0">
+        <div className="flex gap-6">
+          <button 
+            onClick={() => setActiveTab('hoje')}
+            className={`pb-3 font-bold text-[15px] relative transition-colors ${activeTab === 'hoje' ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
+          >
+            Hoje
+            {activeTab === 'hoje' && <motion.div layoutId="hometab" className="absolute bottom-0 left-0 right-0 h-[3px] bg-rose-500 rounded-t-full" />}
+          </button>
+          <button 
+            onClick={() => setActiveTab('comunidade')}
+            className={`pb-3 font-bold text-[15px] relative transition-colors ${activeTab === 'comunidade' ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
+          >
+            Comunidade
+            {activeTab === 'comunidade' && <motion.div layoutId="hometab" className="absolute bottom-0 left-0 right-0 h-[3px] bg-rose-500 rounded-t-full" />}
+          </button>
+        </div>
+      </header>
+
+      {activeTab === 'comunidade' ? (
+        <div className="pt-4"><SocialFeed /></div>
+      ) : (
+        <div className="px-5 pt-6 pb-10 space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight">Boa noite, {user?.nome?.split(' ')[0] || "Visitante"}</h1>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1 text-gray-900 dark:text-white font-semibold">
+                <Sparkles size={16} className="text-gray-900 dark:text-white" />
+                <span className="text-sm">{(user?.cultos_presenca || 0)}</span>
+              </div>
+              <button className="relative">
+                <Bell size={20} className="text-gray-900 dark:text-white" />
+                <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-[#F8FAFC] dark:border-[#121212] flex items-center justify-center text-[8px] text-white font-bold">1</div>
+              </button>
             </div>
           </div>
-        </Link>
-        <button className="glass-panel p-3.5 rounded-2xl shadow-sm relative transition-soft active:scale-90">
-          <Bell size={20} className="text-[#1B3B6B] dark:text-white" />
-          <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm" />
-        </button>
-      </header>
 
       {/* Banner de Gamificação: Resgate de Culto */}
       <AnimatePresence>
@@ -184,57 +204,60 @@ export function Home() {
         )}
       </AnimatePresence>
 
-      {user?.last_bible_reading && (() => {
-        const br = user.last_bible_reading as { bookId?: string; book?: string; chapter?: number };
-        const bookId = br.bookId || null;
-        const bookName = bookId
-          ? (BIBLE_BOOKS.find(b => b.id === bookId)?.nome ?? br.book ?? "")
-          : (br.book ?? "");
-        const chapter = br.chapter ?? 1;
-        if (!bookName) return null;
-        return (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8">
-             <Link to="/biblia-leitura" className="glass-panel p-4 rounded-3xl flex items-center justify-between group active:scale-95 transition-soft border border-[#1B3B6B]/10 dark:border-white/10 dark:bg-slate-800/50">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#1B3B6B]/10 dark:bg-white/10 rounded-2xl flex items-center justify-center text-[#1B3B6B] dark:text-white group-hover:rotate-12 transition-soft">
-                    <BookOpen size={20} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 tracking-widest">Continuar Lendo</p>
-                    <h4 className="font-black text-gray-900 dark:text-white italic uppercase">{bookName} {chapter}</h4>
-                  </div>
-               </div>
-               <Navigation size={18} className="text-[#1B3B6B]/50 dark:text-white/50 group-hover:text-[#1B3B6B] dark:group-hover:text-white transition-soft -rotate-45" />
-             </Link>
-          </motion.div>
-        );
-      })()}
+          {/* Versículo Card Milimétrico */}
+          <div className="relative rounded-[16px] overflow-hidden bg-gray-900 shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#b77443]/90 to-gray-900/90 mix-blend-multiply z-0" />
+            <div className="relative z-10 p-5 flex flex-col justify-between min-h-[300px]">
+              <div>
+                <p className="text-white/80 text-[11px] font-normal tracking-wide">Versículo do Dia</p>
+                <p className="text-white font-bold text-sm mt-0.5">{VERSE.ref}</p>
+                
+                <p 
+                  className="mt-6 text-white text-[28px] leading-[1.25] max-w-[280px]" 
+                  style={{ fontFamily: "'Lora', 'Merriweather', 'PT Serif', serif" }}
+                >
+                  {VERSE.text}
+                </p>
+              </div>
 
-      {/* Card da Palavra - Ultra Premium */}
-      <div className="relative group mb-10">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-rose-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition-soft" />
-        <div className="relative bg-black rounded-[2.5rem] p-8 text-white shadow-2xl overflow-hidden min-h-[220px] flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-[#1B3B6B]/50/20 rounded-full -mr-20 -mt-20 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-rose-500/10 rounded-full -ml-20 -mb-20 blur-3xl" />
-          
-          <div className="relative z-10 flex justify-between items-start">
-            <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
-              <BookOpen size={24} className="text-[#1B3B6B]" />
-            </div>
-            <button onClick={shareVerse} className="bg-white/10 p-3 rounded-2xl backdrop-blur-md hover:bg-white/20 transition-soft active:scale-90">
-               <Share2 size={18} />
-            </button>
-          </div>
-
-          <div className="relative z-10 space-y-4">
-            <p className="text-2xl font-black leading-tight italic tracking-tight">"{VERSE.text}"</p>
-            <div className="flex items-center gap-3">
-              <div className="h-0.5 w-8 bg-[#1B3B6B]/50" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1B3B6B]">{VERSE.ref}</span>
+              <div className="flex items-center justify-between mt-10 px-2">
+                <button className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
+                  <div className="p-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
+                  <span className="text-[10px]">&nbsp;</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
+                  <div className="p-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+                  <span className="text-[10px]">&nbsp;</span>
+                </button>
+                <button onClick={shareVerse} className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
+                  <div className="p-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></div>
+                  <span className="text-[10px]">&nbsp;</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
+                  <div className="p-2 flex gap-1"><div className="w-1.5 h-1.5 bg-current rounded-full" /><div className="w-1.5 h-1.5 bg-current rounded-full" /><div className="w-1.5 h-1.5 bg-current rounded-full" /></div>
+                  <span className="text-[10px]">Mais</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          {user?.last_bible_reading && (() => {
+            const br = user.last_bible_reading as { bookId?: string; book?: string; chapter?: number };
+            const bookName = br.bookId ? (BIBLE_BOOKS.find(b => b.id === br.bookId)?.nome ?? br.book ?? "") : (br.book ?? "");
+            if (!bookName) return null;
+            return (
+              <Link to="/biblia-leitura" className="w-full bg-[#1A1A1A] p-4 rounded-[12px] flex items-center justify-between group active:bg-[#222]">
+                <div className="flex flex-col">
+                  <span className="text-white/60 text-[11px] font-medium tracking-wide flex items-center gap-1"><BookOpen size={10} /> Leitura Contínua</span>
+                  <h4 className="font-bold text-white text-base mt-1">{bookName} {br.chapter ?? 1}</h4>
+                  <span className="text-white/40 text-[11px] mt-1 flex items-center gap-1"><div className="w-2 h-2 fill-current">▶</div> Retomar</span>
+                </div>
+                <div className="w-14 h-14 bg-gray-800 rounded-[8px] flex items-center justify-center overflow-hidden">
+                   <BookOpen size={24} className="text-white/20" />
+                </div>
+              </Link>
+            );
+          })()}
 
       {/* Atalhos para Líderes */}
       {(user?.role === 'lider' || user?.role === 'master' || user?.email === 'aquilles@kefel.com') && (
@@ -261,94 +284,45 @@ export function Home() {
       {/* Rede Social */}
       <SocialFeed />
 
-      {/* Eventos */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-6 px-2">
-          <div className="flex items-center gap-2">
-             <div className="w-2 h-6 bg-[#1B3B6B] rounded-full" />
-             <h2 className="text-xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">Agenda</h2>
-          </div>
-          <Link to="/eventos" className="text-[#1B3B6B] dark:text-white text-[10px] font-black uppercase tracking-widest bg-[#1B3B6B]/5 dark:bg-white/5 px-4 py-2 rounded-full active:scale-90 transition-soft">Ver tudo</Link>
-        </div>
-
-        {loading ? (
-          <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
-        ) : (
-          <div className="space-y-6">
-            {upcomingEvents.map(event => {
+          {/* Agenda section - YouVersion layout */}
+          <div className="space-y-4">
+            {upcomingEvents.map((event, i) => {
               const date = new Date(event.data_hora);
               const isInscribed = inscribedIds.includes(event.id);
               return (
-                <div key={event.id} className="glass-panel dark:bg-slate-800/80 p-5 rounded-[2.5rem] shadow-sm flex gap-5 items-center transition-soft hover:shadow-xl hover:shadow-[#1B3B6B]/5 dark:hover:shadow-black/20 group border-white/50 dark:border-white/10 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#1B3B6B]/5 dark:bg-white/5 rounded-full -mr-12 -mt-12 blur-2xl opacity-0 group-hover:opacity-100 transition-soft" />
-                  
-                  <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-[1.8rem] shadow-sm flex flex-col items-center justify-center overflow-hidden relative border border-gray-100 dark:border-white/10 flex-shrink-0 transition-soft group-hover:scale-105 p-0.5">
+                <div key={event.id} onClick={() => setSelectedEvent(event)} className="w-full bg-[#1A1A1A] p-4 rounded-[12px] flex items-center justify-between cursor-pointer active:bg-[#222]">
+                  <div className="flex flex-col pr-4">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3.5 h-4 bg-gray-500/20 text-gray-400 rounded-sm flex items-center justify-center text-[9px]">💧</span>
+                      <span className="text-white/60 text-[11px] font-medium tracking-wide">Agenda | {date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.','')}</span>
+                    </div>
+                    <h4 className="font-bold text-white text-base mt-1 line-clamp-1">{event.titulo}</h4>
+                    <span className="text-white/40 text-[11px] mt-1 flex items-center gap-1"><div className="text-[8px]">▶</div> {event.endereco}</span>
+                  </div>
+                  <div className="w-14 h-14 bg-[#232323] rounded-[8px] flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {event.imagem_url ? (
-                      <img src={event.imagem_url} className="absolute inset-0 w-full h-full object-cover rounded-[1.7rem]" />
+                      <img src={event.imagem_url} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black uppercase text-[#1B3B6B] dark:text-gray-400">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                        <span className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter leading-none mt-0.5">{date.getDate()}</span>
-                      </div>
+                      <Calendar size={20} className="text-white/30" />
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                       <span className="text-[9px] font-black uppercase text-[#1B3B6B] dark:text-white bg-[#1B3B6B]/5 dark:bg-white/10 px-2.5 py-1 rounded-full border border-[#1B3B6B]/10 dark:border-white/5 tracking-widest leading-none">
-                          {date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}
-                       </span>
-                    </div>
-                    <h4 className="font-black text-gray-900 dark:text-white truncate uppercase text-sm tracking-tight italic leading-tight">{event.titulo}</h4>
-                    <div className="flex items-center gap-2 opacity-40 mt-1 dark:opacity-60">
-                      <MapPin size={10} className="text-rose-500" />
-                      <p className="text-[9px] text-gray-900 dark:text-white truncate uppercase font-black tracking-widest">{event.endereco}</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setSelectedEvent(event)} 
-                    className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-soft active:scale-90 border-2 ${isInscribed ? 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 shadow-inner' : 'bg-black border-black text-white shadow-premium shadow-black/10 hover:bg-white hover:text-black dark:hover:bg-slate-700'}`}
-                  >
-                    {isInscribed ? <CheckCircle2 size={20} /> : <ArrowRight size={20} />}
-                  </button>
                 </div>
               );
             })}
           </div>
-        )}
-      </section>
 
-      {/* Célula */}
-      <section className="mb-10">
-        <div className="flex items-center gap-2 mb-6 px-2">
-           <div className="w-2 h-6 bg-rose-500 rounded-full" />
-           <h2 className="text-xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">Minha Célula</h2>
-        </div>
-        
-        {meuGrupo ? (
-          <div className="glass-panel dark:bg-slate-800/80 p-6 rounded-[3rem] shadow-sm border-white/50 dark:border-white/10 flex items-center gap-5 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#1B3B6B]/50/5 dark:bg-rose-500/10 rounded-full -mr-20 -mt-20 blur-3xl" />
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-rose-500 rounded-[1.8rem] flex items-center justify-center text-white shadow-lg transition-soft group-hover:scale-110 group-hover:rotate-3">
-               <Users size={28} />
-            </div>
-            <div className="relative z-10 flex-1">
-              <h4 className="font-black text-gray-900 dark:text-white uppercase italic text-lg tracking-tighter leading-tight">{meuGrupo.nome}</h4>
-              <div className="flex items-center gap-2 mt-1">
-                 <Clock size={10} className="text-rose-500" />
-                 <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-widest">Toda {meuGrupo.dia_semana}</p>
+          <div className="mt-8">
+            <h2 className="text-[17px] font-bold text-gray-900 dark:text-white mb-4 tracking-tight">Mais para você</h2>
+            <div className="bg-[#1A1A1A] rounded-[12px] p-5 h-[120px] relative overflow-hidden flex flex-col justify-end">
+              <div className="absolute top-0 right-0 bottom-0 w-[50%] bg-gradient-to-l from-emerald-900/60 to-transparent" />
+              <div className="relative z-10 w-[70%]">
+                <h4 className="font-bold text-white text-base leading-tight">Sua Comunidade Kefel</h4>
+                <p className="text-white/60 text-xs mt-1">Conecte-se com mais pessoas</p>
               </div>
             </div>
-            <ArrowRight size={20} className="text-gray-200 dark:text-gray-600 group-hover:text-[#1B3B6B] dark:group-hover:text-white transition-soft group-hover:translate-x-2" />
           </div>
-        ) : (
-          <div className="glass-panel p-10 rounded-[3rem] shadow-sm border-white/50 text-center flex flex-col items-center gap-4 border-dashed border-2 dark:border-white/10 dark:bg-slate-800/50">
-            <div className="w-14 h-14 bg-gray-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-gray-200 dark:text-gray-600">
-               <Users size={28} />
-            </div>
-            <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-widest">Sem célula vinculada</p>
-            <button className="text-[#1B3B6B] dark:text-white text-[10px] font-black uppercase tracking-widest underline underline-offset-4">Vincular Agora</button>
-          </div>
-        )}
-      </section>
+        </div>
+      )}
 
       {/* Modal Inscrição */}
       <AnimatePresence>

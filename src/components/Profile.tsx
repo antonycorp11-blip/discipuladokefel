@@ -201,120 +201,108 @@ export function Profile() {
   const effectiveBadges = getEffectiveBadges(profile);
 
   return (
-    <div className="flex flex-col min-h-screen bg-transparent pt-14 pb-28 px-6 overflow-y-auto">
-      <header className="mb-8 pt-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase">{isOwnProfile ? 'Meu Perfil' : 'Perfil'}</h1>
-          <div className="h-1.5 w-12 bg-[#1B3B6B] dark:bg-blue-500 rounded-full mt-1"></div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Toggle Dark Mode */}
-          {isOwnProfile && (
-            <button
-              onClick={toggleDark}
-              className="glass-panel p-3.5 rounded-2xl text-[#1B3B6B] dark:text-amber-300 active:scale-95 transition-transform shadow-sm"
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-          )}
-          {isOwnProfile && (
-            <button onClick={() => setShowSettings(true)} className="glass-panel p-3.5 rounded-2xl text-[#1B3B6B] dark:text-white active:scale-95 transition-transform shadow-sm">
-              <Settings className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+    <div className="flex flex-col min-h-screen bg-transparent pt-10 pb-28 px-4 overflow-y-auto">
+      <header className="mb-6 pt-4 flex items-center justify-end gap-5 text-gray-900 dark:text-white">
+          <button className="p-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg></button>
+          {isOwnProfile && <button onClick={() => setShowSettings(true)} className="p-1"><Settings className="w-6 h-6" /></button>}
+          {isOwnProfile && <button onClick={toggleDark} className="p-1">{isDark ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}</button>}
+          <button className="p-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
       </header>
 
-      {/* Hero Card do Perfil */}
-      <div className="flex flex-col items-center gap-6 py-10 glass-panel dark:bg-slate-800/80 rounded-[3.5rem] shadow-premium shadow-[#1B3B6B]/5 mb-8 relative border-white/50 dark:border-white/10 overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full -mr-10 -mt-10 blur-2xl" />
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#1B3B6B] to-[#4F93F5] rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition-soft"></div>
-          <div className="relative w-32 h-32 bg-white dark:bg-slate-700 rounded-[2.8rem] shadow-xl border-4 border-white dark:border-slate-600 flex items-center justify-center overflow-hidden transition-soft group-hover:scale-105">
-            {uploading ? <Loader2 className="animate-spin text-[#1B3B6B]" />
-              : profile.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" />
-              : <User size={56} className="text-indigo-100" />}
+      {/* Hero Card do Perfil estilo YouVersion */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex-1">
+          <h1 className="text-[28px] font-bold text-gray-900 dark:text-white leading-tight tracking-tight">{profile.nome}</h1>
+          <div className="flex items-center gap-2 mt-3">
+             <button className="border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-[11px] font-medium px-4 py-1.5 rounded-full">+ Amigos</button>
+             <button className="border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-[11px] font-medium px-4 py-1.5 rounded-full">Seguindo 0</button>
+          </div>
+        </div>
+        <div className="relative ml-4">
+          <div className="w-[84px] h-[84px] rounded-full border-2 border-gray-300 dark:border-gray-500 p-1 flex items-center justify-center">
+             <div className="w-full h-full bg-[#1A1A1A] rounded-full overflow-hidden flex items-center justify-center text-2xl font-bold text-white">
+                {uploading ? <Loader2 className="animate-spin text-white" />
+                  : profile.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                  : profile.nome.charAt(0).toUpperCase()}
+             </div>
           </div>
           {isOwnProfile && (
-            <label className="absolute -bottom-2 -right-2 bg-black text-white p-3.5 rounded-2xl shadow-xl cursor-pointer active:scale-90 transition-soft hover:bg-[#1B3B6B]">
-              <Camera size={20} />
+            <label className="absolute bottom-0 right-0 bg-[#2C2C2E] text-white p-1.5 rounded-full border-2 border-white dark:border-[#121212] flex items-center justify-center cursor-pointer">
+              <Camera size={14} />
               <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
             </label>
           )}
         </div>
-        <div className="text-center px-4">
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter leading-tight">{profile.nome}</h2>
-          <div className="flex items-center justify-center gap-2 mt-2">
-             <div className="h-0.5 w-4 bg-[#1B3B6B] opacity-20" />
-             <p className="text-[10px] font-black text-[#1B3B6B] dark:text-blue-400 uppercase tracking-[0.2em]">{profile.role}</p>
-             <div className="h-0.5 w-4 bg-[#1B3B6B] opacity-20" />
-          </div>
-          {meuGrupo && (
-            <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2">📍 {meuGrupo.nome}</p>
-          )}
+      </div>
+
+      <button className="w-full bg-[#1A1A1A] text-white py-3.5 rounded-full font-medium text-[13px] flex items-center justify-center gap-2 mb-6 shadow-sm">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        {meuGrupo ? meuGrupo.nome : "Adicionar sua Célula"}
+      </button>
+
+      {/* Grid Menu */}
+      <div className="grid grid-cols-3 gap-2.5 mb-6">
+        <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[4/3]">
+           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+           <span className="text-white text-[12px] font-medium">Salvo</span>
+        </div>
+        <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[4/3]">
+           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+           <span className="text-white text-[12px] font-medium">Oração</span>
+        </div>
+        <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[4/3]">
+           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+           <span className="text-white text-[12px] font-medium">Doar</span>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="glass-panel dark:bg-slate-800/80 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex flex-col gap-2">
-           <div className="w-9 h-9 bg-[#1B3B6B]/10 dark:bg-blue-400/10 rounded-xl flex items-center justify-center text-[#1B3B6B] dark:text-blue-400">
-             <Clock size={18} />
-           </div>
-           <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Tempo Lido</p>
-           <p className="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter">{formatTime(Number(profile.tempo_leitura_total))}</p>
-        </div>
-        <div className="glass-panel dark:bg-slate-800/80 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex flex-col gap-2">
-           <div className="w-9 h-9 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400">
-             <Award size={18} />
-           </div>
-           <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Presença Culto</p>
-           <p className="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter">{profile.cultos_presenca ?? 0}x</p>
-        </div>
-        <div className="glass-panel dark:bg-slate-800/80 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex flex-col gap-2">
-           <div className="w-9 h-9 bg-green-50 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
-             <Users size={18} />
-           </div>
-           <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Presença Célula</p>
-           <p className="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter">{profile.celulas_presenca ?? 0}x</p>
-        </div>
-        <div className="glass-panel dark:bg-slate-800/80 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex flex-col gap-2">
-           <div className="w-9 h-9 bg-rose-50 dark:bg-rose-900/30 rounded-xl flex items-center justify-center text-rose-500 dark:text-rose-400">
-             <Star size={18} />
-           </div>
-           <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Vers. Favoritos</p>
-           <p className="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter">{favorites.length}</p>
-        </div>
+      <div className="bg-[#1C1C1E] rounded-[16px] p-5 mb-4 flex items-center justify-between">
+         <div className="flex flex-col">
+            <span className="text-white font-bold text-lg leading-tight">1</span>
+            <span className="text-white/50 text-[11px] font-normal mt-1">Perseverança no Aplicativo</span>
+         </div>
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
       </div>
 
-      {/* Seção de Badges / Conquistas */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Award size={18} className="text-amber-500" />
-          <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase italic tracking-widest">Conquistas</h3>
-        </div>
+      {/* Seção de Badges e Atividades */}
+      <div className="bg-[#1C1C1E] rounded-[16px] p-5 mb-8 flex flex-col">
+         <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-white font-bold text-lg leading-tight">{effectiveBadges.length}</span>
+              <span className="text-white/50 text-[11px] font-normal mt-1">Medalhas</span>
+            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/80"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+         </div>
 
-        {/* Badges já conquistados */}
-        {effectiveBadges.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {effectiveBadges.map((badgeKey) => {
-              const badge = BADGE_MAP[badgeKey];
-              if (!badge) return null;
-              return (
-                <button
-                  key={badgeKey}
-                  onClick={() => setActiveBadge(activeBadge === badgeKey ? null : badgeKey)}
-                  className={`relative flex flex-col items-center gap-2 p-3 rounded-[1.5rem] border-2 transition-all active:scale-95 ${badge.color} ${activeBadge === badgeKey ? 'scale-105 shadow-lg' : ''}`}
-                >
-                  <div className="w-14 h-14 relative overflow-hidden rounded-xl">
-                    <img src={badge.img} alt={badge.label} className="w-full h-full object-cover" />
+         <div className="flex gap-4 overflow-x-auto pb-4 pt-2 -mx-2 px-2 snap-x">
+          {effectiveBadges.map((badgeKey) => {
+            const badge = BADGE_MAP[badgeKey];
+            if (!badge) return null;
+            return (
+              <div key={badgeKey} className="snap-center flex flex-col items-center flex-shrink-0 w-24">
+                <div className="w-20 h-20 bg-[#152e46] rounded-full flex items-center justify-center relative shadow-inner p-1">
+                  <div className="w-full h-full rounded-full border border-blue-400/30 overflow-hidden flex items-center justify-center bg-blue-900/50">
+                    <img src={badge.img} className="w-[80%] h-[80%] object-contain drop-shadow-md" />
                   </div>
-                  <p className="text-[9px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest leading-none text-center">{badge.label}</p>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                  <div className="absolute -bottom-2 w-10 h-1.5 bg-[#F43F5E] rounded-full" />
+                </div>
+              </div>
+            );
+          })}
+          {effectiveBadges.length === 0 && <span className="text-white/50 text-sm italic">Nenhuma medalha ainda</span>}
+         </div>
+      </div>
+
+      <div>
+        <h2 className="text-white text-lg font-bold mb-4 tracking-tight">Atividade</h2>
+        <div className="flex gap-2 overflow-x-auto pb-4">
+           {['Todos', 'Destaques', 'Anotações', 'Planos'].map((tab, i) => (
+             <button key={tab} className={`px-4 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 ${i === 0 ? 'bg-white text-black' : 'bg-transparent border border-white/20 text-white'}`}>
+                {tab}
+             </button>
+           ))}
+        </div>
+      </div>
 
         {/* Solicitações de Badge (lider / discipulador) — apenas no próprio perfil */}
         {isOwnProfile && (['lider', 'discipulador'] as const).map((badgeKey) => {
@@ -366,25 +354,35 @@ export function Profile() {
           </AnimatePresence>
         </section>
 
-      {/* Versículos Favoritos */}
+      {/* Atividade (Favoritos) */}
       {profile.role !== 'master' && favorites.length > 0 && (
-        <div className="flex flex-col gap-6 mb-8">
-          <div className="flex items-center gap-3">
-             <Star className="text-amber-500" size={18} fill="currentColor" />
-             <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase italic tracking-widest">Versículos Favoritos</h3>
-          </div>
-          <div className="flex flex-col gap-4">
-             {favorites.map(fav => (
-               <div key={fav.id} className="glass-panel dark:bg-slate-800/80 dark:border-white/10 p-6 rounded-[2rem] border-white/30 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 bg-[#1B3B6B]/5 dark:bg-blue-500/10 px-4 py-2 rounded-bl-2xl">
-                     <p className="text-[10px] font-black text-[#1B3B6B] dark:text-blue-400 uppercase italic tracking-tighter">
-                        {fav.livro} {fav.capitulo}:{fav.versiculo}
-                     </p>
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4 line-clamp-4 group-hover:line-clamp-none transition-all duration-300">"{fav.texto}"</p>
-               </div>
-             ))}
-          </div>
+        <div className="flex flex-col gap-4 mb-8">
+           {favorites.map(fav => (
+             <div key={fav.id} className="bg-transparent mb-2">
+                <div className="flex items-center gap-3 mb-3">
+                   <div className="w-8 h-8 rounded-full border border-gray-600 flex items-center justify-center font-bold text-white text-xs bg-[#1A1A1A]">
+                      {profile.nome.charAt(0).toUpperCase()}
+                   </div>
+                   <div className="flex items-center justify-between flex-1">
+                      <p className="text-white text-sm font-medium">Você destacou <span className="font-bold">{fav.livro} {fav.capitulo}:{fav.versiculo} NAA</span></p>
+                      <div className="flex flex-col items-center gap-0.5">
+                         <span className="text-white/50 text-[10px]">1d</span>
+                         <div className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                      </div>
+                   </div>
+                </div>
+                
+                <div className="flex gap-3 pl-4">
+                   <div className="w-1 bg-white" />
+                   <div className="flex-1 py-1">
+                      <p className="text-white/90 leading-relaxed text-[15px]" style={{ fontFamily: "'Lora', 'Merriweather', 'PT Serif', serif" }}>
+                         "{fav.texto}"
+                      </p>
+                      <p className="text-white font-bold text-xs mt-3">{fav.livro} {fav.capitulo}:{fav.versiculo} NAA</p>
+                   </div>
+                </div>
+             </div>
+           ))}
         </div>
       )}
 
