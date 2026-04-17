@@ -1,4 +1,4 @@
-import { BookOpen, Users, Calendar, ArrowRight, Bell, Loader2, QrCode, AlertCircle, X, Share2, Clock, FileText, Award, Sparkles } from "lucide-react";
+import { BookOpen, Calendar, Bell, Loader2, QrCode, AlertCircle, X, Award, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
@@ -250,30 +250,7 @@ export function Home() {
             );
           })()}
 
-      {/* Atalhos para Líderes */}
-      {(user?.role === 'lider' || user?.role === 'master' || user?.email === 'aquilles@kefel.com') && (
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-6 px-2">
-             <div className="w-2 h-6 bg-[#1B3B6B] dark:bg-white rounded-full" />
-             <h2 className="text-xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">Gestão</h2>
-          </div>
-          <Link to="/relatorios" className="bg-white dark:bg-slate-800 p-6 rounded-[2.8rem] shadow-sm border-2 border-dashed border-[#1B3B6B]/20 dark:border-white/20 flex items-center justify-between group active:scale-95 transition-soft hover:border-[#1B3B6B]/50 hover:bg-[#1B3B6B]/5 dark:hover:bg-white/5">
-             <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-[#1B3B6B] text-white rounded-2xl flex items-center justify-center shadow-premium shadow-[#1B3B6B]/20 group-hover:rotate-6 transition-soft">
-                   <FileText size={24} />
-                </div>
-                <div>
-                   <h3 className="font-black text-gray-900 dark:text-white uppercase italic text-base leading-tight">Enviar Relatório</h3>
-                   <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Célula ou Culto</p>
-                </div>
-             </div>
-             <ArrowRight size={20} className="text-[#1B3B6B] dark:text-white group-hover:translate-x-2 transition-soft" />
-          </Link>
-        </section>
-      )}
 
-      {/* Rede Social */}
-      <SocialFeed />
 
           {/* Agenda section - YouVersion layout */}
           <div className="space-y-4">

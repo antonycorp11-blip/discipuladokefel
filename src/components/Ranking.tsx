@@ -52,7 +52,7 @@ export function Ranking() {
 
     profiles.forEach(p => {
       const time = userTimes[p.id] || 0;
-      if (time > 0) {
+      if (time >= 0) {
         individualStats.push({
           id: p.id,
           nome: p.nome,
@@ -77,7 +77,6 @@ export function Ranking() {
 
     const cellStats = Object.entries(cellTimes)
       .map(([id, data]) => ({ id, nome: data.nome, tempoTotal: data.total }))
-      .filter(c => c.tempoTotal > 0)
       .sort((a, b) => b.tempoTotal - a.tempoTotal);
 
     setIndividualRanking(individualStats.slice(0, 50));
