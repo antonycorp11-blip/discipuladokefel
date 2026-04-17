@@ -217,7 +217,7 @@ export default function BibleReader() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8FAFC] dark:bg-[#121212] pt-12 pb-20 overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-[#F8FAFC] dark:bg-[#121212] pt-12 pb-20 overflow-hidden">
       {/* Barra superior estilo YouVersion */}
       <header className="px-4 py-3 flex items-center justify-between z-30 border-b border-gray-200 dark:border-white/5 bg-[#F8FAFC] dark:bg-[#121212]">
         <div className="flex gap-2">

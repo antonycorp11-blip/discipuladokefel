@@ -53,7 +53,7 @@ export function Ranking() {
 
     const userTimes: Record<string, number> = {};
     logs.forEach(log => {
-      userTimes[log.user_id] = (userTimes[log.user_id] || 0) + log.tempo_segundos;
+      userTimes[log.user_id] = (userTimes[log.user_id] || 0) + Number(log.tempo_segundos || 0);
     });
 
     const individualStats: RankUser[] = profiles.map(p => ({
