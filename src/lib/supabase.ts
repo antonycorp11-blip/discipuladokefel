@@ -349,6 +349,7 @@ class QueryBuilder {
   private _qs: string[] = [];
   private _headers: Record<string, string> = {};
   private _single = false;
+  private _maybeSingle = false;
   private _method = 'GET';
   private _body: unknown = undefined;
   private _prefer: string[] = [];
@@ -391,6 +392,13 @@ class QueryBuilder {
 
   single() {
     this._single = true;
+    this._headers['Accept'] = 'application/vnd.pgrst.object+json';
+    return this;
+  }
+
+  maybeSingle() {
+    this._single = true;
+    this._maybeSingle = true;
     this._headers['Accept'] = 'application/vnd.pgrst.object+json';
     return this;
   }
@@ -446,6 +454,9 @@ class QueryBuilder {
       let json: unknown;
       try { json = await res.json(); } catch { json = null; }
       if (!res.ok) {
+        if (this._maybeSingle && res.status === 406) {
+          return { data: null, error: null };
+        }
         const err = json as { message?: string; details?: string } | null;
         return { data: null, error: { message: err?.message || err?.details || `HTTP ${res.status}` } };
       }
