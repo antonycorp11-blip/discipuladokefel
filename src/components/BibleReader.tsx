@@ -118,6 +118,15 @@ export default function BibleReader() {
         sessionRef.current = next; 
         if (next === 600) {
           showToast("🎖️ Parabéns! Meta de 10 minutos de leitura alcançada!", "success");
+          // Persistir conquista diária
+          if (user) {
+            const currentAch = (user as any).reading_achievements || [];
+            if (!currentAch.includes('10m_daily')) {
+              supabase.from('kefel_profiles').update({ 
+                reading_achievements: [...currentAch, '10m_daily'] 
+              }).eq('id', user.id);
+            }
+          }
         }
         return next; 
       });
@@ -130,7 +139,7 @@ export default function BibleReader() {
         sessionRef.current = 0;
       }
     };
-  }, []);
+  }, [user]);
 
   const toggleVerse = (vNum: number) => {
     setSelectedVerses(prev => 
@@ -278,7 +287,7 @@ export default function BibleReader() {
       {selectedVerses.length > 0 && (
         <>
           {/* Header contextual com versículo selecionado - exato YouVersion */}
-          <div className="fixed top-0 left-0 right-0 z-[100] bg-[#1C1C1E] border-b border-white/5 shadow-md fade-in animate-in">
+          <div className="fixed top-0 left-0 right-0 z-[10000] bg-[#1C1C1E] border-b border-white/5 shadow-md fade-in animate-in">
             <div className="flex items-center justify-between px-4 py-4 pt-safe">
               <span className="text-white/80 text-[14px] font-bold tracking-tight">
                 {selectedBook.nome} {chapter}:{selectedVerses.join(',')}
@@ -290,10 +299,10 @@ export default function BibleReader() {
           </div>
 
           {/* Submenu flutuante de ações (Acima da tab bar do app) */}
-          <div className="fixed bottom-[85px] left-3 right-3 bg-[#1C1C1E] border border-white/10 z-[100] rounded-[1.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom-5 p-4 flex flex-col gap-4">
+          <div className="fixed bottom-[115px] left-3 right-3 bg-[#1C1C1E] border border-white/10 z-[9999] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-10 p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between px-2">
               {/* Cores de destaque */}
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 {HIGHLIGHT_COLORS.map(c => (
                   <button
                     key={c.bg}

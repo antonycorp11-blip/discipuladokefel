@@ -8,14 +8,14 @@ import { motion, AnimatePresence } from "motion/react";
 
 // ── Mapa completo de selos ────────────────────────────────────────
 const BADGE_MAP: Record<string, { label: string; img: string; ringColor: string; bgColor: string; desc: string }> = {
-  culto:        { label: "Culto",        img: "/badge_culto.png",        ringColor: "border-amber-400", bgColor: "bg-[#7c5b36]",  desc: "Presença registrada no culto dominical" },
-  celula:       { label: "Célula",       img: "/badge_celula.png",       ringColor: "border-emerald-500", bgColor: "bg-[#1f4a3e]", desc: "Presença registrada na célula" },
-  cursao:       { label: "Cursão",       img: "/badge_cursao.png",       ringColor: "border-amber-400", bgColor: "bg-[#7c5b36]",  desc: "Concluiu o Cursão de Teologia" },
+  culto:        { label: "CULTO",        img: "/badge_culto.png",        ringColor: "border-amber-400", bgColor: "bg-[#7c5b36]",  desc: "Presença registrada no culto dominical" },
+  celula:       { label: "CÉLULA",       img: "/badge_celula.png",       ringColor: "border-emerald-500", bgColor: "bg-[#1f4a3e]", desc: "Presença registrada na célula" },
+  cursao:       { label: "CURSÃO",       img: "/badge_cursao.png",       ringColor: "border-amber-400", bgColor: "bg-[#7c5b36]",  desc: "Concluiu o Cursão de Teologia" },
   ctl:          { label: "CTL",          img: "/badge_ctl.png",          ringColor: "border-purple-400", bgColor: "bg-[#4a2b66]", desc: "Completou o treinamento CTL" },
-  lider:        { label: "Líder",        img: "/badge_lider.png",        ringColor: "border-amber-500", bgColor: "bg-[#804f14]",  desc: "Líder de Célula" },
-  discipulador: { label: "Discipulador", img: "/badge_discipulador.png", ringColor: "border-blue-400", bgColor: "bg-[#152e46]",    desc: "Discipulador de novos membros" },
-  equipe:       { label: "Equipe",       img: "/badge_equipe.png",       ringColor: "border-slate-300", bgColor: "bg-[#333333]",   desc: "Membro da equipe de serviço" },
-  biblia:       { label: "Bíblia",       img: "/badge_biblia.png",       ringColor: "border-[#e0b075]", bgColor: "bg-[#294c66]", desc: "Capítulos lidos na Bíblia" },
+  lider:        { label: "LÍDER",        img: "/badge_lider.png",        ringColor: "border-amber-500", bgColor: "bg-[#804f14]",  desc: "Líder de Célula" },
+  discipulador: { label: "DISCIPULADOR", img: "/badge_discipulador.png", ringColor: "border-[#4aa1ce]", bgColor: "bg-[#133c5a]",    desc: "Discipulador de novos membros" },
+  equipe:       { label: "EQUIPE",       img: "/badge_equipe.png",       ringColor: "border-slate-300", bgColor: "bg-[#333333]",   desc: "Membro da equipe de serviço" },
+  biblia:       { label: "BÍBLIA",       img: "/badge_biblia.png",       ringColor: "border-[#e0b075]", bgColor: "bg-[#294c66]", desc: "Leitura Bíblica Diária" },
 };
 
 export function Profile() {
@@ -191,6 +191,9 @@ export function Profile() {
     if (p.cultos_presenca > 0 && !badges.includes('culto')) badges.push('culto');
     if (p.celulas_presenca > 0 && !badges.includes('celula')) badges.push('celula');
     if (((p as any).bible_progress?.length || 0) > 0 && !badges.includes('biblia')) badges.push('biblia');
+    if (((p as any).reading_achievements?.includes('10m_daily')) && !badges.includes('biblia')) {
+       // Já incluído via check normal
+    }
     return badges;
   };
 
@@ -277,35 +280,35 @@ export function Profile() {
          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-white/50"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
       </div>
 
-      {/* Gestão Administrativa */}
-      {isOwnProfile && (currentUser?.role === 'master' || currentUser?.role === 'lider' || currentUser?.email === 'aquilles@kefel.com') && (
-        <section className="mb-6">
-          <Link to="/relatorios" className="bg-blue-50 dark:bg-[#1A1A1A] p-5 rounded-[16px] shadow-sm flex items-center justify-between group active:scale-95 transition-soft border border-blue-100 dark:border-white/5">
-             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-600 dark:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-md">
-                   <FileText size={20} />
-                </div>
-                <div>
-                   <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight">Gestão de Relatórios</h3>
-                   <p className="text-[10px] text-gray-500 font-medium uppercase mt-0.5">Enviar Célula ou Culto</p>
-                </div>
-             </div>
-             <ChevronRight size={20} className="text-gray-400 dark:text-white/30 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </section>
-      )}
+       {/* Gestão Administrativa */}
+       {isOwnProfile && (currentUser?.role === 'master' || currentUser?.role === 'lider' || currentUser?.email === 'aquilles@kefel.com') && (
+         <section className="mb-6">
+           <Link to="/relatorios" className="bg-[#1C1C1E] p-6 rounded-[24px] shadow-lg flex items-center justify-between group active:scale-95 transition-all border border-white/5">
+              <div className="flex items-center gap-5">
+                 <div className="w-14 h-14 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center shadow-inner border border-blue-500/20">
+                    <FileText size={24} />
+                 </div>
+                 <div>
+                    <h3 className="font-black text-white text-[17px] leading-tight tracking-tight italic uppercase">Gestão de Relatórios</h3>
+                    <p className="text-[10px] text-white/30 font-black uppercase mt-1 tracking-widest">Enviar Célula ou Culto</p>
+                 </div>
+              </div>
+              <ChevronRight size={20} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+           </Link>
+         </section>
+       )}
 
       {/* Seção de Badges e Atividades */}
-      <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-5 mb-8 flex flex-col">
-         <div className="flex items-center justify-between mb-4">
+      <div className="bg-[#1C1C1E] rounded-[24px] p-6 mb-8 flex flex-col shadow-xl">
+         <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <span className="text-gray-900 dark:text-white font-bold text-lg leading-tight">{effectiveBadges.length}</span>
-              <span className="text-gray-500 dark:text-white/50 text-[11px] font-normal mt-1">Medalhas</span>
+               <span className="text-white font-black text-xl leading-tight">{effectiveBadges.length}</span>
+               <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.15em] mt-1">Medalhas</span>
             </div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-white/50"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+            <Award size={18} className="text-white/20" />
          </div>
 
-         <div className="flex gap-4 overflow-x-auto pb-4 pt-2 -mx-2 px-2 snap-x">
+         <div className="flex gap-6 overflow-x-auto pb-2 -mx-2 px-2 snap-x no-scrollbar">
           {effectiveBadges.map((badgeKey) => {
             const badge = BADGE_MAP[badgeKey];
             if (!badge) return null;
@@ -317,22 +320,28 @@ export function Profile() {
 
             return (
               <div key={badgeKey} className="snap-center flex flex-col items-center flex-shrink-0 w-24 relative group cursor-pointer" onClick={() => setActiveBadge(badgeKey)}>
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center relative shadow-inner p-1 bg-gradient-to-b from-[#2A2A2C] to-[#1C1C1E]`}>
-                  <div className={`w-full h-full rounded-full border-[1.5px] ${badge.ringColor} overflow-hidden flex items-center justify-center ${badge.bgColor} relative`}>
-                    <img src={badge.img} className="w-[85%] h-[85%] object-contain drop-shadow-md" />
+                <div className="w-20 h-20 rounded-full flex items-center justify-center relative p-1.5 bg-gradient-to-tr from-[#121212] to-[#252528] shadow-inner">
+                  <div className={`w-full h-full rounded-full border-[1.5px] ${badge.ringColor} overflow-hidden flex items-center justify-center ${badge.bgColor} relative shadow-lg`}>
+                    <img src={badge.img} className="w-[85%] h-[85%] object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]" />
                   </div>
-                  <div className="absolute -bottom-1 w-8 h-1 bg-[#EB4B4B] rounded-full" />
+                  
+                  {count > 1 && (
+                    <div className="absolute top-0 right-0 bg-[#FFB800] text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg border-2 border-[#1C1C1E] z-20">
+                      {count}
+                    </div>
+                  )}
                 </div>
-                {count > 1 && (
-                   <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-amber-300">
-                     {count}
-                   </div>
-                )}
-                <span className="text-[9px] text-gray-500 dark:text-white/40 font-bold uppercase mt-3 tracking-widest">{badge.label}</span>
+                
+                {/* Indicador de Progresso (Barra Vermelha) */}
+                <div className="w-8 h-[2.5px] bg-[#EB4B4B] rounded-full mt-3 opacity-90 shadow-[0_0_8px_rgba(235,75,75,0.4)]" />
+                
+                <span className="text-[9px] text-white/40 font-black uppercase mt-2 tracking-[0.2em]">{badge.label}</span>
               </div>
             );
           })}
-          {effectiveBadges.length === 0 && <span className="text-white/50 text-sm italic">Nenhuma medalha ainda</span>}
+          {effectiveBadges.length === 0 && <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest italic py-4">Nenhuma medalha conquistada</span>}
+         </div>
+      </div>adges.length === 0 && <span className="text-white/50 text-sm italic">Nenhuma medalha ainda</span>}
          </div>
       </div>
 
