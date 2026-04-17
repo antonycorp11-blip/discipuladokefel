@@ -11,9 +11,16 @@ interface RankUser {
   cultos_presenca: number;
 }
 
+interface RankCell {
+  id: string;
+  nome: string;
+  imagem_url?: string;
+  tempoTotal: number;
+}
+
 export function Ranking() {
   const [individualRanking, setIndividualRanking] = useState<RankUser[]>([]);
-  const [cellRanking, setCellRanking] = useState<{ id: string, nome: string, tempoTotal: number }[]>([]);
+  const [cellRanking, setCellRanking] = useState<RankCell[]>([]);
   const [activeTab, setActiveTab] = useState<'individual' | 'celulas'>('individual');
   const [loading, setLoading] = useState(true);
 
@@ -36,8 +43,8 @@ export function Ranking() {
 
     const [logsRes, profilesRes, celulaRes] = await Promise.all([
       supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
-      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, kefel_celulas(nome)"),
-      supabase.from("kefel_celulas").select("id, nome")
+      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca"),
+      supabase.from("kefel_celulas").select("id, nome, imagem_url")
     ]);
 
     const logs = (logsRes.data as any[]) || [];
@@ -66,12 +73,13 @@ export function Ranking() {
       }
     });
 
-    // Todas as células aparecem, mesmo zeradas
-    const cellStats = celulas.map(cel => ({
+    // Todas as células aparecem com foto, mesmo zeradas
+    const cellStats: RankCell[] = celulas.map((cel: any) => ({
       id: cel.id,
       nome: cel.nome,
+      imagem_url: cel.imagem_url,
       tempoTotal: cellTimes[cel.id] || 0
-    })).sort((a, b) => b.tempoTotal - a.tempoTotal);
+    })).sort((a: RankCell, b: RankCell) => b.tempoTotal - a.tempoTotal);
 
     setIndividualRanking(individualStats.slice(0, 50));
     setCellRanking(cellStats.slice(0, 50));

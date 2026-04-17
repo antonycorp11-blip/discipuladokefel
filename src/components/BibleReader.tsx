@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
-  ChevronLeft, ChevronRight, BookOpen, Clock, Star, X
+  ChevronLeft, ChevronRight, BookOpen, Clock, Star, X, Copy, Bookmark
 } from "lucide-react";
 import { BIBLE_BOOKS, fetchBibleChapter, BibleVerse } from "@/data/bible";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 export default function BibleReader() {
-  const { user, showToast } = useAuth();
+  const { user, showToast, updateReadingTime } = useAuth();
   const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === '1') || BIBLE_BOOKS[0]);
   const [chapter, setChapter] = useState(1);
   const [version, setVersion] = useState<'acf'|'ara'|'nvi'|'ntlh'>('acf');
@@ -25,10 +25,18 @@ export default function BibleReader() {
   
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [highlights, setHighlights] = useState<Record<number, string>>({}); // verse -> color
+  const HIGHLIGHT_COLORS = [
+    { bg: '#FF9500', label: 'Laranja' },
+    { bg: '#FFD60A', label: 'Amarelo' },
+    { bg: '#32D74B', label: 'Verde' },
+    { bg: '#5AC8FA', label: 'Azul' },
+  ];
   
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const sessionRef = useRef(0);
   const timerId = useRef<NodeJS.Timeout|null>(null);
+  const userRef = useRef(user);
   const isInitialLoad = useRef(true);
   const [showWarning, setShowWarning] = useState(false);
 
@@ -86,51 +94,28 @@ export default function BibleReader() {
     load();
   }, [selectedBook, chapter, version]);
 
+  // Mantém ref do user sempre atualizada para o cleanup do useEffect
+  useEffect(() => { userRef.current = user; }, [user]);
+
+  const syncLeitura = useCallback(async (secs: number) => {
+    if (secs <= 0) return;
+    try {
+      await updateReadingTime(secs, selectedBook.nome, chapter);
+    } catch (e) {
+      console.error("Erro ao sincronizar leitura", e);
+    }
+  }, [updateReadingTime, selectedBook.nome, chapter]);
+
   useEffect(() => {
     timerId.current = setInterval(() => {
-      setSessionSeconds(s => {
-        const next = s + 1;
-        sessionRef.current = next;
-        return next;
-      });
+      setSessionSeconds(s => { const next = s + 1; sessionRef.current = next; return next; });
     }, 1000);
 
-    // Sincroniza automaticamente a cada 30 segundos
-    const autoSyncTimer = setInterval(() => {
-      if (sessionRef.current > 0 && user) {
-        syncLeitura(sessionRef.current);
-        setSessionSeconds(0);
-        sessionRef.current = 0;
-      }
-    }, 30000);
-
-    // Sincroniza ao sair da tela (unmount) mesmo sem concluir capítulo
     return () => {
       if (timerId.current) clearInterval(timerId.current);
-      clearInterval(autoSyncTimer);
-      if (sessionRef.current > 0 && user) {
-        syncLeitura(sessionRef.current);
-      }
+      if (sessionRef.current > 0) syncLeitura(sessionRef.current);
     };
-  }, [user?.id]);
-
-  const syncLeitura = async (secs: number) => {
-    if (!user) return;
-    
-    // Log detalhado da leitura
-    await supabase.from("kefel_leitura_logs").insert({
-      user_id: user.id,
-      livro: selectedBook.nome,
-      capitulo: chapter,
-      tempo_segundos: secs
-    });
-
-    // Atualiza o tempo total do perfil via RPC (agora que a função existe)
-    await supabase.rpc('increment_reading_time', { 
-      row_id: user.id, 
-      increment_by: secs 
-    });
-  };
+  }, [syncLeitura]);
 
   const toggleVerse = (vNum: number) => {
     setSelectedVerses(prev => 
@@ -247,10 +232,17 @@ export default function BibleReader() {
                    key={v.verse} 
                    id={`v-${v.verse}`} 
                    onClick={() => toggleVerse(v.verse)} 
-                   className={`inline rounded break-words cursor-pointer ${selectedVerses.includes(v.verse) ? 'bg-[#1B3B6B]/20 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 font-medium' : favorites.includes(v.verse) ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100' : ''}`}
+                   className={`inline rounded-sm break-words cursor-pointer transition-colors`}
+                   style={{
+                     backgroundColor: selectedVerses.includes(v.verse) 
+                       ? 'rgba(90, 120, 200, 0.3)' 
+                       : highlights[v.verse] 
+                         ? highlights[v.verse] + '55'
+                         : undefined
+                   }}
                  >
                     <sup 
-                       className={`text-[11px] font-bold mr-1 ml-2 ${favorites.includes(v.verse) ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`}
+                       className={`text-[11px] font-bold mr-1 ml-2 ${favorites.includes(v.verse) ? 'text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}
                     >
                       {v.verse}
                     </sup>
@@ -269,34 +261,86 @@ export default function BibleReader() {
       </div>
 
       {selectedVerses.length > 0 && (
-         <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-md border-t border-gray-200 dark:border-white/5 py-4 px-6 z-50 flex items-center justify-around pb-safe">
-            <button 
-              onClick={() => {
-                const targetVerses = verses.filter(v => selectedVerses.includes(v.verse));
-                targetVerses.forEach(v => toggleFavorite(v));
-              }}
-              className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
-            >
-              <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500">
-                 <Star size={20} fill={selectedVerses.some(v => favorites.includes(v)) ? "currentColor" : "none"} />
+        <>
+          {/* Header contextual com versículo selecionado - exato YouVersion */}
+          <div className="fixed top-0 left-0 right-0 z-50 bg-[#1C1C1E] border-b border-white/5">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-white/70 text-[13px] font-medium">
+                Selecionado: {selectedBook.nome} {chapter}:{selectedVerses.join(',')}
+              </span>
+              <button onClick={() => setSelectedVerses([])} className="text-white/40 p-1">
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Barra inferior exata do YouVersion */}
+          <div className="fixed bottom-0 left-0 right-0 bg-[#1C1C1E] border-t border-white/5 z-50">
+            {/* Linha de destaque deslizavel para cima */}
+            <div className="flex items-center px-5 pt-3 pb-1 gap-1">
+              <span className="text-white/30 text-[11px] mr-2">\u2227 Deslize para cima para ver mais</span>
+            </div>
+            <div className="flex items-center justify-between px-5 pb-6 pt-2">
+              {/* Cores de destaque */}
+              <div className="flex items-center gap-3">
+                {HIGHLIGHT_COLORS.map(c => (
+                  <button
+                    key={c.bg}
+                    onClick={() => {
+                      setHighlights(prev => {
+                        const next = { ...prev };
+                        selectedVerses.forEach(v => {
+                          if (next[v] === c.bg) delete next[v];
+                          else next[v] = c.bg;
+                        });
+                        return next;
+                      });
+                    }}
+                    className="w-9 h-9 rounded-full active:scale-90 transition-transform shadow-md"
+                    style={{ backgroundColor: c.bg }}
+                  />
+                ))}
               </div>
-              <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Favoritar</span>
-            </button>
-            <button 
-              onClick={() => {
-                const text = verses.filter(v => selectedVerses.includes(v.verse)).map(v => `${v.verse}. ${v.text}`).join('\n');
-                const msg = `${selectedBook.nome} ${chapter}\n\n${text}\n\nLido no Kefel App`;
-                if (navigator.share) navigator.share({ text: msg });
-                else { navigator.clipboard.writeText(msg); showToast("Copiado!", "info"); }
-              }} 
-              className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-[#1B3B6B] dark:text-blue-400">
-                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+              {/* Ações */}
+              <div className="flex items-center gap-5">
+                <button
+                  onClick={async () => {
+                    const targetVerses = verses.filter(v => selectedVerses.includes(v.verse));
+                    for (const v of targetVerses) await toggleFavorite(v);
+                    setSelectedVerses([]);
+                  }}
+                  className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
+                >
+                  <Bookmark size={20} className={selectedVerses.some(v => favorites.includes(v)) ? 'text-amber-400 fill-amber-400' : 'text-white'} />
+                  <span className="text-[10px] text-white/60">Salvar</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  <span className="text-[10px] text-white/60">Anotação</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const text = verses.filter(v => selectedVerses.includes(v.verse)).map(v => `${v.verse} ${v.text}`).join(' ');
+                    const msg = `${selectedBook.nome} ${chapter}\n\n${text}\n\nKefel App`;
+                    if (navigator.share) navigator.share({ text: msg });
+                    else { navigator.clipboard.writeText(msg); showToast('Copiado!', 'info'); }
+                    setSelectedVerses([]);
+                  }}
+                  className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
+                >
+                  <Copy size={20} className="text-white" />
+                  <span className="text-[10px] text-white/60">Copiar</span>
+                </button>
               </div>
-              <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Compartilhar</span>
-            </button>
-         </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Basic Nav block */}
