@@ -15,7 +15,7 @@ export function Layout() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 1.02, y: -10 }}
           transition={{ duration: 0.3, cubicBezier: [0.4, 0, 0.2, 1] }}
-          className="max-w-[430px] mx-auto"
+          className="max-w-[430px] mx-auto relative z-[60]"
         >
           <Outlet />
         </motion.main>

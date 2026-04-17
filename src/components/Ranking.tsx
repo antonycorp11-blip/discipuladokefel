@@ -2,6 +2,7 @@ import { Trophy, Medal, Crown, Loader2, User, Clock, ChevronRight, Award } from 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 interface RankUser {
   id: string;
@@ -19,6 +20,7 @@ interface RankCell {
 }
 
 export function Ranking() {
+  const { showToast } = useAuth();
   const [individualRanking, setIndividualRanking] = useState<RankUser[]>([]);
   const [cellRanking, setCellRanking] = useState<RankCell[]>([]);
   const [activeTab, setActiveTab] = useState<'individual' | 'celulas'>('individual');
@@ -32,9 +34,12 @@ export function Ranking() {
     const now = new Date();
     const sunday = new Date(now);
     // Retrocede até o domingo (0 = Domingo)
-    sunday.setDate(now.getDate() - now.getDay());
+    const day = now.getDay();
+    const diff = now.getDate() - day;
+    sunday.setDate(diff);
     sunday.setHours(0, 0, 0, 0);
-    return sunday.toISOString();
+    // Usamos o formato YYYY-MM-DD para evitar problemas de timezone no GTE
+    return sunday.toISOString().split('T')[0];
   };
 
   async function fetchRanking() {
