@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { 
   ChevronLeft, ChevronRight, BookOpen, Clock, Star, X, Copy, Bookmark
 } from "lucide-react";

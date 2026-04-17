@@ -31,12 +31,10 @@ export function Ranking() {
   }, []);
 
   const getSundayOfCurrentWeek = () => {
-    const now = new Date();
-    const sunday = new Date(now);
-    // Retrocede até o domingo (0 = Domingo)
-    sunday.setDate(now.getDate() - now.getDay());
-    sunday.setHours(0, 0, 0, 0);
-    return sunday.toISOString();
+    // Para evitar problemas de fuso horário e garantir que todas as leituras da semana apareçam,
+    // vamos pegar tudo dos últimos 7 dias. É mais seguro e justo para um ranking semanal rotativo.
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return sevenDaysAgo.toISOString();
   };
 
   async function fetchRanking() {
@@ -143,6 +141,9 @@ export function Ranking() {
         <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B] dark:text-blue-400" /></div>
       ) : (
         <div className="grid gap-5 pb-10">
+          {/* Debug Info para Master */}
+          {/* {location.search.includes('debug') && <div className="text-[8px] text-gray-400">Logs: {individualRanking.length} | Profiles: {cellRanking.length}</div>} */}
+          
           {activeTab === 'individual' && individualRanking.length === 0 && (
             <div className="text-center py-10">
               <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Nenhuma leitura nesta semana.</p>
