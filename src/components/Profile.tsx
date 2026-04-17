@@ -39,6 +39,10 @@ export function Profile() {
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
   const [badgeRequests, setBadgeRequests] = useState<Record<string, string>>({}); // key -> status
   const [requesting, setRequesting] = useState<string | null>(null);
+  const [showSalvo, setShowSalvo] = useState(false);
+  const [showOracao, setShowOracao] = useState(false);
+  const [pedidoOracao, setPedidoOracao] = useState("");
+  const [sendingOracao, setSendingOracao] = useState(false);
 
   const isOwnProfile = !id || id === currentUser?.id;
 
@@ -204,7 +208,6 @@ export function Profile() {
     <div className="flex flex-col min-h-screen bg-transparent pt-10 pb-28 px-4 overflow-y-auto">
       <header className="mb-6 pt-4 flex items-center justify-end gap-3 text-gray-900 dark:text-white">
           {isOwnProfile && <button onClick={() => setShowSettings(true)} className="p-2 bg-gray-100 dark:bg-[#1C1C1E] rounded-full active:scale-95"><Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" /></button>}
-          {isOwnProfile && <button onClick={toggleDark} className="p-2 bg-gray-100 dark:bg-[#1C1C1E] rounded-full active:scale-95">{isDark ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-[#1B3B6B]" />}</button>}
       </header>
 
       {/* Hero Card do Perfil estilo YouVersion */}
@@ -242,14 +245,21 @@ export function Profile() {
 
       {/* Grid Menu */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity">
+        <button 
+          onClick={() => setShowSalvo(true)}
+          className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity"
+        >
            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-900 dark:text-white"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
            <span className="text-gray-900 dark:text-white text-[12px] font-medium">Salvo</span>
-        </div>
-        <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity">
+           {favorites.length > 0 && <span className="text-[9px] text-gray-400 dark:text-white/30">{favorites.length} versículos</span>}
+        </button>
+        <button 
+          onClick={() => isOwnProfile && setShowOracao(true)}
+          className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity"
+        >
            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-900 dark:text-white"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
            <span className="text-gray-900 dark:text-white text-[12px] font-medium">Oração</span>
-        </div>
+        </button>
       </div>
 
       <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-5 mb-4 flex items-center justify-between">
@@ -591,12 +601,12 @@ export function Profile() {
                  </div>
                  <div className="flex items-center justify-between p-2">
                     <div>
-                       <p className="font-black text-gray-900 dark:text-white uppercase italic text-sm">Tema Escuro</p>
-                       <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-1">Modo noturno</p>
+                       <p className="font-black text-gray-900 dark:text-white uppercase italic text-sm">Modo Escuro</p>
+                       <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-1">Sempre ativo neste app</p>
                     </div>
-                    <button onClick={toggleDark} className={`w-14 h-8 rounded-full transition-colors relative ${isDark ? 'bg-[#1B3B6B]' : 'bg-gray-200'}`}>
-                       <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${isDark ? 'translate-x-7' : 'translate-x-1'}`} />
-                    </button>
+                    <div className="w-14 h-8 rounded-full bg-[#1B3B6B] flex items-center justify-end px-1">
+                       <div className="w-6 h-6 bg-white rounded-full" />
+                    </div>
                  </div>
                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
                     <div>
@@ -627,6 +637,70 @@ export function Profile() {
                  </button>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* Modal: Versículos Salvos */}
+      {showSalvo && (
+        <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-md flex items-end">
+          <div className="bg-[#1A1A1A] w-full rounded-t-[2rem] p-6 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-white">Versículos Salvos</h2>
+              <button onClick={() => setShowSalvo(false)} className="p-2 bg-[#2C2C2E] rounded-full"><X size={18} className="text-white" /></button>
+            </div>
+            <div className="overflow-y-auto flex-1 space-y-4 pb-10">
+              {favorites.length === 0 ? (
+                <p className="text-white/40 text-sm text-center py-10">Nenhum versículo favoritado ainda.</p>
+              ) : favorites.map(fav => (
+                <div key={fav.id} className="bg-[#2C2C2E] rounded-2xl p-4">
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-2">{fav.livro} {fav.capitulo}:{fav.versiculo}</p>
+                  <p className="text-white text-sm leading-relaxed" style={{ fontFamily: "'Lora', serif" }}>"{fav.texto}"</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Pedido de Oração */}
+      {showOracao && (
+        <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-md flex items-end">
+          <div className="bg-[#1A1A1A] w-full rounded-t-[2rem] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-white">Pedido de Oração</h2>
+              <button onClick={() => { setShowOracao(false); setPedidoOracao(""); }} className="p-2 bg-[#2C2C2E] rounded-full"><X size={18} className="text-white" /></button>
+            </div>
+            <textarea
+              value={pedidoOracao}
+              onChange={e => setPedidoOracao(e.target.value)}
+              placeholder="Escreva seu pedido de oração aqui..."
+              className="w-full bg-[#2C2C2E] text-white rounded-2xl p-4 text-sm resize-none outline-none min-h-[120px] leading-relaxed placeholder:text-white/30"
+            />
+            <p className="text-white/30 text-[10px] mt-2 mb-4">Seu pedido será compartilhado com a comunidade no Feed.</p>
+            <button
+              disabled={!pedidoOracao.trim() || sendingOracao}
+              onClick={async () => {
+                if (!pedidoOracao.trim() || !currentUser) return;
+                setSendingOracao(true);
+                try {
+                  await supabase.from("kefel_oracao").insert({
+                    user_id: currentUser.id,
+                    texto: pedidoOracao.trim()
+                  });
+                  showToast("Pedido enviado para o Feed! 🙏", "success");
+                  setShowOracao(false);
+                  setPedidoOracao("");
+                } catch {
+                  showToast("Erro ao enviar pedido", "error");
+                } finally {
+                  setSendingOracao(false);
+                }
+              }}
+              className="w-full bg-[#1B3B6B] text-white py-4 rounded-2xl font-bold text-sm disabled:opacity-40 active:scale-95 transition-transform"
+            >
+              {sendingOracao ? "Enviando..." : "Enviar para o Feed"}
+            </button>
+          </div>
         </div>
       )}
     </div>

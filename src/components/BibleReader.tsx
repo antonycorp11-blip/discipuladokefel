@@ -95,10 +95,24 @@ export default function BibleReader() {
       });
     }, 1000);
 
+    // Sincroniza automaticamente a cada 30 segundos
+    const autoSyncTimer = setInterval(() => {
+      if (sessionRef.current > 0 && user) {
+        syncLeitura(sessionRef.current);
+        setSessionSeconds(0);
+        sessionRef.current = 0;
+      }
+    }, 30000);
+
+    // Sincroniza ao sair da tela (unmount) mesmo sem concluir capítulo
     return () => {
       if (timerId.current) clearInterval(timerId.current);
+      clearInterval(autoSyncTimer);
+      if (sessionRef.current > 0 && user) {
+        syncLeitura(sessionRef.current);
+      }
     };
-  }, []);
+  }, [user?.id]);
 
   const syncLeitura = async (secs: number) => {
     if (!user) return;

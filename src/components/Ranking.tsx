@@ -34,50 +34,44 @@ export function Ranking() {
     setLoading(true);
     const sunday = getSundayOfCurrentWeek();
 
-    const [logsRes, profilesRes] = await Promise.all([
+    const [logsRes, profilesRes, celulaRes] = await Promise.all([
       supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
-      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, kefel_celulas(nome)")
+      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, kefel_celulas(nome)"),
+      supabase.from("kefel_celulas").select("id, nome")
     ]);
 
     const logs = (logsRes.data as any[]) || [];
     const profiles = (profilesRes.data as any[]) || [];
+    const celulas = (celulaRes.data as any[]) || [];
 
     const userTimes: Record<string, number> = {};
     logs.forEach(log => {
       userTimes[log.user_id] = (userTimes[log.user_id] || 0) + log.tempo_segundos;
     });
 
-    const individualStats: RankUser[] = [];
-    const cellTimes: Record<string, { nome: string, total: number }> = {};
+    const individualStats: RankUser[] = profiles.map(p => ({
+      id: p.id,
+      nome: p.nome,
+      avatar_url: p.avatar_url,
+      tempo_leitura_total: userTimes[p.id] || 0,
+      cultos_presenca: p.cultos_presenca
+    }));
+    individualStats.sort((a, b) => b.tempo_leitura_total - a.tempo_leitura_total);
 
+    // Soma tempos por célula
+    const cellTimes: Record<string, number> = {};
     profiles.forEach(p => {
-      const time = userTimes[p.id] || 0;
-      if (time >= 0) {
-        individualStats.push({
-          id: p.id,
-          nome: p.nome,
-          avatar_url: p.avatar_url,
-          tempo_leitura_total: time,
-          cultos_presenca: p.cultos_presenca
-        });
-      }
-
-      const cel = p.kefel_celulas as any;
-      if (p.celula_id && cel) {
-        // Trata caso venha array ou objeto único do supabase
-        const cellName = Array.isArray(cel) ? cel[0]?.nome : cel?.nome;
-        if (!cellTimes[p.celula_id]) {
-          cellTimes[p.celula_id] = { nome: cellName || 'Desconhecida', total: 0 };
-        }
-        cellTimes[p.celula_id].total += time;
+      if (p.celula_id) {
+        cellTimes[p.celula_id] = (cellTimes[p.celula_id] || 0) + (userTimes[p.id] || 0);
       }
     });
 
-    individualStats.sort((a, b) => b.tempo_leitura_total - a.tempo_leitura_total);
-
-    const cellStats = Object.entries(cellTimes)
-      .map(([id, data]) => ({ id, nome: data.nome, tempoTotal: data.total }))
-      .sort((a, b) => b.tempoTotal - a.tempoTotal);
+    // Todas as células aparecem, mesmo zeradas
+    const cellStats = celulas.map(cel => ({
+      id: cel.id,
+      nome: cel.nome,
+      tempoTotal: cellTimes[cel.id] || 0
+    })).sort((a, b) => b.tempoTotal - a.tempoTotal);
 
     setIndividualRanking(individualStats.slice(0, 50));
     setCellRanking(cellStats.slice(0, 50));
