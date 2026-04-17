@@ -278,25 +278,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateReadingTime = async (seconds: number, livro: string, capitulo: number) => {
     if (!user) return;
 
-    const updated = { 
-      ...user, 
-      tempo_leitura_total: user.tempo_leitura_total + seconds,
-      last_bible_reading: { book: livro, chapter: capitulo }
-    };
-    setUser(updated);
+    try {
+      const updated = { 
+        ...user, 
+        tempo_leitura_total: (user.tempo_leitura_total || 0) + seconds,
+        last_bible_reading: { book: livro, chapter: capitulo }
+      };
+      
+      // Atualização imediata UI
+      setUser(updated);
 
-    await Promise.all([
-      supabase
+      // Persistência
+      const { error: profileError } = await supabase
         .from("kefel_profiles")
         .update({ 
           tempo_leitura_total: updated.tempo_leitura_total,
           last_bible_reading: { book: livro, chapter: capitulo }
         })
-        .eq("id", user.id),
-      supabase
+        .eq("id", user.id);
+
+      const { error: logError } = await supabase
         .from("kefel_leitura_logs")
-        .insert({ user_id: user.id, livro, capitulo, tempo_segundos: seconds }),
-    ]);
+        .insert({ 
+          user_id: user.id, 
+          livro, 
+          capitulo, 
+          tempo_segundos: seconds 
+        });
+
+      if (profileError || logError) {
+        console.error("Erro na sincronização:", profileError || logError);
+        showToast("Houve um problema ao salvar seu progresso. Tentaremos novamente depois.", "info");
+      }
+    } catch (err) {
+      console.error("Critical error in updateReadingTime:", err);
+    }
   };
 
   // ── Deletar Perfil (Master) ──────────────────────────────────

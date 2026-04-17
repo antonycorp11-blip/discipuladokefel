@@ -341,8 +341,6 @@ export function Profile() {
           })}
           {effectiveBadges.length === 0 && <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest italic py-4">Nenhuma medalha conquistada</span>}
          </div>
-      </div>adges.length === 0 && <span className="text-white/50 text-sm italic">Nenhuma medalha ainda</span>}
-         </div>
       </div>
 
       <div>

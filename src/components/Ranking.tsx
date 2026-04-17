@@ -30,9 +30,9 @@ export function Ranking() {
 
   const getSundayOfCurrentWeek = () => {
     const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = now.getDate() - dayOfWeek;
-    const sunday = new Date(now.setDate(diff));
+    const sunday = new Date(now);
+    // Retrocede até o domingo (0 = Domingo)
+    sunday.setDate(now.getDate() - now.getDay());
     sunday.setHours(0, 0, 0, 0);
     return sunday.toISOString();
   };
