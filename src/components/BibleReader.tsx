@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
-  ChevronLeft, ChevronRight, BookOpen, Clock, 
-  Share2, Loader2, Star, X, CheckCircle2
+  ChevronLeft, ChevronRight, BookOpen, Clock, Star, X
 } from "lucide-react";
 import { BIBLE_BOOKS, fetchBibleChapter, BibleVerse } from "@/data/bible";
 import { supabase } from "@/lib/supabase";
@@ -194,13 +193,6 @@ export default function BibleReader() {
     }
   };
 
-  const shareSelected = () => {
-    const text = verses.filter(v => selectedVerses.includes(v.verse)).map(v => `${v.verse}. ${v.text}`).join('\n');
-    const msg = `${selectedBook.nome} ${chapter}\n\n${text}\n\nLido no Kefel App`;
-    if (navigator.share) navigator.share({ text: msg });
-    else { navigator.clipboard.writeText(msg); showToast("Copiado!", "info"); }
-  };
-
   return (
     <div className="flex flex-col h-screen bg-[#F8FAFC] dark:bg-[#121212] pt-12 pb-20 overflow-hidden">
       {/* Barra superior estilo YouVersion */}
@@ -224,7 +216,7 @@ export default function BibleReader() {
       <div className="flex-1 overflow-y-auto px-5 py-8 scroll-smooth relative">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
-             <Loader2 className="animate-spin text-[#1B3B6B]" />
+             <span className="text-[#1B3B6B]">Carregando...</span>
           </div>
         ) : (
           <div className="max-w-xl mx-auto space-y-4">

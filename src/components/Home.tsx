@@ -1,4 +1,4 @@
-import { BookOpen, Users, Calendar, Trophy, ArrowRight, Bell, Loader2, CheckCircle2, QrCode, AlertCircle, X, User, Share2, MapPin, Clock, FileText, Award, Sparkles, Navigation } from "lucide-react";
+import { BookOpen, Users, Calendar, ArrowRight, Bell, Loader2, QrCode, AlertCircle, X, Share2, Clock, FileText, Award, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
