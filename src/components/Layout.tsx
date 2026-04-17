@@ -10,11 +10,9 @@ export function Layout() {
     <div className="min-h-screen bg-transparent pb-24 selection:bg-indigo-100 italic transition-soft">
       <AnimatePresence mode="wait">
         <motion.main
-          key={location.pathname}
-          initial={{ opacity: 0, scale: 0.98, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 1.02, y: -10 }}
-          transition={{ duration: 0.3, cubicBezier: [0.4, 0, 0.2, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
           className="max-w-[430px] mx-auto"
         >
           <Outlet />

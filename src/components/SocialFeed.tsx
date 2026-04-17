@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { 
   UserPlus, Star, Heart, 
   Loader2, UserCircle, Clock, HandMetal

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X, Trash2, Moon, Sun, Award, BookOpen, Send, CheckCircle2 } from "lucide-react";
+import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X, Trash2, Moon, Sun, Award, BookOpen, Send, CheckCircle2, HandMetal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { supabase, type KefelCelula, type KefelProfile, type KefelFavorito } from "@/lib/supabase";
@@ -43,6 +43,9 @@ export function Profile() {
   const [showOracao, setShowOracao] = useState(false);
   const [pedidoOracao, setPedidoOracao] = useState("");
   const [sendingOracao, setSendingOracao] = useState(false);
+  const [showMinhasOracoes, setShowMinhasOracoes] = useState(false);
+  const [minhasOracoes, setMinhasOracoes] = useState<any[]>([]);
+  const [loadingPrayers, setLoadingPrayers] = useState(false);
 
   const isOwnProfile = !id || id === currentUser?.id;
 
@@ -83,9 +86,31 @@ export function Profile() {
       }
 
       setLoading(false);
+      loadMyPrayers();
     }
     loadProfile();
   }, [id, currentUser?.id, currentUser?.role]);
+
+  async function loadMyPrayers() {
+    const targetId = id || currentUser?.id;
+    if (!targetId) return;
+    setLoadingPrayers(true);
+    const { data } = await supabase
+      .from("kefel_feed_interactions")
+      .select("*, item_id, item_type")
+      .eq("user_id", targetId)
+      .eq("interaction_type", "prayer");
+    
+    if (data && data.length > 0) {
+      const oracaoIds = data.map(i => i.item_id);
+      const { data: oracoes } = await supabase
+        .from("kefel_oracao")
+        .select("*, profile:user_id(nome, avatar_url)")
+        .in("id", oracaoIds);
+      setMinhasOracoes(oracoes || []);
+    }
+    setLoadingPrayers(false);
+  }
 
   async function fetchAllReports() {
     if (currentUser?.role !== 'master') return;
@@ -260,13 +285,23 @@ export function Profile() {
            {favorites.length > 0 && <span className="text-[9px] text-gray-400 dark:text-white/30">{favorites.length} versículos</span>}
         </button>
         {isOwnProfile && (
-          <button 
-            onClick={() => setShowOracao(true)}
-            className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity"
-          >
-             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-900 dark:text-white"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
-             <span className="text-gray-900 dark:text-white text-[12px] font-medium">Oração</span>
-          </button>
+          <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-2 flex gap-2">
+            <button 
+              onClick={() => setShowOracao(true)}
+              className="flex-1 bg-white dark:bg-[#2C2C2E] rounded-[14px] p-4 flex flex-col items-center justify-center gap-1 active:opacity-70 transition-opacity"
+            >
+               <Send size={18} className="text-gray-900 dark:text-white" />
+               <span className="text-gray-900 dark:text-white text-[11px] font-bold">Pedir Oração</span>
+            </button>
+            <button 
+              onClick={() => setShowMinhasOracoes(true)}
+              className="flex-1 bg-white dark:bg-[#2C2C2E] rounded-[14px] p-4 flex flex-col items-center justify-center gap-1 active:opacity-70 transition-opacity"
+            >
+               <HandMetal size={18} className="text-purple-500" />
+               <span className="text-gray-900 dark:text-white text-[11px] font-bold">Minhas Orações</span>
+               {minhasOracoes.length > 0 && <span className="text-[8px] text-purple-400 font-black">{minhasOracoes.length} Ativas</span>}
+            </button>
+          </div>
         )}
       </div>
 
@@ -729,6 +764,46 @@ export function Profile() {
           </div>
         </div>
       )}
+
+      {/* Modal: Minhas Orações (Intercedendo) */}
+      <AnimatePresence>
+        {showMinhasOracoes && (
+          <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-md flex items-end">
+            <div className="bg-[#1A1A1A] w-full rounded-t-[2.5rem] p-8 max-h-[85vh] flex flex-col">
+              <div className="flex justify-between items-center mb-8">
+                 <div>
+                    <h2 className="text-xl font-black text-white uppercase italic">Intercedendo</h2>
+                    <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">{minhasOracoes.length} pedidos em foco</p>
+                 </div>
+                 <button onClick={() => setShowMinhasOracoes(false)} className="bg-[#2C2C2E] p-3 rounded-full"><X size={20} className="text-white" /></button>
+              </div>
+              
+              <div className="overflow-y-auto space-y-4 pb-10">
+                {loadingPrayers ? (
+                  <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-purple-500" /></div>
+                ) : minhasOracoes.length === 0 ? (
+                  <div className="text-center py-20 space-y-4">
+                     <p className="text-white/20 text-sm italic font-bold">Você ainda não clicou em "Estou Orando" em nenhum pedido.</p>
+                  </div>
+                ) : minhasOracoes.map((item) => (
+                  <div key={item.id} className="bg-[#2C2C2E] p-5 rounded-3xl border border-white/5 space-y-3">
+                     <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl overflow-hidden bg-gray-800">
+                           {item.profile?.avatar_url ? <img src={item.profile.avatar_url} className="w-full h-full object-cover" /> : <User className="text-gray-600 p-1" />}
+                        </div>
+                        <p className="text-[11px] font-black text-white uppercase italic">{item.profile?.nome}</p>
+                     </div>
+                     <p className="text-xs text-white/70 leading-relaxed italic">"{item.texto}"</p>
+                     <div className="flex items-center gap-2 pt-2 text-[9px] font-bold text-gray-500">
+                        <Clock size={10} /> {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
