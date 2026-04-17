@@ -106,16 +106,31 @@ export default function BibleReader() {
     }
   }, [updateReadingTime, selectedBook.nome, chapter]);
 
+  const syncLeituraRef = useRef(syncLeitura);
+  useEffect(() => {
+    syncLeituraRef.current = syncLeitura;
+  }, [syncLeitura]);
+
   useEffect(() => {
     timerId.current = setInterval(() => {
-      setSessionSeconds(s => { const next = s + 1; sessionRef.current = next; return next; });
+      setSessionSeconds(s => { 
+        const next = s + 1; 
+        sessionRef.current = next; 
+        if (next === 600) {
+          showToast("🎖️ Parabéns! Meta de 10 minutos de leitura alcançada!", "success");
+        }
+        return next; 
+      });
     }, 1000);
 
     return () => {
       if (timerId.current) clearInterval(timerId.current);
-      if (sessionRef.current > 0) syncLeitura(sessionRef.current);
+      if (sessionRef.current > 0) {
+        syncLeituraRef.current(sessionRef.current);
+        sessionRef.current = 0;
+      }
     };
-  }, [syncLeitura]);
+  }, []);
 
   const toggleVerse = (vNum: number) => {
     setSelectedVerses(prev => 

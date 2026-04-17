@@ -7,15 +7,15 @@ import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
 // ── Mapa completo de selos ────────────────────────────────────────
-const BADGE_MAP: Record<string, { label: string; img: string; color: string; desc: string }> = {
-  culto:        { label: "Culto",        img: "/badge_culto.png",        color: "bg-amber-50 dark:bg-amber-900/20 border-amber-200",  desc: "Presença registrada no culto dominical" },
-  celula:       { label: "Célula",       img: "/badge_celula.png",       color: "bg-slate-50 dark:bg-slate-800 border-slate-200",     desc: "Presença registrada na célula" },
-  cursao:       { label: "Cursão",       img: "/badge_cursao.png",       color: "bg-amber-50 dark:bg-amber-900/20 border-amber-200",  desc: "Concluiu o Cursão de Teologia" },
-  ctl:          { label: "CTL",          img: "/badge_ctl.png",          color: "bg-slate-100 dark:bg-slate-700 border-slate-300",    desc: "Completou o treinamento CTL" },
-  lider:        { label: "Líder",        img: "/badge_lider.png",        color: "bg-amber-50 dark:bg-amber-900/20 border-amber-200",  desc: "Líder de Célula" },
-  discipulador: { label: "Discipulador", img: "/badge_discipulador.png", color: "bg-blue-50 dark:bg-blue-900/20 border-blue-200",    desc: "Discipulador de novos membros" },
-  equipe:       { label: "Equipe",       img: "/badge_equipe.png",       color: "bg-slate-100 dark:bg-slate-700 border-slate-300",   desc: "Membro da equipe de serviço" },
-  biblia:       { label: "Bíblia",       img: "/badge_biblia.png",       color: "bg-amber-50 dark:bg-amber-900/20 border-amber-200", desc: "Capítulos lidos na Bíblia" },
+const BADGE_MAP: Record<string, { label: string; img: string; ringColor: string; bgColor: string; desc: string }> = {
+  culto:        { label: "Culto",        img: "/badge_culto.png",        ringColor: "border-amber-400", bgColor: "bg-[#7c5b36]",  desc: "Presença registrada no culto dominical" },
+  celula:       { label: "Célula",       img: "/badge_celula.png",       ringColor: "border-emerald-500", bgColor: "bg-[#1f4a3e]", desc: "Presença registrada na célula" },
+  cursao:       { label: "Cursão",       img: "/badge_cursao.png",       ringColor: "border-amber-400", bgColor: "bg-[#7c5b36]",  desc: "Concluiu o Cursão de Teologia" },
+  ctl:          { label: "CTL",          img: "/badge_ctl.png",          ringColor: "border-purple-400", bgColor: "bg-[#4a2b66]", desc: "Completou o treinamento CTL" },
+  lider:        { label: "Líder",        img: "/badge_lider.png",        ringColor: "border-amber-500", bgColor: "bg-[#804f14]",  desc: "Líder de Célula" },
+  discipulador: { label: "Discipulador", img: "/badge_discipulador.png", ringColor: "border-blue-400", bgColor: "bg-[#152e46]",    desc: "Discipulador de novos membros" },
+  equipe:       { label: "Equipe",       img: "/badge_equipe.png",       ringColor: "border-slate-300", bgColor: "bg-[#333333]",   desc: "Membro da equipe de serviço" },
+  biblia:       { label: "Bíblia",       img: "/badge_biblia.png",       ringColor: "border-[#e0b075]", bgColor: "bg-[#294c66]", desc: "Capítulos lidos na Bíblia" },
 };
 
 export function Profile() {
@@ -317,18 +317,18 @@ export function Profile() {
 
             return (
               <div key={badgeKey} className="snap-center flex flex-col items-center flex-shrink-0 w-24 relative group cursor-pointer" onClick={() => setActiveBadge(badgeKey)}>
-                <div className="w-20 h-20 bg-[#152e46] rounded-full flex items-center justify-center relative shadow-inner p-1">
-                  <div className="w-full h-full rounded-full border border-blue-400/30 overflow-hidden flex items-center justify-center bg-blue-900/50 relative">
-                    <img src={badge.img} className="w-[80%] h-[80%] object-contain drop-shadow-md" />
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center relative shadow-inner p-1 bg-gradient-to-b from-[#2A2A2C] to-[#1C1C1E]`}>
+                  <div className={`w-full h-full rounded-full border-[1.5px] ${badge.ringColor} overflow-hidden flex items-center justify-center ${badge.bgColor} relative`}>
+                    <img src={badge.img} className="w-[85%] h-[85%] object-contain drop-shadow-md" />
                   </div>
-                  <div className="absolute -bottom-2 w-10 h-1.5 bg-[#F43F5E] rounded-full" />
+                  <div className="absolute -bottom-1 w-8 h-1 bg-[#EB4B4B] rounded-full" />
                 </div>
                 {count > 1 && (
-                   <div className="absolute top-0 right-1 bg-amber-500 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-amber-300">
+                   <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-amber-300">
                      {count}
                    </div>
                 )}
-                <span className="text-[10px] text-gray-500 font-bold uppercase mt-3 tracking-widest">{badge.label}</span>
+                <span className="text-[9px] text-gray-500 dark:text-white/40 font-bold uppercase mt-3 tracking-widest">{badge.label}</span>
               </div>
             );
           })}
