@@ -11,10 +11,18 @@ export default function BibleReader() {
   const { user, showToast } = useAuth();
   const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === '1') || BIBLE_BOOKS[0]);
   const [chapter, setChapter] = useState(1);
+  const [version, setVersion] = useState<'acf'|'ara'|'nvi'|'ntlh'>('acf');
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSelector, setShowSelector] = useState(false);
-  const [selectorStep, setSelectorStep] = useState<'book' | 'chapter' | 'verse'>('book');
+  const [selectorStep, setSelectorStep] = useState<'version' | 'book' | 'chapter' | 'verse'>('book');
+  
+  const VERSIONS = [
+    { id: 'acf', name: 'ACF - Almeida Corrigida' },
+    { id: 'ara', name: 'ARA - Almeida Rev. e Atualizada' },
+    { id: 'nvi', name: 'NVI - Nova Versão Internacional' },
+    { id: 'ntlh', name: 'NTLH - Linguagem de Hoje (A Mensagem)' }
+  ];
   
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -23,6 +31,12 @@ export default function BibleReader() {
   const sessionRef = useRef(0);
   const timerId = useRef<NodeJS.Timeout|null>(null);
   const isInitialLoad = useRef(true);
+  const [showWarning, setShowWarning] = useState(false);
+
+  useEffect(() => {
+    const hideWarning = localStorage.getItem('hideBibleReadingWarning');
+    if (!hideWarning) setShowWarning(true);
+  }, []);
 
   // Carrega posição inicial do usuário
   useEffect(() => {
@@ -61,7 +75,7 @@ export default function BibleReader() {
     async function load() {
       setLoading(true);
       const [bibleData, favsData] = await Promise.all([
-        fetchBibleChapter(selectedBook.id, chapter),
+        fetchBibleChapter(selectedBook.id, chapter, version),
         user ? supabase.from("kefel_favoritos").select("versiculo").eq("user_id", user.id).eq("livro", selectedBook.nome).eq("capitulo", chapter) : Promise.resolve({ data: [] })
       ]);
       
@@ -71,24 +85,19 @@ export default function BibleReader() {
       setLoading(false);
     }
     load();
-  }, [selectedBook, chapter]);
+  }, [selectedBook, chapter, version]);
 
   useEffect(() => {
-    // Sincroniza a cada 10 segundos para maior precisão (feedback do usuário)
     timerId.current = setInterval(() => {
       setSessionSeconds(s => {
         const next = s + 1;
         sessionRef.current = next;
-        if (next % 10 === 0) syncLeitura(10); 
         return next;
       });
     }, 1000);
 
     return () => {
       if (timerId.current) clearInterval(timerId.current);
-      // Salva o tempo restante
-      const remaining = sessionRef.current % 10;
-      if (remaining > 0) syncLeitura(remaining);
     };
   }, []);
 
@@ -151,6 +160,13 @@ export default function BibleReader() {
     if (!user) return;
     
     try {
+      // Computa e sincroniza o tempo do capítulo ao ser concluído
+      if (sessionRef.current > 0) {
+        await syncLeitura(sessionRef.current);
+        setSessionSeconds(0);
+        sessionRef.current = 0;
+      }
+
       const chapterId = `${selectedBook.id}_${chapter}`;
       const currentProgress = (user as any).bible_progress || [];
       
@@ -171,7 +187,7 @@ export default function BibleReader() {
           showToast("Você terminou este livro! 🎉");
         }
       } else {
-        showToast("Capítulo já lido", "info");
+        showToast("Capítulo já lido. Tempo de leitura da releitura foi computado com sucesso! 🎉", "info");
       }
     } catch (err) {
       showToast("Erro ao concluir", "error");
@@ -188,10 +204,15 @@ export default function BibleReader() {
   return (
     <div className="flex flex-col h-screen bg-[#FDFDFD] dark:bg-slate-900 pt-14 pb-24 overflow-hidden">
       <header className="px-6 py-4 flex items-center justify-between bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-white/10 shadow-sm z-30">
-        <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-black dark:bg-slate-700 text-white px-4 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform shadow-xl">
-          <BookOpen size={14} className="text-blue-400" />
-          <span className="text-[10px] font-black uppercase italic tracking-widest">{selectedBook.nome} {chapter}</span>
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-black dark:bg-slate-700 text-white px-4 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform shadow-xl">
+            <BookOpen size={14} className="text-blue-400" />
+            <span className="text-[10px] font-black uppercase italic tracking-widest">{selectedBook.nome} {chapter}</span>
+          </button>
+          <button onClick={() => { setSelectorStep('version'); setShowSelector(true); }} className="bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white px-3 py-2 rounded-2xl flex items-center gap-2 active:scale-95 transition-transform">
+            <span className="text-[10px] font-black uppercase italic tracking-widest">{version.toUpperCase()}</span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           <div className="bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-xl flex items-center gap-2">
@@ -263,6 +284,15 @@ export default function BibleReader() {
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2 pb-10">
+              {selectorStep === 'version' && (
+                <div className="flex flex-col gap-3">
+                  {VERSIONS.map(v => (
+                    <button key={v.id} onClick={() => { setVersion(v.id as any); setSelectorStep('book'); }} className={`p-5 rounded-[2rem] text-left border-2 transition-all ${version === v.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-transparent bg-gray-50 dark:bg-slate-800'}`}>
+                       <p className="font-bold uppercase text-xs dark:text-white">{v.name}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
               {selectorStep === 'book' && (
                 <div className="grid grid-cols-2 gap-3">
                   {BIBLE_BOOKS.map(b => (
@@ -286,6 +316,37 @@ export default function BibleReader() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWarning && (
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[3rem] p-8 flex flex-col items-center text-center shadow-2xl animate-in zoom-in duration-300">
+            <div className="w-16 h-16 bg-[#1B3B6B]/10 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
+              <Clock className="text-[#1B3B6B] dark:text-blue-400" size={32} />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-2">Tempo de Leitura</h2>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-8 leading-relaxed">
+              Seu tempo de leitura só será contabilizado e salvo no ranking ao final do capítulo, quando você pressionar o botão <strong>"Concluir Capítulo"</strong>.
+            </p>
+            <div className="w-full space-y-3">
+              <button 
+                onClick={() => setShowWarning(false)} 
+                className="w-full bg-[#1B3B6B] dark:bg-blue-600 text-white p-4 rounded-2xl font-bold uppercase text-sm tracking-widest active:scale-95 transition-all"
+              >
+                Entendi
+              </button>
+              <button 
+                onClick={() => {
+                  localStorage.setItem('hideBibleReadingWarning', 'true');
+                  setShowWarning(false);
+                }} 
+                className="w-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 p-4 rounded-2xl font-bold uppercase text-xs tracking-widest active:scale-95 transition-all"
+              >
+                Não mostrar novamente
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 // Importação dinâmica para não pesar no carregamento inicial do app
-let bibleData: any = null;
+const bibleData: Record<string, any> = {};
 
 export interface BibleVerse {
   book_id: string;
@@ -86,18 +86,19 @@ export const BIBLE_BOOKS: BibleBook[] = [
   { id: '66', nome: 'Apocalipse', abrev: 'Ap', testamento: 'NT', capitulos: 22 },
 ];
 
-export async function fetchBibleChapter(bookId: string, chapter: number): Promise<BibleVerse[]> {
+export async function fetchBibleChapter(bookId: string, chapter: number, version: string = 'acf'): Promise<BibleVerse[]> {
   try {
-    // Carrega o JSON local apenas na primeira vez
-    if (!bibleData) {
-      const response = await fetch('/data/bible_acf.json');
-      bibleData = await response.json();
+    // Carrega o JSON local em cache conforme a versão
+    if (!bibleData[version]) {
+      const response = await fetch(`/data/bible_${version}.json`);
+      if (!response.ok) throw new Error('Versão não encontrada');
+      bibleData[version] = await response.json();
     }
 
     // O arquivo é um array de 66 objetos (um para cada livro)
     // Usamos o bookId (1 a 66) como índice (0 a 65)
     const bookIdx = parseInt(bookId) - 1;
-    const book = bibleData[bookIdx];
+    const book = bibleData[version][bookIdx];
 
     if (!book || !book.chapters[chapter - 1]) {
       return [];
