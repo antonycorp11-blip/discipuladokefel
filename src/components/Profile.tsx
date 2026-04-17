@@ -202,11 +202,9 @@ export function Profile() {
 
   return (
     <div className="flex flex-col min-h-screen bg-transparent pt-10 pb-28 px-4 overflow-y-auto">
-      <header className="mb-6 pt-4 flex items-center justify-end gap-5 text-gray-900 dark:text-white">
-          <button className="p-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg></button>
-          {isOwnProfile && <button onClick={() => setShowSettings(true)} className="p-1"><Settings className="w-6 h-6" /></button>}
-          {isOwnProfile && <button onClick={toggleDark} className="p-1">{isDark ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}</button>}
-          <button className="p-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+      <header className="mb-6 pt-4 flex items-center justify-end gap-3 text-gray-900 dark:text-white">
+          {isOwnProfile && <button onClick={() => setShowSettings(true)} className="p-2 bg-gray-100 dark:bg-[#1C1C1E] rounded-full active:scale-95"><Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" /></button>}
+          {isOwnProfile && <button onClick={toggleDark} className="p-2 bg-gray-100 dark:bg-[#1C1C1E] rounded-full active:scale-95">{isDark ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-[#1B3B6B]" />}</button>}
       </header>
 
       {/* Hero Card do Perfil estilo YouVersion */}
@@ -235,43 +233,59 @@ export function Profile() {
         </div>
       </div>
 
-      <button className="w-full bg-[#1A1A1A] text-white py-3.5 rounded-full font-medium text-[13px] flex items-center justify-center gap-2 mb-6 shadow-sm">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        {meuGrupo ? meuGrupo.nome : "Adicionar sua Célula"}
-      </button>
+      {currentUser?.role !== 'master' && (
+        <button className="w-full bg-gray-900 dark:bg-[#1A1A1A] text-white py-3.5 rounded-full font-medium text-[13px] flex items-center justify-center gap-2 mb-6 shadow-sm active:scale-95 transition-transform">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          {meuGrupo ? meuGrupo.nome : "Adicionar sua Célula"}
+        </button>
+      )}
 
       {/* Grid Menu */}
-      <div className="grid grid-cols-3 gap-2.5 mb-6">
-        <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[4/3]">
-           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-           <span className="text-white text-[12px] font-medium">Salvo</span>
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity">
+           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-900 dark:text-white"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+           <span className="text-gray-900 dark:text-white text-[12px] font-medium">Salvo</span>
         </div>
-        <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[4/3]">
-           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
-           <span className="text-white text-[12px] font-medium">Oração</span>
-        </div>
-        <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[4/3]">
-           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-           <span className="text-white text-[12px] font-medium">Doar</span>
+        <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity">
+           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-900 dark:text-white"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+           <span className="text-gray-900 dark:text-white text-[12px] font-medium">Oração</span>
         </div>
       </div>
 
-      <div className="bg-[#1C1C1E] rounded-[16px] p-5 mb-4 flex items-center justify-between">
+      <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-5 mb-4 flex items-center justify-between">
          <div className="flex flex-col">
-            <span className="text-white font-bold text-lg leading-tight">1</span>
-            <span className="text-white/50 text-[11px] font-normal mt-1">Perseverança no Aplicativo</span>
+            <span className="text-gray-900 dark:text-white font-bold text-lg leading-tight">1</span>
+            <span className="text-gray-500 dark:text-white/50 text-[11px] font-normal mt-1">Perseverança no Aplicativo</span>
          </div>
-         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-white/50"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
       </div>
+
+      {/* Gestão Administrativa */}
+      {isOwnProfile && (currentUser?.role === 'master' || currentUser?.role === 'lider' || currentUser?.email === 'aquilles@kefel.com') && (
+        <section className="mb-6">
+          <Link to="/relatorios" className="bg-blue-50 dark:bg-[#1A1A1A] p-5 rounded-[16px] shadow-sm flex items-center justify-between group active:scale-95 transition-soft border border-blue-100 dark:border-white/5">
+             <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-600 dark:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-md">
+                   <FileText size={20} />
+                </div>
+                <div>
+                   <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight">Gestão de Relatórios</h3>
+                   <p className="text-[10px] text-gray-500 font-medium uppercase mt-0.5">Enviar Célula ou Culto</p>
+                </div>
+             </div>
+             <ChevronRight size={20} className="text-gray-400 dark:text-white/30 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </section>
+      )}
 
       {/* Seção de Badges e Atividades */}
-      <div className="bg-[#1C1C1E] rounded-[16px] p-5 mb-8 flex flex-col">
+      <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-5 mb-8 flex flex-col">
          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-white font-bold text-lg leading-tight">{effectiveBadges.length}</span>
-              <span className="text-white/50 text-[11px] font-normal mt-1">Medalhas</span>
+              <span className="text-gray-900 dark:text-white font-bold text-lg leading-tight">{effectiveBadges.length}</span>
+              <span className="text-gray-500 dark:text-white/50 text-[11px] font-normal mt-1">Medalhas</span>
             </div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/80"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-white/50"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
          </div>
 
          <div className="flex gap-4 overflow-x-auto pb-4 pt-2 -mx-2 px-2 snap-x">

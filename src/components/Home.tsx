@@ -145,16 +145,16 @@ export function Home() {
             {activeTab === 'hoje' && <motion.div layoutId="hometab" className="absolute bottom-0 left-0 right-0 h-[3px] bg-rose-500 rounded-t-full" />}
           </button>
           <button 
-            onClick={() => setActiveTab('comunidade')}
-            className={`pb-3 font-bold text-[15px] relative transition-colors ${activeTab === 'comunidade' ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
+            onClick={() => setActiveTab('feed')}
+            className={`pb-3 font-bold text-[15px] relative transition-colors ${activeTab === 'feed' ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
           >
-            Comunidade
-            {activeTab === 'comunidade' && <motion.div layoutId="hometab" className="absolute bottom-0 left-0 right-0 h-[3px] bg-rose-500 rounded-t-full" />}
+            Feed
+            {activeTab === 'feed' && <motion.div layoutId="hometab" className="absolute bottom-0 left-0 right-0 h-[3px] bg-rose-500 rounded-t-full" />}
           </button>
         </div>
       </header>
 
-      {activeTab === 'comunidade' ? (
+      {activeTab === 'feed' ? (
         <div className="pt-4"><SocialFeed /></div>
       ) : (
         <div className="px-5 pt-6 pb-10 space-y-6">
@@ -220,22 +220,13 @@ export function Home() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-between mt-10 px-2">
+              <div className="flex items-center justify-between mt-10 px-4 pb-4">
                 <button className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
-                  <div className="p-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
-                  <span className="text-[10px]">&nbsp;</span>
+                  <div className="p-2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
                 </button>
-                <button className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
-                  <div className="p-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
-                  <span className="text-[10px]">&nbsp;</span>
-                </button>
+                <div className="flex-1" />
                 <button onClick={shareVerse} className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
-                  <div className="p-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></div>
-                  <span className="text-[10px]">&nbsp;</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 text-white/90 active:scale-90 transition-transform">
-                  <div className="p-2 flex gap-1"><div className="w-1.5 h-1.5 bg-current rounded-full" /><div className="w-1.5 h-1.5 bg-current rounded-full" /><div className="w-1.5 h-1.5 bg-current rounded-full" /></div>
-                  <span className="text-[10px]">Mais</span>
+                  <div className="p-2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></div>
                 </button>
               </div>
             </div>
@@ -311,15 +302,6 @@ export function Home() {
             })}
           </div>
 
-          <div className="mt-8">
-            <h2 className="text-[17px] font-bold text-gray-900 dark:text-white mb-4 tracking-tight">Mais para você</h2>
-            <div className="bg-[#1A1A1A] rounded-[12px] p-5 h-[120px] relative overflow-hidden flex flex-col justify-end">
-              <div className="absolute top-0 right-0 bottom-0 w-[50%] bg-gradient-to-l from-emerald-900/60 to-transparent" />
-              <div className="relative z-10 w-[70%]">
-                <h4 className="font-bold text-white text-base leading-tight">Sua Comunidade Kefel</h4>
-                <p className="text-white/60 text-xs mt-1">Conecte-se com mais pessoas</p>
-              </div>
-            </div>
           </div>
         </div>
       )}

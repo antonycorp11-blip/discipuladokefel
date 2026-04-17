@@ -12,7 +12,7 @@ export function BottomNav() {
     { icon: Home, label: "Início", path: "/" },
     { icon: Book, label: "Bíblia", path: "/biblia" },
     { icon: Trophy, label: "Ranking", path: "/ranking" },
-    { icon: Calendar, label: "Descubra", path: "/eventos" },
+    { icon: Calendar, label: "Eventos", path: "/eventos" },
     { icon: User, label: "Você", path: "/perfil" },
   ];
 

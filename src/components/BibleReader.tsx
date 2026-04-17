@@ -207,9 +207,12 @@ export default function BibleReader() {
         </div>
 
         <div className="flex items-center gap-4 text-gray-900 dark:text-white">
-          <button className="active:opacity-50"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button>
           <button className="active:opacity-50"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
-          <button className="active:opacity-50"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+          
+          <div className="bg-gray-100 dark:bg-[#2C2C2E] px-3 py-1.5 rounded-md flex items-center gap-2">
+            <Clock size={12} className="text-gray-900 dark:text-gray-300" />
+            <span className="text-[12px] font-bold text-gray-900 dark:text-white tabular-nums">{Math.floor(sessionSeconds/60)}:{(sessionSeconds%60).toString().padStart(2,'0')}</span>
+          </div>
         </div>
       </header>
 
@@ -226,16 +229,18 @@ export default function BibleReader() {
              
              <div className="text-[19px] leading-[1.8] text-gray-900 dark:text-gray-200" style={{ fontFamily: "'Lora', 'Merriweather', 'PT Serif', serif" }}>
                {verses.map((v, i) => (
-                 <span key={v.verse} id={`v-${v.verse}`} className={`inline rounded break-words ${favorites.includes(v.verse) ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100' : ''}`}>
+                 <span 
+                   key={v.verse} 
+                   id={`v-${v.verse}`} 
+                   onClick={() => toggleVerse(v.verse)} 
+                   className={`inline rounded break-words cursor-pointer ${selectedVerses.includes(v.verse) ? 'bg-[#1B3B6B]/20 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 font-medium' : favorites.includes(v.verse) ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100' : ''}`}
+                 >
                     <sup 
-                       onClick={(e) => { e.stopPropagation(); toggleFavorite(v); }} 
-                       className="text-[11px] font-bold text-gray-400 dark:text-gray-500 mr-1 ml-2 cursor-pointer active:scale-125 transition-transform"
+                       className={`text-[11px] font-bold mr-1 ml-2 ${favorites.includes(v.verse) ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`}
                     >
                       {v.verse}
                     </sup>
-                    <span onClick={() => toggleVerse(v.verse)} className={`cursor-pointer ${selectedVerses.includes(v.verse) ? 'bg-blue-200/50 dark:bg-blue-800/40' : ''}`}>
-                       {v.text}{' '}
-                    </span>
+                    {v.text}{' '}
                  </span>
                ))}
              </div>
@@ -249,23 +254,48 @@ export default function BibleReader() {
          )}
       </div>
 
-      {/* Floating Play and Navigate block */}
-      <div className="fixed bottom-20 left-0 right-0 flex justify-center items-center gap-4 z-40 pointer-events-none px-6">
-         <div className="flex-1" />
-         <button onClick={() => setChapter(c => c > 1 ? c - 1 : c)} className="w-[52px] h-[52px] bg-[#424242]/90 backdrop-blur-md rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 shadow-lg hidden">
-            <ChevronLeft size={24} />
-         </button>
-         
-         <button className="w-[72px] h-[72px] bg-[#424242]/95 backdrop-blur-md rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 shadow-xl border border-white/10">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-         </button>
-         
-         <div className="flex-1 flex justify-start">
-            <button onClick={() => setChapter(c => c < selectedBook.capitulos ? c + 1 : c)} className="w-[46px] h-[46px] bg-[#424242]/90 backdrop-blur-md rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 shadow-lg border border-white/10 ml-2">
-               <ChevronRight size={24} />
+      {selectedVerses.length > 0 && (
+         <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-md border-t border-gray-200 dark:border-white/5 py-4 px-6 z-50 flex items-center justify-around pb-safe">
+            <button 
+              onClick={() => {
+                const targetVerses = verses.filter(v => selectedVerses.includes(v.verse));
+                targetVerses.forEach(v => toggleFavorite(v));
+              }}
+              className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500">
+                 <Star size={20} fill={selectedVerses.some(v => favorites.includes(v)) ? "currentColor" : "none"} />
+              </div>
+              <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Favoritar</span>
+            </button>
+            <button 
+              onClick={() => {
+                const text = verses.filter(v => selectedVerses.includes(v.verse)).map(v => `${v.verse}. ${v.text}`).join('\n');
+                const msg = `${selectedBook.nome} ${chapter}\n\n${text}\n\nLido no Kefel App`;
+                if (navigator.share) navigator.share({ text: msg });
+                else { navigator.clipboard.writeText(msg); showToast("Copiado!", "info"); }
+              }} 
+              className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-[#1B3B6B] dark:text-blue-400">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+              </div>
+              <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Compartilhar</span>
             </button>
          </div>
-      </div>
+      )}
+
+      {/* Basic Nav block */}
+      {!selectedVerses.length && (
+        <div className="fixed bottom-0 left-0 right-0 flex justify-between items-center bg-white dark:bg-[#121212] border-t border-gray-200 dark:border-white/5 p-4 z-40 pb-safe">
+           <button disabled={chapter === 1} onClick={() => setChapter(c => c > 1 ? c - 1 : c)} className="p-3 bg-gray-100 dark:bg-[#2C2C2E] rounded-full text-gray-900 dark:text-white disabled:opacity-30">
+              <ChevronLeft size={20} />
+           </button>
+           <button disabled={chapter >= selectedBook.capitulos} onClick={() => setChapter(c => c < selectedBook.capitulos ? c + 1 : c)} className="p-3 bg-gray-100 dark:bg-[#2C2C2E] rounded-full text-gray-900 dark:text-white disabled:opacity-30">
+              <ChevronRight size={20} />
+           </button>
+        </div>
+      )}
 
       {showSelector && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-end">
@@ -286,25 +316,18 @@ export default function BibleReader() {
                 </div>
               )}
               {selectorStep === 'book' && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col">
                   {BIBLE_BOOKS.map(b => (
-                    <button key={b.id} onClick={() => { setSelectedBook(b); setSelectorStep('chapter'); }} className={`p-5 rounded-[2rem] text-left border-2 transition-all ${selectedBook.id === b.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-transparent bg-gray-50 dark:bg-slate-800'}`}>
-                       <p className="font-bold italic uppercase text-[10px] dark:text-white">{b.nome}</p>
+                    <button key={b.id} onClick={() => { setSelectedBook(b); setSelectorStep('chapter'); }} className={`py-4 px-2 text-left border-b border-gray-100 dark:border-white/5 transition-all ${selectedBook.id === b.id ? 'text-[#1B3B6B] dark:text-blue-400 font-bold' : 'text-gray-600 dark:text-gray-300 font-medium'}`}>
+                       <p className="text-[16px] leading-tight">{b.nome}</p>
                     </button>
                   ))}
                 </div>
               )}
               {selectorStep === 'chapter' && (
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-5 gap-3">
                   {Array.from({ length: selectedBook.capitulos }, (_, i) => i + 1).map(c => (
-                    <button key={c} onClick={() => { setChapter(c); setSelectorStep('verse'); }} className={`p-4 rounded-2xl font-bold text-sm ${chapter === c ? 'bg-[#1B3B6B] text-white' : 'bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-400'}`}>{c}</button>
-                  ))}
-                </div>
-              )}
-              {selectorStep === 'verse' && (
-                <div className="grid grid-cols-4 gap-3">
-                  {verses.map(v => (
-                    <button key={v.verse} onClick={() => { setShowSelector(false); setTimeout(() => { document.getElementById(`v-${v.verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }} className="p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl font-bold text-sm text-gray-400 dark:text-slate-400">{v.verse}</button>
+                    <button key={c} onClick={() => { setChapter(c); setShowSelector(false); }} className={`p-4 rounded-xl font-bold text-sm ${chapter === c ? 'bg-[#1B3B6B] text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white'}`}>{c}</button>
                   ))}
                 </div>
               )}
