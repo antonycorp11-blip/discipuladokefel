@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { 
   UserPlus, Star, Heart, 
-  Loader2, UserCircle, Clock, HandMetal
+  Loader2, UserCircle, Clock, HandMetal, Users
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "motion/react";
