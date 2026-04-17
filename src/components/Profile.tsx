@@ -188,6 +188,9 @@ export function Profile() {
     const badges: string[] = [...(p.badges || [])];
     if (p.role === 'lider' && !badges.includes('lider')) badges.push('lider');
     if (p.role === 'master' && !badges.includes('discipulador')) badges.push('discipulador');
+    if (p.cultos_presenca > 0 && !badges.includes('culto')) badges.push('culto');
+    if (p.celulas_presenca > 0 && !badges.includes('celula')) badges.push('celula');
+    if (((p as any).bible_progress?.length || 0) > 0 && !badges.includes('biblia')) badges.push('biblia');
     return badges;
   };
 
@@ -244,7 +247,7 @@ export function Profile() {
       )}
 
       {/* Grid Menu */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className={`grid gap-3 mb-6 ${isOwnProfile ? 'grid-cols-2' : 'grid-cols-1'}`}>
         <button 
           onClick={() => setShowSalvo(true)}
           className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity"
@@ -253,19 +256,23 @@ export function Profile() {
            <span className="text-gray-900 dark:text-white text-[12px] font-medium">Salvo</span>
            {favorites.length > 0 && <span className="text-[9px] text-gray-400 dark:text-white/30">{favorites.length} versículos</span>}
         </button>
-        <button 
-          onClick={() => isOwnProfile && setShowOracao(true)}
-          className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity"
-        >
-           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-900 dark:text-white"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
-           <span className="text-gray-900 dark:text-white text-[12px] font-medium">Oração</span>
-        </button>
+        {isOwnProfile && (
+          <button 
+            onClick={() => setShowOracao(true)}
+            className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center justify-center gap-2 aspect-[5/3] active:opacity-70 transition-opacity"
+          >
+             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-900 dark:text-white"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+             <span className="text-gray-900 dark:text-white text-[12px] font-medium">Oração</span>
+          </button>
+        )}
       </div>
 
       <div className="bg-gray-100 dark:bg-[#1C1C1E] rounded-[16px] p-5 mb-4 flex items-center justify-between">
          <div className="flex flex-col">
-            <span className="text-gray-900 dark:text-white font-bold text-lg leading-tight">1</span>
-            <span className="text-gray-500 dark:text-white/50 text-[11px] font-normal mt-1">Perseverança no Aplicativo</span>
+            <span className="text-gray-900 dark:text-white font-bold text-lg leading-tight">
+              {(profile.cultos_presenca || 0) + (profile.celulas_presenca || 0) + ((profile as any).bible_progress?.length || 0) || 1}
+            </span>
+            <span className="text-gray-500 dark:text-white/50 text-[11px] font-normal mt-1">Nível de Perseverança</span>
          </div>
          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-white/50"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
       </div>
@@ -302,14 +309,26 @@ export function Profile() {
           {effectiveBadges.map((badgeKey) => {
             const badge = BADGE_MAP[badgeKey];
             if (!badge) return null;
+            
+            let count = 0;
+            if (badgeKey === 'culto') count = profile.cultos_presenca || 0;
+            if (badgeKey === 'celula') count = profile.celulas_presenca || 0;
+            if (badgeKey === 'biblia') count = (profile as any).bible_progress?.length || 0;
+
             return (
-              <div key={badgeKey} className="snap-center flex flex-col items-center flex-shrink-0 w-24">
+              <div key={badgeKey} className="snap-center flex flex-col items-center flex-shrink-0 w-24 relative group cursor-pointer" onClick={() => setActiveBadge(badgeKey)}>
                 <div className="w-20 h-20 bg-[#152e46] rounded-full flex items-center justify-center relative shadow-inner p-1">
-                  <div className="w-full h-full rounded-full border border-blue-400/30 overflow-hidden flex items-center justify-center bg-blue-900/50">
+                  <div className="w-full h-full rounded-full border border-blue-400/30 overflow-hidden flex items-center justify-center bg-blue-900/50 relative">
                     <img src={badge.img} className="w-[80%] h-[80%] object-contain drop-shadow-md" />
                   </div>
                   <div className="absolute -bottom-2 w-10 h-1.5 bg-[#F43F5E] rounded-full" />
                 </div>
+                {count > 1 && (
+                   <div className="absolute top-0 right-1 bg-amber-500 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-amber-300">
+                     {count}
+                   </div>
+                )}
+                <span className="text-[10px] text-gray-500 font-bold uppercase mt-3 tracking-widest">{badge.label}</span>
               </div>
             );
           })}

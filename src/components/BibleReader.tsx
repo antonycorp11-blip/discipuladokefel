@@ -176,16 +176,16 @@ export default function BibleReader() {
         }).eq('id', user.id);
         
         showToast("Capítulo concluído! 🏆", "success");
-        
-        // Se houver próximo capítulo, vai para ele
-        if (chapter < selectedBook.capitulos) {
-          setChapter(c => c + 1);
-          window.scrollTo(0, 0);
-        } else {
-          showToast("Você terminou este livro! 🎉");
-        }
       } else {
-        showToast("Capítulo já lido. Tempo de leitura da releitura foi computado com sucesso! 🎉", "info");
+        showToast("Capítulo concluído! Tempo da releitura foi computado com sucesso! 🎉", "info");
+      }
+
+      // Sempre avança para o próximo capítulo
+      if (Number(chapter) < Number(selectedBook.capitulos)) {
+        setChapter(c => Number(c) + 1);
+        window.scrollTo(0, 0);
+      } else {
+        showToast("Você terminou este livro! 🎉", "success");
       }
     } catch (err) {
       showToast("Erro ao concluir", "error");

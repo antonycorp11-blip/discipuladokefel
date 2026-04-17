@@ -13,18 +13,35 @@ export function SocialFeed() {
   const [activities, setActivities] = useState<any[]>([]);
   const [topReaders, setTopReaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
+
+  const toggleLike = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setLikedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     fetchSocialData();
   }, []);
 
+  const getSundayOfCurrentWeek = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek;
+    const sunday = new Date(now.setDate(diff));
+    sunday.setHours(0, 0, 0, 0);
+    return sunday.toISOString();
+  };
+
   async function fetchSocialData() {
     setLoading(true);
     try {
-      const [profilesRes, favoritesRes, readersRes, oracaoRes] = await Promise.all([
-        supabase.from("kefel_profiles").select("id, nome, avatar_url, created_at").order("created_at", { ascending: false }).limit(5),
+      const sunday = getSundayOfCurrentWeek();
+
+      const [profilesRes, favoritesRes, logsRes, oracaoRes] = await Promise.all([
+        supabase.from("kefel_profiles").select("id, nome, avatar_url, created_at").order("created_at", { ascending: false }),
         supabase.from("kefel_favoritos").select("id, user_id, livro, capitulo, versiculo, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(8),
-        supabase.from("kefel_profiles").select("id, nome, avatar_url, tempo_leitura_total").order("tempo_leitura_total", { ascending: false }).limit(3),
+        supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
         supabase.from("kefel_oracao").select("id, user_id, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(8)
       ]);
 
@@ -48,8 +65,27 @@ export function SocialFeed() {
         }))
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+      const profilesList = (profilesRes.data as any[]) || [];
+      const logsList = (logsRes.data as any[]) || [];
+
+      const userTimes: Record<string, number> = {};
+      logsList.forEach(log => {
+        userTimes[log.user_id] = (userTimes[log.user_id] || 0) + log.tempo_segundos;
+      });
+
+      const topWeeklyReaders = profilesList
+        .filter(p => userTimes[p.id] && userTimes[p.id] > 0)
+        .map(p => ({
+          id: p.id,
+          nome: p.nome,
+          avatar_url: p.avatar_url,
+          tempo_leitura_total: userTimes[p.id] || 0
+        }))
+        .sort((a, b) => b.tempo_leitura_total - a.tempo_leitura_total)
+        .slice(0, 3);
+
       setActivities(allActivities.slice(0, 20));
-      setTopReaders(readersRes.data || []);
+      setTopReaders(topWeeklyReaders);
     } catch (err) {
       console.error("Erro social feed:", err);
     } finally {
@@ -140,11 +176,29 @@ export function SocialFeed() {
                     <div className="bg-[#1C1C1E] p-3 rounded-2xl rounded-tl-none">
                        <p className="text-xs text-white/60 italic leading-relaxed">"{act.text}"</p>
                        <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mt-2">{act.book} {act.chapter}:{act.verse}</p>
+                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+                         <button 
+                           onClick={(e) => toggleLike(act.id, e)}
+                           className={`flex items-center gap-1.5 active:scale-95 transition-all text-[10px] font-bold uppercase ${likedItems[act.id] ? 'text-rose-400' : 'text-white/40 hover:text-rose-400'}`}
+                         >
+                           <Heart size={12} className={likedItems[act.id] ? "fill-rose-400" : ""} />
+                           {likedItems[act.id] ? 'Você curtiu' : 'Curtir'}
+                         </button>
+                       </div>
                     </div>
                  )}
                  {act.type === 'oracao' && (
                     <div className="bg-[#1C1C1E] border border-purple-500/20 p-3 rounded-2xl rounded-tl-none">
                        <p className="text-xs text-white/70 leading-relaxed">{act.text}</p>
+                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-purple-500/10">
+                         <button 
+                           onClick={(e) => toggleLike(act.id, e)}
+                           className={`flex items-center gap-1.5 active:scale-95 transition-all text-[10px] font-bold uppercase ${likedItems[act.id] ? 'text-purple-400' : 'text-white/40 hover:text-purple-400'}`}
+                         >
+                           <HandMetal size={12} className={likedItems[act.id] ? "fill-purple-400" : ""} />
+                           {likedItems[act.id] ? 'Orando' : 'Estou orando'}
+                         </button>
+                       </div>
                     </div>
                  )}
                  {act.type === 'join' && (
