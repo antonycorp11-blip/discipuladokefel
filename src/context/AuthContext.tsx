@@ -309,8 +309,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user_id: user.id, 
           livro, 
           capitulo, 
-          tempo_segundos: seconds,
-          created_at: new Date().toISOString()
+          tempo_segundos: seconds
         });
 
       if (logError) {
