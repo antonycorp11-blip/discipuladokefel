@@ -220,7 +220,10 @@ export default function BibleReader() {
     <div className="flex flex-col h-[100dvh] bg-[#F8FAFC] dark:bg-[#121212] pt-12 pb-20 overflow-hidden">
       {/* Barra superior estilo YouVersion */}
       <header className="px-4 py-3 flex items-center justify-between z-30 border-b border-gray-200 dark:border-white/5 bg-[#F8FAFC] dark:bg-[#121212]">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <Link to="/" className="p-2 -ml-2 text-gray-400 active:text-gray-900 transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          </Link>
           <button onClick={() => { setSelectorStep('book'); setShowSelector(true); }} className="bg-[#E5E5EA] dark:bg-[#2C2C2E] text-gray-900 dark:text-white px-3 py-1.5 rounded-md flex items-center gap-2 active:opacity-70 transition-opacity">
             <span className="text-[14px] font-semibold">{selectedBook.nome} {chapter}</span>
           </button>
@@ -299,7 +302,7 @@ export default function BibleReader() {
           </div>
 
           {/* Submenu flutuante de ações (Acima da tab bar do app) */}
-          <div className="fixed bottom-[115px] pb-[env(safe-area-inset-bottom)] left-3 right-3 bg-[#1C1C1E] border border-white/10 z-[100000] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-10 p-5 flex flex-col gap-4">
+          <div className="fixed bottom-[115px] pb-[env(safe-area-inset-bottom)] left-3 right-3 bg-[#1C1C1E] border border-white/10 z-[500] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-10 p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between px-2">
               {/* Cores de destaque */}
               <div className="flex items-center gap-3">

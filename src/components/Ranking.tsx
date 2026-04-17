@@ -34,12 +34,9 @@ export function Ranking() {
     const now = new Date();
     const sunday = new Date(now);
     // Retrocede até o domingo (0 = Domingo)
-    const day = now.getDay();
-    const diff = now.getDate() - day;
-    sunday.setDate(diff);
+    sunday.setDate(now.getDate() - now.getDay());
     sunday.setHours(0, 0, 0, 0);
-    // Usamos o formato YYYY-MM-DD para evitar problemas de timezone no GTE
-    return sunday.toISOString().split('T')[0];
+    return sunday.toISOString();
   };
 
   async function fetchRanking() {
