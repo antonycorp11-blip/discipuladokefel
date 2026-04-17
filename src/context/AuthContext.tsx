@@ -279,39 +279,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     try {
+      // 1. Atualização Otimista no State
+      const nextTotal = (user.tempo_leitura_total || 0) + seconds;
       const updated = { 
         ...user, 
-        tempo_leitura_total: (user.tempo_leitura_total || 0) + seconds,
+        tempo_leitura_total: nextTotal,
         last_bible_reading: { book: livro, chapter: capitulo }
       };
-      
-      // Atualização imediata UI
       setUser(updated);
 
-      // Persistência
+      // 2. Persistir no Perfil
       const { error: profileError } = await supabase
         .from("kefel_profiles")
         .update({ 
-          tempo_leitura_total: updated.tempo_leitura_total,
+          tempo_leitura_total: nextTotal,
           last_bible_reading: { book: livro, chapter: capitulo }
         })
         .eq("id", user.id);
 
+      if (profileError) {
+        console.error("Erro no Perfil:", profileError);
+        showToast("Erro ao sincronizar perfil", "error");
+      }
+
+      // 3. Registrar Log (para Ranking) com timestamp explícito
       const { error: logError } = await supabase
         .from("kefel_leitura_logs")
         .insert({ 
           user_id: user.id, 
           livro, 
           capitulo, 
-          tempo_segundos: seconds 
+          tempo_segundos: seconds,
+          created_at: new Date().toISOString()
         });
 
-      if (profileError || logError) {
-        console.error("Erro na sincronização:", profileError || logError);
-        showToast("Houve um problema ao salvar seu progresso. Tentaremos novamente depois.", "info");
+      if (logError) {
+        console.error("Erro no Log:", logError);
+        showToast("Seu tempo não foi registrado no ranking!", "error");
+      } else {
+        console.log(`[Sync] ${seconds}s registrados com sucesso.`);
       }
+
     } catch (err) {
-      console.error("Critical error in updateReadingTime:", err);
+      console.error("Falha crítica no Sync:", err);
+      showToast("Falha técnica na sincronização", "error");
     }
   };
 

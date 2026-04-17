@@ -299,7 +299,7 @@ export default function BibleReader() {
           </div>
 
           {/* Submenu flutuante de ações (Acima da tab bar do app) */}
-          <div className="fixed bottom-[max(115px,calc(90px+env(safe-area-inset-bottom)))] left-3 right-3 bg-[#1C1C1E] border border-white/10 z-[99999] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-10 p-5 flex flex-col gap-4">
+          <div className="fixed bottom-[115px] pb-[env(safe-area-inset-bottom)] left-3 right-3 bg-[#1C1C1E] border border-white/10 z-[100000] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-10 p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between px-2">
               {/* Cores de destaque */}
               <div className="flex items-center gap-3">
