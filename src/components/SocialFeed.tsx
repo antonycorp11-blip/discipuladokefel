@@ -12,25 +12,63 @@ import { ptBR } from "date-fns/locale";
 export function SocialFeed() {
   const [activities, setActivities] = useState<any[]>([]);
   const [topReaders, setTopReaders] = useState<any[]>([]);
+  const [topCells, setTopCells] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
+  const [likedItems, setLikedItems] = useState<string[]>([]); // Array de item_ids curtidos pelo user atual
+  const [interactions, setInteractions] = useState<any[]>([]); // Todas interações para contagem
 
-  const toggleLike = (id: string, e: React.MouseEvent) => {
+  const { user, showToast } = useAuth();
+
+  const toggleLike = async (itemId: string, itemType: string, interactionType: string, e: React.MouseEvent) => {
     e.preventDefault();
-    setLikedItems(prev => ({ ...prev, [id]: !prev[id] }));
+    if (!user) return;
+
+    const isLiked = likedItems.includes(itemId);
+    
+    // Otimista
+    if (isLiked) {
+      setLikedItems(prev => prev.filter(i => i !== itemId));
+    } else {
+      setLikedItems(prev => [...prev, itemId]);
+    }
+
+    try {
+      if (isLiked) {
+        await supabase.from("kefel_feed_interactions")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("item_id", itemId)
+          .eq("interaction_type", interactionType);
+      } else {
+        await supabase.from("kefel_feed_interactions")
+          .insert({
+            user_id: user.id,
+            item_id: itemId,
+            item_type: itemType,
+            interaction_type: interactionType
+          });
+      }
+      fetchInteractions();
+    } catch (err) {
+      console.error("Erro ao interagir:", err);
+    }
   };
+
+  async function fetchInteractions() {
+    const { data } = await supabase.from("kefel_feed_interactions").select("*");
+    setInteractions(data || []);
+    if (user) {
+      setLikedItems((data || []).filter((i: any) => i.user_id === user.id).map((i: any) => i.item_id));
+    }
+  }
 
   useEffect(() => {
     fetchSocialData();
   }, []);
 
   const getSundayOfCurrentWeek = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = now.getDate() - dayOfWeek;
-    const sunday = new Date(now.setDate(diff));
-    sunday.setHours(0, 0, 0, 0);
-    return sunday.toISOString();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return sevenDaysAgo.toISOString();
   };
 
   async function fetchSocialData() {
@@ -38,17 +76,17 @@ export function SocialFeed() {
     try {
       const sunday = getSundayOfCurrentWeek();
 
-      const [profilesRes, favoritesRes, logsRes, oracaoRes] = await Promise.all([
-        supabase.from("kefel_profiles").select("id, nome, avatar_url, created_at").order("created_at", { ascending: false }),
-        supabase.from("kefel_favoritos").select("id, user_id, livro, capitulo, versiculo, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(8),
+      const [profilesRes, favoritesRes, logsRes, oracaoRes, celulasRes] = await Promise.all([
+        supabase.from("kefel_profiles").select("id, nome, avatar_url, created_at, celula_id"),
+        supabase.from("kefel_favoritos").select("id, user_id, livro, capitulo, versiculo, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(15),
         supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
-        supabase.from("kefel_oracao").select("id, user_id, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(8)
+        supabase.from("kefel_oracao").select("id, user_id, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(10),
+        supabase.from("kefel_celulas").select("*")
       ]);
 
-      const allActivities: any[] = [
-        ...((profilesRes.data as any[]) || []).map(p => ({
-          type: 'join', id: p.id, nome: p.nome, avatar_url: p.avatar_url, created_at: p.created_at
-        })),
+      fetchInteractions();
+
+      const snapshots: any[] = [
         ...((favoritesRes.data as any[]) || []).map(f => ({
           type: 'favorite', id: f.id, profileId: f.user_id,
           nome: (f.profile as any)?.nome || 'Membro',
@@ -67,10 +105,11 @@ export function SocialFeed() {
 
       const profilesList = (profilesRes.data as any[]) || [];
       const logsList = (logsRes.data as any[]) || [];
+      const celulas = (celulasRes.data as any[]) || [];
 
       const userTimes: Record<string, number> = {};
       logsList.forEach(log => {
-        userTimes[log.user_id] = (userTimes[log.user_id] || 0) + log.tempo_segundos;
+        userTimes[log.user_id] = (userTimes[log.user_id] || 0) + Number(log.tempo_segundos || 0);
       });
 
       const topWeeklyReaders = profilesList
@@ -84,8 +123,28 @@ export function SocialFeed() {
         .sort((a, b) => b.tempo_leitura_total - a.tempo_leitura_total)
         .slice(0, 3);
 
-      setActivities(allActivities.slice(0, 20));
+      // Top Células
+      const cellTimes: Record<string, number> = {};
+      profilesList.forEach(p => {
+        if (p.celula_id && userTimes[p.id]) {
+          cellTimes[p.celula_id] = (cellTimes[p.celula_id] || 0) + userTimes[p.id];
+        }
+      });
+
+      const topWeeklyCells = celulas
+        .map(c => ({
+          id: c.id,
+          nome: c.nome,
+          imagem_url: c.imagem_url,
+          tempoTotal: cellTimes[c.id] || 0
+        }))
+        .filter(c => c.tempoTotal > 0)
+        .sort((a, b) => b.tempoTotal - a.tempoTotal)
+        .slice(0, 3);
+
+      setActivities(snapshots);
       setTopReaders(topWeeklyReaders);
+      setTopCells(topWeeklyCells);
     } catch (err) {
       console.error("Erro social feed:", err);
     } finally {
@@ -97,33 +156,52 @@ export function SocialFeed() {
 
   return (
     <div className="space-y-10 mb-20 px-5">
-      {/* Top Readers */}
+      {/* Highlights Toggle */}
       <section>
         <div className="flex items-center gap-2 mb-5">
            <div className="w-2 h-5 bg-amber-400 rounded-full" />
            <h2 className="text-base font-bold text-white tracking-tight">Destaques da Semana</h2>
         </div>
-        <div className="flex justify-center items-end gap-3 py-4">
-           {topReaders.map((reader, index) => (
-             <Link to={`/perfil/${reader.id}`} key={reader.id}>
+        
+        {/* Readers */}
+        <div className="flex justify-between items-end gap-3 py-4 mb-4">
+           {topReaders.length > 0 ? topReaders.map((reader, index) => (
+             <Link to={`/perfil/${reader.id}`} key={reader.id} className="flex-1">
                <motion.div 
                  initial={{ y: 20, opacity: 0 }}
                  animate={{ y: 0, opacity: 1 }}
                  transition={{ delay: index * 0.1 }}
-                 className={`flex-1 bg-[#1C1C1E] p-4 rounded-[20px] flex flex-col items-center justify-center relative ${index === 0 ? 'ring-1 ring-amber-500/50' : ''}`}
+                 className={`bg-[#1C1C1E] p-4 rounded-[20px] flex flex-col items-center justify-center relative ${index === 0 ? 'ring-1 ring-amber-500/50 scale-110' : 'scale-95 opacity-80'}`}
                >
-                  {index === 0 && <Star className="absolute -top-3 text-amber-400 fill-amber-400" size={20} />}
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-[#2C2C2E] mb-2">
-                    {reader.avatar_url ? <img src={reader.avatar_url} className="w-full h-full object-cover" /> : <UserCircle className="text-gray-600" size={28} />}
+                  {index === 0 && <Star className="absolute -top-3 text-amber-400 fill-amber-400" size={18} />}
+                  <div className="w-10 h-10 rounded-2xl overflow-hidden flex items-center justify-center bg-[#2C2C2E] mb-2 border border-white/5">
+                    {reader.avatar_url ? <img src={reader.avatar_url} className="w-full h-full object-cover" /> : <UserCircle className="text-gray-600" size={24} />}
                   </div>
-                  <p className="text-[10px] font-bold text-white text-center truncate w-full">{reader.nome.split(' ')[0]}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                      <Clock size={8} className="text-white/30" />
-                      <span className="text-[9px] text-white/30">{Math.floor(reader.tempo_leitura_total / 60)} min</span>
-                  </div>
+                  <p className="text-[9px] font-black text-white text-center truncate w-full uppercase italic">{reader.nome.split(' ')[0]}</p>
+                  <p className="text-[8px] font-bold text-amber-500 mt-0.5">{Math.floor(reader.tempo_leitura_total / 60)}m</p>
                </motion.div>
              </Link>
-           ))}
+           )) : <p className="text-[10px] text-white/20 italic text-center w-full py-4">Nenhuma leitura ainda...</p>}
+        </div>
+
+        {/* Cells */}
+        <div className="flex justify-between items-end gap-3 py-4 border-t border-white/5">
+           {topCells.length > 0 ? topCells.map((cell, index) => (
+             <div key={cell.id} className="flex-1 opacity-80 scale-95">
+               <motion.div 
+                 initial={{ y: 20, opacity: 0 }}
+                 animate={{ y: 0, opacity: 1 }}
+                 transition={{ delay: index * 0.1 + 0.3 }}
+                 className="bg-[#1C1C1E] p-4 rounded-[20px] flex flex-col items-center justify-center"
+               >
+                  <div className="w-10 h-10 rounded-2xl overflow-hidden flex items-center justify-center bg-[#2C2C2E] mb-2 border border-blue-500/20">
+                    {cell.imagem_url ? <img src={cell.imagem_url} className="w-full h-full object-cover" /> : <Users className="text-gray-600" size={24} />}
+                  </div>
+                  <p className="text-[9px] font-black text-white text-center truncate w-full uppercase italic">{cell.nome}</p>
+                  <p className="text-[8px] font-bold text-blue-400 mt-0.5">{Math.floor(cell.tempoTotal / 60)}m</p>
+               </motion.div>
+             </div>
+           )) : null}
         </div>
       </section>
 
@@ -176,13 +254,14 @@ export function SocialFeed() {
                     <div className="bg-[#1C1C1E] p-3 rounded-2xl rounded-tl-none">
                        <p className="text-xs text-white/60 italic leading-relaxed">"{act.text}"</p>
                        <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mt-2">{act.book} {act.chapter}:{act.verse}</p>
-                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+                       <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/5">
                          <button 
-                           onClick={(e) => toggleLike(act.id, e)}
-                           className={`flex items-center gap-1.5 active:scale-95 transition-all text-[10px] font-bold uppercase ${likedItems[act.id] ? 'text-rose-400' : 'text-white/40 hover:text-rose-400'}`}
+                           onClick={(e) => toggleLike(act.id, 'favorite', 'like', e)}
+                           className={`flex items-center gap-1.5 active:scale-95 transition-all text-[10px] font-bold uppercase ${likedItems.includes(act.id) ? 'text-rose-400' : 'text-white/40 hover:text-rose-400'}`}
                          >
-                           <Heart size={12} className={likedItems[act.id] ? "fill-rose-400" : ""} />
-                           {likedItems[act.id] ? 'Você curtiu' : 'Curtir'}
+                           <Heart size={12} className={likedItems.includes(act.id) ? "fill-rose-400" : ""} />
+                           <span className="tabular-nums">{interactions.filter(i => i.item_id === act.id && i.interaction_type === 'like').length || ''}</span>
+                           {likedItems.includes(act.id) ? 'Curtiu' : 'Curtir'}
                          </button>
                        </div>
                     </div>
@@ -190,13 +269,14 @@ export function SocialFeed() {
                  {act.type === 'oracao' && (
                     <div className="bg-[#1C1C1E] border border-purple-500/20 p-3 rounded-2xl rounded-tl-none">
                        <p className="text-xs text-white/70 leading-relaxed">{act.text}</p>
-                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-purple-500/10">
+                       <div className="flex items-center gap-4 mt-3 pt-3 border-t border-purple-500/10">
                          <button 
-                           onClick={(e) => toggleLike(act.id, e)}
-                           className={`flex items-center gap-1.5 active:scale-95 transition-all text-[10px] font-bold uppercase ${likedItems[act.id] ? 'text-purple-400' : 'text-white/40 hover:text-purple-400'}`}
+                           onClick={(e) => toggleLike(act.id, 'oracao', 'prayer', e)}
+                           className={`flex items-center gap-1.5 active:scale-95 transition-all text-[10px] font-bold uppercase ${likedItems.includes(act.id) ? 'text-purple-400' : 'text-white/40 hover:text-purple-400'}`}
                          >
-                           <HandMetal size={12} className={likedItems[act.id] ? "fill-purple-400" : ""} />
-                           {likedItems[act.id] ? 'Orando' : 'Estou orando'}
+                           <HandMetal size={12} className={likedItems.includes(act.id) ? "fill-purple-400" : ""} />
+                           <span className="tabular-nums">{interactions.filter(i => i.item_id === act.id && i.interaction_type === 'prayer').length || ''}</span>
+                           {likedItems.includes(act.id) ? 'Orando' : 'Estou orando'}
                          </button>
                        </div>
                     </div>
