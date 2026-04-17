@@ -278,26 +278,22 @@ export default function BibleReader() {
       {selectedVerses.length > 0 && (
         <>
           {/* Header contextual com versículo selecionado - exato YouVersion */}
-          <div className="fixed top-0 left-0 right-0 z-50 bg-[#1C1C1E] border-b border-white/5">
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-white/70 text-[13px] font-medium">
-                Selecionado: {selectedBook.nome} {chapter}:{selectedVerses.join(',')}
+          <div className="fixed top-0 left-0 right-0 z-[100] bg-[#1C1C1E] border-b border-white/5 shadow-md fade-in animate-in">
+            <div className="flex items-center justify-between px-4 py-4 pt-safe">
+              <span className="text-white/80 text-[14px] font-bold tracking-tight">
+                {selectedBook.nome} {chapter}:{selectedVerses.join(',')}
               </span>
-              <button onClick={() => setSelectedVerses([])} className="text-white/40 p-1">
+              <button onClick={() => setSelectedVerses([])} className="text-white/50 p-2 bg-white/5 rounded-full active:scale-95 transition-transform">
                 <X size={18} />
               </button>
             </div>
           </div>
 
-          {/* Barra inferior exata do YouVersion */}
-          <div className="fixed bottom-0 left-0 right-0 bg-[#1C1C1E] border-t border-white/5 z-50">
-            {/* Linha de destaque deslizavel para cima */}
-            <div className="flex items-center px-5 pt-3 pb-1 gap-1">
-              <span className="text-white/30 text-[11px] mr-2">\u2227 Deslize para cima para ver mais</span>
-            </div>
-            <div className="flex items-center justify-between px-5 pb-6 pt-2">
+          {/* Submenu flutuante de ações (Acima da tab bar do app) */}
+          <div className="fixed bottom-[85px] left-3 right-3 bg-[#1C1C1E] border border-white/10 z-[100] rounded-[1.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom-5 p-4 flex flex-col gap-4">
+            <div className="flex items-center justify-between px-2">
               {/* Cores de destaque */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 {HIGHLIGHT_COLORS.map(c => (
                   <button
                     key={c.bg}
@@ -311,13 +307,13 @@ export default function BibleReader() {
                         return next;
                       });
                     }}
-                    className="w-9 h-9 rounded-full active:scale-90 transition-transform shadow-md"
+                    className="w-10 h-10 rounded-full active:scale-90 transition-transform shadow-lg border-[1.5px] border-white/10"
                     style={{ backgroundColor: c.bg }}
                   />
                 ))}
               </div>
-              {/* Ações */}
-              <div className="flex items-center gap-5">
+              {/* Ações estendidas */}
+              <div className="flex items-center gap-4 border-l border-white/10 pl-4">
                 <button
                   onClick={async () => {
                     const targetVerses = verses.filter(v => selectedVerses.includes(v.verse));
@@ -326,18 +322,8 @@ export default function BibleReader() {
                   }}
                   className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
                 >
-                  <Bookmark size={20} className={selectedVerses.some(v => favorites.includes(v)) ? 'text-amber-400 fill-amber-400' : 'text-white'} />
-                  <span className="text-[10px] text-white/60">Salvar</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                  </svg>
-                  <span className="text-[10px] text-white/60">Anotação</span>
+                  <Bookmark size={22} className={selectedVerses.some(v => favorites.includes(v)) ? 'text-amber-400 fill-amber-400' : 'text-white/80'} />
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1">Salvar</span>
                 </button>
                 <button
                   onClick={() => {
@@ -349,8 +335,8 @@ export default function BibleReader() {
                   }}
                   className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
                 >
-                  <Copy size={20} className="text-white" />
-                  <span className="text-[10px] text-white/60">Copiar</span>
+                  <Copy size={22} className="text-white/80" />
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1">Copiar</span>
                 </button>
               </div>
             </div>

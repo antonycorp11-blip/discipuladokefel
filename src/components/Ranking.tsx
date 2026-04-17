@@ -211,6 +211,14 @@ export function Ranking() {
                 
                 <div className="flex-shrink-0 w-10 flex justify-center z-10">{style.icon}</div>
 
+                <div className={`relative flex-shrink-0 ${isTop3 ? 'w-16 h-16' : 'w-12 h-12'} bg-white dark:bg-slate-700 rounded-[1.8rem] shadow-lg border-2 border-white dark:border-slate-600 flex items-center justify-center overflow-hidden z-10 transition-all group-hover:scale-105 p-0.5`}>
+                   {cell.imagem_url ? (
+                     <img src={cell.imagem_url} className="w-full h-full object-cover rounded-2xl" />
+                   ) : (
+                     <User className={isTop3 ? "text-[#1B3B6B]/20" : "text-gray-200"} size={isTop3 ? 28 : 22} />
+                   )}
+                </div>
+
                 <div className="flex-1 min-w-0 z-10">
                    <h3 className={`font-black text-gray-900 dark:text-white truncate uppercase italic tracking-tight ${isTop3 ? 'text-base' : 'text-sm'}`}>
                      {cell.nome}
