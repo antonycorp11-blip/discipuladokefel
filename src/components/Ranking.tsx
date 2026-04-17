@@ -12,22 +12,76 @@ interface RankUser {
 }
 
 export function Ranking() {
-  const [ranking, setRanking] = useState<RankUser[]>([]);
+  const [individualRanking, setIndividualRanking] = useState<RankUser[]>([]);
+  const [cellRanking, setCellRanking] = useState<{ id: string, nome: string, tempoTotal: number }[]>([]);
+  const [activeTab, setActiveTab] = useState<'individual' | 'celulas'>('individual');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRanking();
   }, []);
 
+  const getSundayOfCurrentWeek = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek;
+    const sunday = new Date(now.setDate(diff));
+    sunday.setHours(0, 0, 0, 0);
+    return sunday.toISOString();
+  };
+
   async function fetchRanking() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("kefel_profiles")
-      .select("id, nome, avatar_url, tempo_leitura_total, cultos_presenca")
-      .order("tempo_leitura_total", { ascending: false })
-      .limit(20);
-    
-    if (!error) setRanking(data as RankUser[]);
+    const sunday = getSundayOfCurrentWeek();
+
+    const [logsRes, profilesRes] = await Promise.all([
+      supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
+      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, kefel_celulas(nome)")
+    ]);
+
+    const logs = logsRes.data || [];
+    const profiles = profilesRes.data || [];
+
+    const userTimes: Record<string, number> = {};
+    logs.forEach(log => {
+      userTimes[log.user_id] = (userTimes[log.user_id] || 0) + log.tempo_segundos;
+    });
+
+    const individualStats: RankUser[] = [];
+    const cellTimes: Record<string, { nome: string, total: number }> = {};
+
+    profiles.forEach(p => {
+      const time = userTimes[p.id] || 0;
+      if (time > 0) {
+        individualStats.push({
+          id: p.id,
+          nome: p.nome,
+          avatar_url: p.avatar_url,
+          tempo_leitura_total: time,
+          cultos_presenca: p.cultos_presenca
+        });
+      }
+
+      const cel = p.kefel_celulas as any;
+      if (p.celula_id && cel) {
+        // Trata caso venha array ou objeto único do supabase
+        const cellName = Array.isArray(cel) ? cel[0]?.nome : cel?.nome;
+        if (!cellTimes[p.celula_id]) {
+          cellTimes[p.celula_id] = { nome: cellName || 'Desconhecida', total: 0 };
+        }
+        cellTimes[p.celula_id].total += time;
+      }
+    });
+
+    individualStats.sort((a, b) => b.tempo_leitura_total - a.tempo_leitura_total);
+
+    const cellStats = Object.entries(cellTimes)
+      .map(([id, data]) => ({ id, nome: data.nome, tempoTotal: data.total }))
+      .filter(c => c.tempoTotal > 0)
+      .sort((a, b) => b.tempoTotal - a.tempoTotal);
+
+    setIndividualRanking(individualStats.slice(0, 50));
+    setCellRanking(cellStats.slice(0, 50));
     setLoading(false);
   }
 
@@ -51,20 +105,48 @@ export function Ranking() {
 
   return (
     <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
-      <header className="mb-8 pt-4 flex items-center justify-between">
-        <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase">Ranking</h1>
-            <div className="h-1.5 w-12 bg-[#1B3B6B] dark:bg-blue-500 rounded-full mt-1"></div>
-            <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-widest mt-2">Dedicados à Palavra</p>
+      <header className="mb-6 pt-4 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase">Ranking da Semana</h1>
+              <div className="h-1.5 w-12 bg-[#1B3B6B] dark:bg-blue-500 rounded-full mt-1"></div>
+              <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-widest mt-2 px-0">Reseta todo domingo</p>
+          </div>
+          <div className="bg-black p-3.5 rounded-[1.5rem] shadow-xl text-white transform -rotate-3 hover:rotate-0 transition-transform"><Trophy size={22} className="text-amber-400" /></div>
         </div>
-        <div className="bg-black p-3.5 rounded-[1.5rem] shadow-xl text-white transform -rotate-3 hover:rotate-0 transition-transform"><Trophy size={22} className="text-amber-400" /></div>
+
+        <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-2xl w-full">
+          <button 
+            onClick={() => setActiveTab('individual')} 
+            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'individual' ? 'bg-white dark:bg-slate-700 text-[#1B3B6B] dark:text-blue-400 shadow-sm' : 'text-gray-400'}`}
+          >
+            Individual
+          </button>
+          <button 
+            onClick={() => setActiveTab('celulas')} 
+            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'celulas' ? 'bg-white dark:bg-slate-700 text-[#1B3B6B] dark:text-blue-400 shadow-sm' : 'text-gray-400'}`}
+          >
+            Células
+          </button>
+        </div>
       </header>
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B] dark:text-blue-400" /></div>
       ) : (
         <div className="grid gap-5 pb-10">
-          {ranking.map((user, index) => {
+          {activeTab === 'individual' && individualRanking.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Nenhuma leitura nesta semana.</p>
+            </div>
+          )}
+          {activeTab === 'celulas' && cellRanking.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Nenhuma leitura de células nesta semana.</p>
+            </div>
+          )}
+
+          {activeTab === 'individual' && individualRanking.map((user, index) => {
             const style = getRankStyle(index);
             const isTop3 = index < 3;
             
@@ -112,6 +194,40 @@ export function Ranking() {
                   </div>
                 )}
               </Link>
+            );
+          })}
+
+          {activeTab === 'celulas' && cellRanking.map((cell, index) => {
+            const style = getRankStyle(index);
+            const isTop3 = index < 3;
+            
+            return (
+              <div 
+                key={cell.id} 
+                className={`group p-5 rounded-[2.5rem] shadow-sm border border-white/50 dark:border-white/10 flex items-center gap-5 transition-all relative overflow-hidden ${style.bg} ${isTop3 ? 'ring-1 ring-black/5 dark:ring-white/5 scale-[1.02] -mx-1' : ''}`}
+              >
+                {index === 0 && <div className="absolute top-0 left-0 w-full h-1 bg-amber-400/30 blur-md" />}
+                
+                <div className="flex-shrink-0 w-10 flex justify-center z-10">{style.icon}</div>
+
+                <div className="flex-1 min-w-0 z-10">
+                   <h3 className={`font-black text-gray-900 dark:text-white truncate uppercase italic tracking-tight ${isTop3 ? 'text-base' : 'text-sm'}`}>
+                     {cell.nome}
+                   </h3>
+                   <div className="flex items-center gap-2 mt-1">
+                     <div className="flex items-center gap-1.5 bg-white/50 dark:bg-white/10 w-fit px-2 py-0.5 rounded-lg border border-white/80 dark:border-white/5">
+                        <Clock size={11} className="text-[#1B3B6B] dark:text-blue-400" />
+                        <p className="text-[11px] font-black text-[#1B3B6B] dark:text-blue-400 tabular-nums uppercase">{formatTime(cell.tempoTotal)}</p>
+                     </div>
+                   </div>
+                </div>
+
+                {isTop3 && (
+                  <div className="absolute -right-4 -bottom-4 opacity-[0.03] rotate-12 group-hover:scale-110 transition-transform">
+                    <Trophy size={80} />
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

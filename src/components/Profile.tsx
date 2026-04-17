@@ -587,13 +587,28 @@ export function Profile() {
                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${isDark ? 'translate-x-7' : 'translate-x-1'}`} />
                     </button>
                  </div>
-                 <div className="flex items-center justify-between p-2">
+                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
                     <div>
-                       <p className="font-black text-gray-900 dark:text-white uppercase italic text-sm">Notificações Push</p>
-                       <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-1">Ativar lembretes e alertas</p>
+                       <p className="font-black text-gray-900 dark:text-white uppercase italic text-sm leading-none">Notificações Push</p>
+                       <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-2">Ativar alertas de célula e eventos</p>
                     </div>
-                    <button onClick={() => togglePush(!pushEnabled)} className={`w-14 h-8 rounded-full transition-colors relative ${pushEnabled ? 'bg-[#1B3B6B]' : 'bg-gray-200'}`}>
-                       <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${pushEnabled ? 'translate-x-7' : 'translate-x-1'}`} />
+                    <button 
+                      onClick={async () => {
+                        try {
+                          const os = (window as any).OneSignal;
+                          if (os) {
+                            await os.Notifications.requestPermission();
+                            showToast("Configuração aberta!");
+                          } else {
+                            showToast("Sistema de push carregando...", "info");
+                          }
+                        } catch (e) {
+                          showToast("Cansado de esperar?", "info");
+                        }
+                      }}
+                      className="bg-[#1B3B6B] dark:bg-blue-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#1B3B6B]/20 active:scale-95 transition-all"
+                    >
+                      Configurar
                     </button>
                  </div>
                  <button onClick={handleUpdateProfile} className="w-full bg-[#1B3B6B] text-white py-5 rounded-[2rem] font-black uppercase italic tracking-widest shadow-lg active:scale-95 transition-soft">

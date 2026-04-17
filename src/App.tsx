@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Home } from "./components/Home";
@@ -17,14 +17,13 @@ import { Reports } from "./components/Reports";
 import { WhatsAppRequired } from "./components/WhatsAppRequired";
 import { UserManagement } from "./components/UserManagement";
 import { supabase } from "./lib/supabase";
-// import OneSignal from 'react-onesignal'; // Removido em favor da v16 nativa
 
 // ── Tela de loading global ──────────────────────────────────────
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col items-center justify-center gap-4 transition-colors">
       <img src="/logo.png" alt="Kefel" className="w-24 h-24 object-contain animate-pulse" />
-      <p className="text-gray-400 text-sm font-medium">Carregando...</p>
+      <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">Carregando...</p>
     </div>
   );
 }
@@ -73,85 +72,94 @@ function AppRoutes() {
   );
 }
 
+// ── Helper: enfileira callback no OneSignalDeferred (padrão v16) ─
+function pushToOneSignal(callback: (os: any) => void) {
+  const win = window as any;
+  win.OneSignalDeferred = win.OneSignalDeferred || [];
+  win.OneSignalDeferred.push(callback);
+}
+
 function OneSignalHandler() {
   const { user } = useAuth();
-  const initDone = React.useRef(false);
+  const initDone = useRef(false);
+  const permissionRequested = useRef(false);
 
-  // Helper para obter o objeto OneSignal — tenta o padrão do v16
-  const getOS = (): Promise<any> => new Promise((resolve) => {
-    if ((window as any).OneSignal?.initialized) {
-      return resolve((window as any).OneSignal);
-    }
-    const deferred = (window as any).OneSignalDeferred || [];
-    (window as any).OneSignalDeferred = deferred;
-    deferred.push((os: any) => resolve(os));
-  });
-
-  // Inicialização apenas uma vez
   useEffect(() => {
     if (initDone.current) return;
     initDone.current = true;
 
     const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
-    if (!appId) return;
+    if (!appId) {
+      console.warn('[OneSignal] VITE_ONESIGNAL_APP_ID não definido.');
+      return;
+    }
 
-    const init = async () => {
+    pushToOneSignal(async (os) => {
       try {
-        const os = await getOS();
         await os.init({
           appId,
           allowLocalhostAsSecureOrigin: true,
           serviceWorkerPath: '/OneSignalSDKWorker.js',
-          notifyButton: { enable: false }, // Usamos nosso próprio UI
+          notifyButton: { enable: false },
         });
-        console.log('[OneSignal] Inicializado com sucesso');
+        console.log('[OneSignal] Inicializado com sucesso ✅');
       } catch (e) {
         console.warn('[OneSignal] Erro na inicialização:', e);
       }
-    };
-    init();
+    });
   }, []);
 
-  // Sincronizar usuário, solicitar permissão e salvar token
   useEffect(() => {
     if (!user?.id) return;
 
-    const sync = async () => {
-      try {
-        const os = await getOS();
-
-        // Login do usuário no OneSignal (external_id)
-        await os.login(user.id);
-
-        // Tags para filtros de notificação
-        os.User.addTag('role', user.role);
-        if (user.celula_id) os.User.addTag('celula_id', user.celula_id);
-
-        // Pedir permissão se ainda não tiver
-        if (os.Notifications.permission !== 'granted') {
-          setTimeout(() => os.Notifications.requestPermission(), 2500);
-        }
-
-        // Salvar push token no banco
-        const saveToken = async () => {
+        pushToOneSignal(async (os) => {
           try {
-            const pushId = os.User.PushSubscription.id;
-            if (pushId) {
-              await supabase.from('kefel_profiles').update({ push_token: pushId }).eq('id', user.id);
-              console.log('[OneSignal] Token sincronizado:', pushId);
+            if (!os || !os.login) {
+              console.warn('[OneSignal] SDK não carregou corretamente ou está bloqueado.');
+              return;
             }
-          } catch (e) {
-            console.warn('[OneSignal] Erro ao salvar token:', e);
-          }
-        };
 
-        saveToken();
-        os.User.PushSubscription.addEventListener('change', saveToken);
-      } catch (e) {
-        console.warn('[OneSignal] Erro na sincronização do usuário:', e);
-      }
-    };
-    sync();
+            await os.login(user.id);
+            console.log('[OneSignal] Usuário associado:', user.id);
+
+            if (os.User) {
+              os.User.addTag('role', user.role);
+              if (user.celula_id) os.User.addTag('celula_id', String(user.celula_id));
+            }
+
+            if (!permissionRequested.current && os.Notifications && os.Notifications.permission !== 'granted') {
+              permissionRequested.current = true;
+              setTimeout(async () => {
+                try {
+                  await os.Notifications.requestPermission();
+                } catch (pe) {
+                  console.warn('[OneSignal] Falha ao pedir permissão:', pe);
+                }
+              }, 4000);
+            }
+
+            // Salvar push subscription ID no banco
+            const savePushId = async () => {
+              try {
+                const pushId = os.User?.PushSubscription?.id;
+                if (pushId) {
+                  await supabase
+                    .from('kefel_profiles')
+                    .update({ push_token: pushId })
+                    .eq('id', user.id);
+                  console.log('[OneSignal] Token salvo:', pushId);
+                }
+              } catch (te) {
+                console.warn('[OneSignal] Erro ao salvar token:', te);
+              }
+            };
+
+            savePushId();
+            os.User?.PushSubscription?.addEventListener('change', savePushId);
+          } catch (e) {
+            console.warn('[OneSignal] Erro na sincronização:', e.message);
+          }
+        });
   }, [user?.id, user?.role]);
 
   return null;

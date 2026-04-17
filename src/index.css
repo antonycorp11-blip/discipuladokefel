@@ -17,10 +17,10 @@
 /* ── Dark Mode Variables ───────────────────────────── */
 .dark {
   --primary-glow: rgba(79, 147, 245, 0.20);
-  --glass: rgba(15, 23, 42, 0.90);
+  --glass: rgba(0, 0, 0, 0.90);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --surface: #0F172A;
-  --surface-2: #1E293B;
+  --surface: #000000;
+  --surface-2: #121212;
   --text-primary: #F1F5F9;
   --text-secondary: #94A3B8;
 }
@@ -36,12 +36,20 @@ body {
   background: var(--surface);
   color: var(--text-primary);
   overflow-x: hidden;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Transição suave global para mudança de tema */
+*, *::before, *::after {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.3s ease;
 }
 
 html.dark body {
-  background: #0F172A;
-  color: #F1F5F9;
+  background: #000000 !important;
+  color: #F1F5F9 !important;
 }
 
 /* ── #root ─────────────────────────────────────────── */
@@ -51,13 +59,13 @@ html.dark body {
 }
 
 html.dark #root {
-  background: #0F172A;
+  background: #000000 !important;
 }
 
 /* Desktop: fundo cinza ao redor do app */
 @media (min-width: 430px) {
   html, body { background: #e5e7eb; }
-  html.dark, html.dark body { background: #020617; }
+  html.dark, html.dark body { background: #000000; }
 }
 
 h1, h2, h3, .font-heading {
@@ -73,11 +81,17 @@ h1, h2, h3, .font-heading {
 }
 
 /* ── Dark Mode Global Overrides ────────────────────── */
-/* Superfícies */
-.dark .bg-white       { background-color: #1E293B !important; }
-.dark .bg-gray-50     { background-color: #0F172A !important; }
-.dark .bg-white\/80   { background-color: rgba(30, 41, 59, 0.88) !important; }
-.dark .bg-white\/90   { background-color: rgba(30, 41, 59, 0.95) !important; }
+/* Superfícies brancas e cinza */
+.dark .bg-white       { background-color: #121212 !important; }
+.dark .bg-gray-50     { background-color: #000000 !important; }
+.dark .bg-gray-100    { background-color: #121212 !important; }
+.dark .bg-white\/80   { background-color: rgba(18, 18, 18, 0.88) !important; }
+.dark .bg-white\/90   { background-color: rgba(18, 18, 18, 0.95) !important; }
+.dark .bg-white\/50   { background-color: rgba(18, 18, 18, 0.60) !important; }
+
+/* Superfícies slate */
+.dark .bg-slate-50    { background-color: #000000 !important; }
+.dark .bg-slate-100   { background-color: #121212 !important; }
 
 /* Textos */
 .dark .text-gray-900  { color: #F1F5F9 !important; }
@@ -89,23 +103,30 @@ h1, h2, h3, .font-heading {
 
 /* Bordas */
 .dark .border-gray-100  { border-color: rgba(255,255,255,0.08) !important; }
-.dark .border-gray-200  { border-color: rgba(255,255,255,0.1) !important; }
+.dark .border-gray-200  { border-color: rgba(255,255,255,0.10) !important; }
 .dark .border-gray-50   { border-color: rgba(255,255,255,0.05) !important; }
+.dark .border-white     { border-color: rgba(255,255,255,0.12) !important; }
 
 /* Nav escura */
 .dark nav.fixed.bottom-6 {
-  background: rgba(15, 23, 42, 0.97) !important;
+  background: rgba(0, 0, 0, 0.97) !important;
   border-color: rgba(255,255,255,0.08) !important;
 }
 
 /* Header / Bíblia */
-.dark .bg-\[\#FDFDFD\] { background-color: #0F172A !important; }
+.dark .bg-\[\#FDFDFD\] { background-color: #000000 !important; }
 
 /* Inputs no dark */
 .dark input, .dark textarea, .dark select {
-  background-color: #1E293B !important;
+  background-color: #121212 !important;
   color: #F1F5F9 !important;
-  border-color: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* Placeholder mais visível no dark */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #475569 !important;
 }
 
 /* ── Box Shadows ───────────────────────────────────── */

@@ -157,7 +157,7 @@ export function UserManagement() {
             placeholder="BUSCAR POR NOME OU WHATSAPP..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-white/80 backdrop-blur-md border border-white/50 p-6 pl-14 rounded-[2rem] font-bold italic uppercase text-xs shadow-sm focus:shadow-xl focus:shadow-[#1B3B6B]/5 outline-none transition-soft"
+            className="w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-white/50 dark:border-white/10 p-6 pl-14 rounded-[2rem] font-bold italic uppercase text-xs shadow-sm dark:text-white focus:shadow-xl focus:shadow-[#1B3B6B]/5 outline-none transition-soft"
          />
       </div>
 

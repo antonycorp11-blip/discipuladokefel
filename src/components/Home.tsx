@@ -112,9 +112,14 @@ export function Home() {
 
     if (!error) {
       setCanClaimCulto(false);
-      showToast("🪙 Selo do Culto resgatado!");
-      await refreshProfile();
+      showToast("🪙 Selo do Culto resgatado!", "success");
+      
+      // Atualizar estado local imediatamente para feedback instantâneo
+      const updatedUser = { ...user, cultos_presenca: newCount, last_culto_claim: now, badges: currentBadges };
+      setUser(updatedUser);
+      
     } else {
+      console.error("Erro ao resgatar selo:", error);
       showToast("Erro ao resgatar selo", "error");
     }
     setClaiming(false);
@@ -127,14 +132,15 @@ export function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent pt-14 pb-20 px-6 overflow-y-auto">
+  return (
+    <div className="min-h-screen bg-transparent dark:bg-[#0F172A] pt-14 pb-20 px-6 overflow-y-auto transition-colors duration-500">
       <header className="flex items-center justify-between py-6">
-        <Link to={`/perfil/${user?.id}`} className="flex items-center gap-4 group">
-          <div className="w-14 h-14 bg-white p-1 rounded-2xl shadow-premium shadow-black/5 ring-1 ring-white/50 flex items-center justify-center overflow-hidden transition-soft group-hover:scale-105">
-             {user?.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="text-[#1B3B6B]" size={28} />}
+        <Link to={user?.id ? `/perfil/${user.id}` : "/login"} className="flex items-center gap-4 group">
+          <div className="w-14 h-14 bg-white dark:bg-slate-800 p-1 rounded-2xl shadow-premium shadow-black/5 ring-1 ring-white/50 flex items-center justify-center overflow-hidden transition-soft group-hover:scale-105">
+             {user?.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="text-[#1B3B6B] dark:text-blue-400" size={28} />}
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white leading-tight italic uppercase tracking-tighter">Olá, {user?.nome?.split(' ')[0]}</h1>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white leading-tight italic uppercase tracking-tighter italic">Olá, {user?.nome?.split(' ')[0]}</h1>
             <div className="flex items-center gap-1.5 opacity-60">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
               <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Membro Ativo</p>
