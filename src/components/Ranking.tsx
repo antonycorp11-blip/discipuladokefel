@@ -39,8 +39,8 @@ export function Ranking() {
       supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, kefel_celulas(nome)")
     ]);
 
-    const logs = logsRes.data || [];
-    const profiles = profilesRes.data || [];
+    const logs = (logsRes.data as any[]) || [];
+    const profiles = (profilesRes.data as any[]) || [];
 
     const userTimes: Record<string, number> = {};
     logs.forEach(log => {

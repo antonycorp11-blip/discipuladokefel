@@ -132,7 +132,6 @@ export function Home() {
   };
 
   return (
-  return (
     <div className="min-h-screen bg-transparent dark:bg-[#0F172A] pt-14 pb-20 px-6 overflow-y-auto transition-colors duration-500">
       <header className="flex items-center justify-between py-6">
         <Link to={user?.id ? `/perfil/${user.id}` : "/login"} className="flex items-center gap-4 group">
