@@ -352,7 +352,6 @@ export function Profile() {
               </motion.div>
             )}
           </AnimatePresence>
-        </section>
 
       {/* Atividade (Favoritos) */}
       {profile.role !== 'master' && favorites.length > 0 && (
