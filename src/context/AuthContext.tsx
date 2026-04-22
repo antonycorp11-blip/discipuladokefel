@@ -276,15 +276,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Salvar tempo de leitura ────────────────────────────────────
   const updateReadingTime = async (seconds: number, livro: string, capitulo: number) => {
-    if (!user) return;
+    if (!user || seconds <= 0) return;
+
+    console.log(`[updateReadingTime] user=${user.id} livro=${livro} cap=${capitulo} secs=${seconds}`);
 
     try {
       // 1. Atualização Otimista no State
       const nextTotal = (user.tempo_leitura_total || 0) + seconds;
+      const progressKey = { bookId: livro, chapter: capitulo };
       const updated = { 
         ...user, 
         tempo_leitura_total: nextTotal,
-        last_bible_reading: { book: livro, chapter: capitulo }
+        last_bible_reading: progressKey
       };
       setUser(updated);
 
@@ -293,34 +296,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from("kefel_profiles")
         .update({ 
           tempo_leitura_total: nextTotal,
-          last_bible_reading: { book: livro, chapter: capitulo }
+          last_bible_reading: progressKey
         })
         .eq("id", user.id);
 
       if (profileError) {
-        console.error("Erro no Perfil:", profileError);
+        console.error("[updateReadingTime] Erro no Perfil:", profileError.message);
         showToast("Erro ao sincronizar perfil", "error");
       }
 
-      // 3. Registrar Log (para Ranking) com timestamp explícito
+      // 3. Registrar Log (para Ranking) — created_at inserido explicitamente
       const { error: logError } = await supabase
         .from("kefel_leitura_logs")
         .insert({ 
           user_id: user.id, 
           livro, 
           capitulo, 
-          tempo_segundos: seconds
+          tempo_segundos: seconds,
+          created_at: new Date().toISOString()
         });
 
       if (logError) {
-        console.error("Erro no Log:", logError);
-        showToast("Seu tempo não foi registrado no ranking!", "error");
+        console.error("[updateReadingTime] Erro no Log:", logError.message);
+        // Não exige toast para não assustar o usuário — perfil já foi atualizado
       } else {
-        console.log(`[Sync] ${seconds}s registrados com sucesso.`);
+        console.log(`[updateReadingTime] ${seconds}s registrados no log com sucesso.`);
       }
 
-    } catch (err) {
-      console.error("Falha crítica no Sync:", err);
+    } catch (err: any) {
+      console.error("[updateReadingTime] Falha crítica:", err?.message || err);
       showToast("Falha técnica na sincronização", "error");
     }
   };

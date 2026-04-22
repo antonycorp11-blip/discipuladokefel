@@ -25,14 +25,13 @@ export function Ranking() {
   const [cellRanking, setCellRanking] = useState<RankCell[]>([]);
   const [activeTab, setActiveTab] = useState<'individual' | 'celulas'>('individual');
   const [loading, setLoading] = useState(true);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     fetchRanking();
   }, []);
 
   const getSundayOfCurrentWeek = () => {
-    // Para evitar problemas de fuso horário e garantir que todas as leituras da semana apareçam,
-    // vamos pegar tudo dos últimos 7 dias. É mais seguro e justo para um ranking semanal rotativo.
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     return sevenDaysAgo.toISOString();
   };
@@ -43,7 +42,7 @@ export function Ranking() {
 
     const [logsRes, profilesRes, celulaRes] = await Promise.all([
       supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
-      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca"),
+      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, tempo_leitura_total"),
       supabase.from("kefel_celulas").select("id, nome, imagem_url")
     ]);
 
@@ -52,33 +51,43 @@ export function Ranking() {
     const celulas = (celulaRes.data as any[]) || [];
 
     if (logsRes.error) {
-       console.error("Erro ao buscar logs:", logsRes.error);
-       showToast("Erro ao buscar logs do servidor", "error");
+       console.error("Erro ao buscar logs:", logsRes.error.message);
     }
 
-    const userTimes: Record<string, number> = {};
+    // Somar tempos dos logs da semana por usuário
+    const userTimesFromLogs: Record<string, number> = {};
     logs.forEach(log => {
-      userTimes[log.user_id] = (userTimes[log.user_id] || 0) + Number(log.tempo_segundos || 0);
+      userTimesFromLogs[log.user_id] = (userTimesFromLogs[log.user_id] || 0) + Number(log.tempo_segundos || 0);
     });
 
-    const individualStats: RankUser[] = profiles.map(p => ({
-      id: p.id,
-      nome: p.nome,
-      avatar_url: p.avatar_url,
-      tempo_leitura_total: userTimes[p.id] || 0,
-      cultos_presenca: p.cultos_presenca
-    }));
-    individualStats.sort((a, b) => b.tempo_leitura_total - a.tempo_leitura_total);
+    // Se há logs válidos esta semana, usa logs. Senão, usa tempo_leitura_total do perfil (fallback histórico)
+    const hasUsersWithLogs = logs.length > 0 && Object.keys(userTimesFromLogs).some(uid => userTimesFromLogs[uid] > 0);
+    setUsingFallback(!hasUsersWithLogs);
 
-    // Soma tempos por célula
+    const individualStats: RankUser[] = profiles
+      .map(p => ({
+        id: p.id,
+        nome: p.nome,
+        avatar_url: p.avatar_url,
+        tempo_leitura_total: hasUsersWithLogs
+          ? (userTimesFromLogs[p.id] || 0)
+          : (p.tempo_leitura_total || 0),
+        cultos_presenca: p.cultos_presenca
+      }))
+      .filter(p => p.tempo_leitura_total > 0)
+      .sort((a, b) => b.tempo_leitura_total - a.tempo_leitura_total);
+
+    // Soma tempos por célula com o mesmo critério
     const cellTimes: Record<string, number> = {};
     profiles.forEach(p => {
       if (p.celula_id) {
-        cellTimes[p.celula_id] = (cellTimes[p.celula_id] || 0) + (userTimes[p.id] || 0);
+        const tempo = hasUsersWithLogs
+          ? (userTimesFromLogs[p.id] || 0)
+          : (p.tempo_leitura_total || 0);
+        cellTimes[p.celula_id] = (cellTimes[p.celula_id] || 0) + tempo;
       }
     });
 
-    // Todas as células aparecem com foto, mesmo zeradas
     const cellStats: RankCell[] = celulas.map((cel: any) => ({
       id: cel.id,
       nome: cel.nome,
@@ -116,10 +125,21 @@ export function Ranking() {
           <div>
               <h1 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase">Ranking da Semana</h1>
               <div className="h-1.5 w-12 bg-[#1B3B6B] dark:bg-blue-500 rounded-full mt-1"></div>
-              <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-widest mt-2 px-0">Reseta todo domingo</p>
+              <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-widest mt-2 px-0">
+                {usingFallback ? "Exibindo total histórico" : "Últimos 7 dias · Reseta todo domingo"}
+              </p>
           </div>
           <div className="bg-black p-3.5 rounded-[1.5rem] shadow-xl text-white transform -rotate-3 hover:rotate-0 transition-transform"><Trophy size={22} className="text-amber-400" /></div>
         </div>
+
+        {usingFallback && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <span className="text-amber-500 text-lg">⚠️</span>
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 leading-relaxed">
+              Ranking semanal sendo inicializado. Exibindo total histórico de leituras.
+            </p>
+          </div>
+        )}
 
         <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-2xl w-full">
           <button 
@@ -141,14 +161,13 @@ export function Ranking() {
         <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B] dark:text-blue-400" /></div>
       ) : (
         <div className="grid gap-5 pb-10">
-          {/* Debug Info para Master */}
-          {/* {location.search.includes('debug') && <div className="text-[8px] text-gray-400">Logs: {individualRanking.length} | Profiles: {cellRanking.length}</div>} */}
           
           {activeTab === 'individual' && individualRanking.length === 0 && (
             <div className="text-center py-10">
-              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Nenhuma leitura nesta semana.</p>
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Nenhuma leitura registrada ainda.</p>
             </div>
           )}
+
           {activeTab === 'celulas' && cellRanking.length === 0 && (
             <div className="text-center py-10">
               <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Nenhuma leitura de células nesta semana.</p>
