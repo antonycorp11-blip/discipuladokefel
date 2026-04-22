@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 export default function BibleReader() {
   const { user, showToast, updateReadingTime } = useAuth();
   const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === '1') || BIBLE_BOOKS[0]);
+  const [chapter, setChapter] = useState(1);
   const [version, setVersion] = useState<'acf'|'ara'|'nvi'|'ntlh'|'mensagem'>('acf');
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [loading, setLoading] = useState(true);
