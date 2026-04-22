@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { supabase, type KefelProfile } from "@/lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
 
