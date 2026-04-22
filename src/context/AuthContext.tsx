@@ -288,6 +288,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     lastUpdateRef.current = now;
 
     console.log(`[updateReadingTime] user=${user.id} livro=${livro} cap=${capitulo} secs=${seconds}`);
+    
+    try {
       // 1. Atualização Otimista no State
       const nextTotal = (user.tempo_leitura_total || 0) + seconds;
       const progressKey = { bookId: livro, chapter: capitulo };
