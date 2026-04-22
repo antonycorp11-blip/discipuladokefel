@@ -68,8 +68,12 @@ export function SocialFeed() {
   }, []);
 
   const getSundayOfCurrentWeek = () => {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return sevenDaysAgo.toISOString();
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day;
+    const sunday = new Date(now.setDate(diff));
+    sunday.setHours(0, 0, 0, 0);
+    return sunday.toISOString();
   };
 
   async function fetchSocialData() {

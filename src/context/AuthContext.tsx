@@ -275,12 +275,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
   // ── Salvar tempo de leitura ────────────────────────────────────
+  const lastUpdateRef = useRef<number>(0);
   const updateReadingTime = async (seconds: number, livro: string, capitulo: number) => {
     if (!user || seconds <= 0) return;
 
-    console.log(`[updateReadingTime] user=${user.id} livro=${livro} cap=${capitulo} secs=${seconds}`);
+    // Proteção contra chamadas duplas (comum em unmount de componentes React)
+    const now = Date.now();
+    if (now - lastUpdateRef.current < 1000) {
+      console.log("[updateReadingTime] Ignorando chamada duplicada rápida");
+      return;
+    }
+    lastUpdateRef.current = now;
 
-    try {
+    console.log(`[updateReadingTime] user=${user.id} livro=${livro} cap=${capitulo} secs=${seconds}`);
       // 1. Atualização Otimista no State
       const nextTotal = (user.tempo_leitura_total || 0) + seconds;
       const progressKey = { bookId: livro, chapter: capitulo };
@@ -312,8 +319,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user_id: user.id, 
           livro, 
           capitulo, 
-          tempo_segundos: seconds,
-          created_at: new Date().toISOString()
+          tempo_segundos: seconds
         });
 
       if (logError) {

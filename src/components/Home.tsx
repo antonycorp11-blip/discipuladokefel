@@ -160,7 +160,14 @@ export function Home() {
       ) : (
         <div className="px-5 pt-6 pb-10 space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight">Boa noite, {user?.nome?.split(' ')[0] || "Visitante"}</h1>
+            <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight">
+              {(() => {
+                const hour = new Date().getHours();
+                if (hour >= 5 && hour < 12) return "Bom dia";
+                if (hour >= 12 && hour < 18) return "Boa tarde";
+                return "Boa noite";
+              })()}, {user?.nome?.split(' ')[0] || "Visitante"}
+            </h1>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5 text-gray-900 dark:text-white font-semibold flex-col">
                 <div className="flex items-center gap-1">
