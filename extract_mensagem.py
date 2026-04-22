@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
-"""
-Extrai a Bíblia A Mensagem do PDF e gera bible_mensagem.json
-no mesmo formato de bible_acf.json (array de 66 livros, cada um com chapters[])
-"""
-
-import pdfplumber
+import pypdf
 import json
 import re
-import sys
+import os
 
 PDF_PATH = "/Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/biblia-a-mensagem_compress.pdf"
 OUT_PATH = "/Users/aquillesantonysantiagosantos/Downloads/discipulado-kefel/public/data/bible_mensagem.json"
 
-# Nomes dos 66 livros em ordem canônica (para mapeamento)
 BOOK_NAMES = [
     "Gênesis", "Êxodo", "Levítico", "Números", "Deuteronômio",
     "Josué", "Juízes", "Rute", "1 Samuel", "2 Samuel",
@@ -30,328 +24,139 @@ BOOK_NAMES = [
     "3 João", "Judas", "Apocalipse"
 ]
 
-# Aliases para reconhecer os livros no PDF (variações de grafia)
-BOOK_ALIASES = {
-    "Gênesis": ["Gênesis", "Genesis"],
-    "Êxodo": ["Êxodo", "Exodo"],
-    "Levítico": ["Levítico", "Levitico"],
-    "Números": ["Números", "Numeros"],
-    "Deuteronômio": ["Deuteronômio", "Deuteronomio"],
-    "Josué": ["Josué", "Josue"],
-    "Juízes": ["Juízes", "Juizes"],
-    "Rute": ["Rute"],
-    "1 Samuel": ["1 Samuel"],
-    "2 Samuel": ["2 Samuel"],
-    "1 Reis": ["1 Reis"],
-    "2 Reis": ["2 Reis"],
-    "1 Crônicas": ["1 Crônicas", "1 Cronicas"],
-    "2 Crônicas": ["2 Crônicas", "2 Cronicas"],
-    "Esdras": ["Esdras"],
-    "Neemias": ["Neemias"],
-    "Ester": ["Ester"],
-    "Jó": ["Jó", "Jo"],
-    "Salmos": ["Salmos"],
-    "Provérbios": ["Provérbios", "Proverbios"],
-    "Eclesiastes": ["Eclesiastes"],
-    "Cantares": ["Cantares", "Cântico dos Cânticos", "Cantico"],
-    "Isaías": ["Isaías", "Isaias"],
-    "Jeremias": ["Jeremias"],
-    "Lamentações": ["Lamentações", "Lamentacoes"],
-    "Ezequiel": ["Ezequiel"],
-    "Daniel": ["Daniel"],
-    "Oseias": ["Oseias", "Oséias"],
-    "Joel": ["Joel"],
-    "Amós": ["Amós", "Amos"],
-    "Obadias": ["Obadias"],
-    "Jonas": ["Jonas"],
-    "Miqueias": ["Miqueias"],
-    "Naum": ["Naum"],
-    "Habacuque": ["Habacuque"],
-    "Sofonias": ["Sofonias"],
-    "Ageu": ["Ageu"],
-    "Zacarias": ["Zacarias"],
-    "Malaquias": ["Malaquias"],
-    "Mateus": ["Mateus"],
-    "Marcos": ["Marcos"],
-    "Lucas": ["Lucas"],
-    "João": ["João", "Joao"],
-    "Atos": ["Atos"],
-    "Romanos": ["Romanos"],
-    "1 Coríntios": ["1 Coríntios", "1 Corintios"],
-    "2 Coríntios": ["2 Coríntios", "2 Corintios"],
-    "Gálatas": ["Gálatas", "Galatas"],
-    "Efésios": ["Efésios", "Efesios"],
-    "Filipenses": ["Filipenses"],
-    "Colossenses": ["Colossenses"],
-    "1 Tessalonicenses": ["1 Tessalonicenses"],
-    "2 Tessalonicenses": ["2 Tessalonicenses"],
-    "1 Timóteo": ["1 Timóteo", "1 Timoteo"],
-    "2 Timóteo": ["2 Timóteo", "2 Timoteo"],
-    "Tito": ["Tito"],
-    "Filemon": ["Filemon", "Filêmon"],
-    "Hebreus": ["Hebreus"],
-    "Tiago": ["Tiago"],
-    "1 Pedro": ["1 Pedro"],
-    "2 Pedro": ["2 Pedro"],
-    "1 João": ["1 João", "1 Joao"],
-    "2 João": ["2 João", "2 Joao"],
-    "3 João": ["3 João", "3 Joao"],
-    "Judas": ["Judas"],
-    "Apocalipse": ["Apocalipse"],
-}
+def get_book_regex(name):
+    # Transforma "1 Samuel" em algo que pegue "1 Samuel", "1Samuel", "Primeiro Samuel", "I Samuel"
+    base = name
+    if name.startswith("1 "): base = r"(1|I|Primeiro)\s*" + name[2:]
+    elif name.startswith("2 "): base = r"(2|II|Segundo)\s*" + name[2:]
+    elif name.startswith("3 "): base = r"(3|III|Terceiro)\s*" + name[2:]
+    # Escapar para regex e permitir espaços/caixa alta
+    pattern = r"^\s*" + base + r"\s*$"
+    return re.compile(pattern, re.IGNORECASE)
 
-# Número de capítulos por livro
-BOOK_CHAPTERS = [
-    50, 40, 27, 36, 34, 24, 21, 4, 31, 24,
-    22, 25, 29, 36, 10, 13, 10, 42, 150, 31,
-    12, 8, 66, 52, 5, 48, 12, 14, 3, 9,
-    1, 4, 7, 3, 3, 3, 2, 14, 4,
-    28, 16, 24, 21, 28, 16, 16, 13, 6, 6,
-    4, 4, 5, 3, 6, 4, 3, 1, 13,
-    5, 5, 3, 5, 1, 1, 1, 22
-]
+BOOK_REGEXES = [(name, get_book_regex(name)) for name in BOOK_NAMES]
 
-def build_alias_map():
-    """Cria um map de alias -> nome canônico"""
-    alias_map = {}
-    for canonical, aliases in BOOK_ALIASES.items():
-        for alias in aliases:
-            alias_map[alias.lower()] = canonical
-    return alias_map
-
-def extract_all_text(pdf_path):
-    """Extrai todo o texto do PDF página a página"""
-    print("Extraindo texto do PDF...")
-    pages_text = []
-    with pdfplumber.open(pdf_path) as pdf:
-        total = len(pdf.pages)
-        for i, page in enumerate(pdf.pages):
-            text = page.extract_text() or ""
-            pages_text.append(text)
-            if (i + 1) % 100 == 0:
-                print(f"  Processado: {i+1}/{total} páginas")
-    print(f"  Total: {total} páginas extraídas")
-    return pages_text
-
-def detect_book(line, alias_map):
-    """Verifica se uma linha é o título de um livro bíblico"""
-    stripped = line.strip()
-    # Remover possíveis números de página ou prefixos
-    cleaned = stripped.strip()
-    return alias_map.get(cleaned.lower())
-
-def parse_bible_text(pages_text, alias_map):
-    """
-    Parseia o texto extraído e organiza em estrutura de livros/capítulos/versículos.
-    Retorna: dict { canonical_book_name: { chapter_num: [verse_texts] } }
-    """
-    # Formato do PDF: "cap: vers-vers Texto" ou "cap: vers Texto" ou só versículo dentro do capítulo
-    
-    bible = { name: {} for name in BOOK_NAMES }
+def extract():
+    print(f"Lendo PDF: {PDF_PATH}")
+    reader = pypdf.PdfReader(PDF_PATH)
+    total_pages = len(reader.pages)
+    bible = {name: {} for name in BOOK_NAMES}
     
     current_book = None
     current_chapter = None
-    pending_text = []  # Acumula texto de versículos multi-linha
+    last_verse = None
     
-    # Padrão: início de capítulo+versículo: "3: 1 texto" ou "3: 1-5 texto"
-    # também pode aparecer como "3: 1-5" sozinho na linha
-    cap_verse_pattern = re.compile(r'^(\d+):\s+(\d+(?:-\d+)?)\s+(.*)')
-    # Padrão: só versículo (sem número de capítulo repetido): "15 texto" ou "15-20 texto"
-    verse_only_pattern = re.compile(r'^(\d+(?:-\d+)?)\s+((?:[A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇ"].{3,}|[a-záéíóúàâêôãõüç"].{3,}))')
-    
-    # Merge all pages into one big string, split by line
-    all_lines = []
-    for pg_text in pages_text:
-        for line in pg_text.split('\n'):
-            all_lines.append(line)
-    
-    i = 0
-    verse_buffer = {}  # chapter -> list of (verse_num, text)
-    
-    def flush_pending():
-        nonlocal pending_text
-        result = " ".join(pending_text).strip()
-        pending_text = []
-        return result
-    
-    def save_verse(book, chap, verse_start, verse_end, text):
-        if not book or not chap:
-            return
-        if chap not in bible[book]:
-            bible[book][chap] = {}
-        # Se é intervalo de versículos, atribui o texto ao primeiro versículo para agrupamento
-        # Na versão A Mensagem, versículos agrupados ficam em um único bloco de texto
-        for v in range(verse_start, verse_end + 1):
-            if v == verse_start:
-                bible[book][chap][v] = text
-            else:
-                # Versículos "secundários" do grupo apontam para o texto do primeiro
-                if v not in bible[book][chap]:
-                    bible[book][chap][v] = ""  # placeholder
-    
-    last_chapter_seen = None
-    last_verse_seen = None
-    continuation_text = ""
-    
-    for line_idx, line in enumerate(all_lines):
-        line = line.strip()
-        if not line:
-            continue
-        
-        # --- Detectar título de livro ---
-        canonical = detect_book(line, alias_map)
-        if canonical:
-            current_book = canonical
-            current_chapter = None
-            last_chapter_seen = None
-            last_verse_seen = None
-            print(f"  Livro detectado: {canonical}")
-            continue
-        
-        if not current_book:
-            continue
-        
-        # --- Detectar padrão "CAP: VERS texto" ---
-        m = cap_verse_pattern.match(line)
-        if m:
-            chap_num = int(m.group(1))
-            verse_range = m.group(2)
-            text = m.group(3).strip()
-            
-            # Parsear range de versículos
-            if '-' in verse_range:
-                parts = verse_range.split('-')
-                v_start = int(parts[0])
-                v_end = int(parts[1])
-            else:
-                v_start = int(verse_range)
-                v_end = v_start
-            
-            current_chapter = chap_num
-            last_chapter_seen = chap_num
-            last_verse_seen = v_start
-            
-            if chap_num not in bible[current_book]:
-                bible[current_book][chap_num] = {}
-            
-            # Salvar versículo
-            combined = verse_range + " " + text if text else verse_range
-            bible[current_book][chap_num][v_start] = combined
-            # Preencher versículos do range
-            for v in range(v_start + 1, v_end + 1):
-                if v not in bible[current_book][chap_num]:
-                    bible[current_book][chap_num][v] = ""
-            continue
-        
-        # --- Continuação do último versículo (linha sem número de versículo) ---
-        if current_book and current_chapter and last_verse_seen:
-            # Se a linha não começa com número e parece texto do versículo anterior,
-            # acumula ao último versículo
-            m2 = verse_only_pattern.match(line)
-            if m2:
-                # É um versículo sem número de capítulo
-                verse_range = m2.group(1)
-                text = m2.group(2).strip()
-                if '-' in verse_range:
-                    parts = verse_range.split('-')
-                    v_start = int(parts[0])
-                    v_end = int(parts[1])
-                else:
-                    v_start = int(verse_range)
-                    v_end = v_start
-                
-                last_verse_seen = v_start
-                if current_chapter not in bible[current_book]:
-                    bible[current_book][current_chapter] = {}
-                
-                combined = verse_range + " " + text
-                bible[current_book][current_chapter][v_start] = combined
-                for v in range(v_start + 1, v_end + 1):
-                    if v not in bible[current_book][current_chapter]:
-                        bible[current_book][current_chapter][v] = ""
-            else:
-                # Linha de continuação — acumula ao último versículo
-                if current_chapter in bible[current_book] and last_verse_seen in bible[current_book][current_chapter]:
-                    current_text = bible[current_book][current_chapter][last_verse_seen]
-                    if current_text:
-                        bible[current_book][current_chapter][last_verse_seen] = current_text + " " + line
-    
-    return bible
+    cp_vs_pattern = re.compile(r'^(\d+):\s*(\d+(?:-\d+)?)')
+    vs_only_pattern = re.compile(r'^(\d+(?:-\d+)?)\s+')
 
-def bible_to_json_format(bible_dict):
-    """
-    Converte o dict para o formato do app:
-    Array de 66 livros, cada um com:
-    { abbrev, chapters: [ [verse1, verse2, ...], [...] ] }
-    """
-    result = []
-    
-    for idx, book_name in enumerate(BOOK_NAMES):
-        book_data = bible_dict.get(book_name, {})
-        num_chapters = BOOK_CHAPTERS[idx]
+    print("Iniciando extração com detecção aprimorada...")
+    for pg_idx in range(total_pages):
+        page = reader.pages[pg_idx]
+        text = page.extract_text()
+        if not text: continue
         
-        chapters = []
-        for chap_num in range(1, num_chapters + 1):
-            chap_data = book_data.get(chap_num, {})
+        lines = text.split('\n')
+        for line in lines:
+            line_clean = line.strip()
+            if not line_clean: continue
             
-            if not chap_data:
-                # Capítulo não encontrado — criar placeholder
-                chapters.append([f"[Capítulo {chap_num} não encontrado no PDF]"])
+            # 1. Detectar Livro
+            found_book = None
+            if len(line_clean) < 30: # Títulos são curtos
+                for bname, regex in BOOK_REGEXES:
+                    if regex.match(line_clean):
+                        found_book = bname
+                        break
+            
+            if found_book:
+                current_book = found_book
+                current_chapter = None
+                last_verse = None
+                print(f"  > [{pg_idx+1}/{total_pages}] {current_book}")
                 continue
             
-            # Converter dict de versículos em array ordenado
-            max_verse = max(chap_data.keys()) if chap_data else 0
-            verses = []
-            for v in range(1, max_verse + 1):
-                text = chap_data.get(v, "")
-                verses.append(text if text else "")
+            if not current_book: continue
             
-            # Remover versículos vazios do final
-            while verses and not verses[-1]:
-                verses.pop()
-            
-            chapters.append(verses if verses else [f"[Capítulo {chap_num}]"])
+            # 2. Detectar Capítulo:Versículo
+            m = cp_vs_pattern.match(line_clean)
+            if m:
+                current_chapter = int(m.group(1))
+                v_range = m.group(2)
+                try:
+                    v_start = int(v_range.split('-')[0])
+                    content = line_clean[m.end():].strip()
+                    if current_chapter not in bible[current_book]:
+                        bible[current_book][current_chapter] = {}
+                    bible[current_book][current_chapter][v_start] = f"({v_range}) " + content
+                    last_verse = v_start
+                except: pass
+            else:
+                # 3. Detectar apenas Versículo
+                m_vs = vs_only_pattern.match(line_clean)
+                if m_vs and current_chapter:
+                    v_range = m_vs.group(1)
+                    try:
+                        v_start = int(v_range.split('-')[0])
+                        # Proteção simples contra números de página (geralmente no fim/início)
+                        if last_verse and v_start > last_verse + 100: pass 
+                        else:
+                            content = line_clean[m_vs.end():].strip()
+                            bible[current_book][current_chapter][v_start] = f"({v_range}) " + content
+                            last_verse = v_start
+                            continue
+                    except: pass
+                
+                # 4. Continuação
+                if current_book and current_chapter and last_verse:
+                    if last_verse in bible[current_book][current_chapter]:
+                        # Ignorar linhas que parecem números de página sozinhos
+                        if not re.match(r'^\d+$', line_clean):
+                            bible[current_book][current_chapter][last_verse] += " " + line_clean
+
+    print("Formatando JSON final...")
+    final_data = []
+    
+    # Número esperado de capítulos por livro (para garantir que o JSON tenha todos os slots)
+    EXPECTED_CHAPS = {
+        "Salmos": 150, "Gênesis": 50, "Êxodo": 40, "Levítico": 27, "Números": 36, "Deuteronômio": 34,
+        "Josué": 24, "Juízes": 21, "Rute": 4, "1 Samuel": 31, "2 Samuel": 24, "1 Reis": 22, "2 Reis": 25,
+        "1 Crônicas": 29, "2 Crônicas": 36, "Esdras": 10, "Neemias": 13, "Ester": 10, "Jó": 42,
+        "Provérbios": 31, "Eclesiastes": 12, "Cantares": 8, "Isaías": 66, "Jeremias": 52, "Lamentações": 5,
+        "Ezequiel": 48, "Daniel": 12, "Oseias": 14, "Joel": 3, "Amós": 9, "Obadias": 1, "Jonas": 4,
+        "Miqueias": 7, "Naum": 3, "Habacuque": 3, "Sofonias": 3, "Ageu": 2, "Zacarias": 14, "Malaquias": 4,
+        "Mateus": 28, "Marcos": 16, "Lucas": 24, "João": 21, "Atos": 28, "Romanos": 16, "1 Coríntios": 16,
+        "2 Coríntios": 13, "Gálatas": 6, "Efésios": 6, "Filipenses": 4, "Colossenses": 4, "1 Tessalonicenses": 5,
+        "2 Tessalonicenses": 3, "1 Timóteo": 6, "2 Timóteo": 4, "Tito": 3, "Filemon": 1, "Hebreus": 13,
+        "Tiago": 5, "1 Pedro": 5, "2 Pedro": 3, "1 João": 5, "2 João": 1, "3 João": 1, "Judas": 1, "Apocalipse": 22
+    }
+
+    for bname in BOOK_NAMES:
+        book_obj = {"abbrev": bname.lower()[:3], "name": bname, "chapters": []}
+        book_data = bible[bname]
         
-        result.append({
-            "abbrev": book_name[:3].lower(),
-            "name": book_name,
-            "chapters": chapters
-        })
-        print(f"  [{idx+1}/66] {book_name}: {len([c for c in chapters if len(c) > 0])} capítulos")
-    
-    return result
+        total_chaps = EXPECTED_CHAPS.get(bname, max(book_data.keys()) if book_data else 1)
+        
+        for c in range(1, total_chaps + 1):
+            chap_data = book_data.get(c, {})
+            if not chap_data:
+                book_obj["chapters"].append(["[Capítulo não encontrado no PDF]"])
+                continue
+            
+            max_v = max(chap_data.keys())
+            verses = []
+            for v in range(1, max_v + 1):
+                v_text = chap_data.get(v, "")
+                # Limpeza final do texto
+                v_text = re.sub(r'\s+', ' ', v_text).strip()
+                verses.append(v_text if v_text else "")
+            book_obj["chapters"].append(verses)
+        
+        final_data.append(book_obj)
 
-def main():
-    alias_map = build_alias_map()
-    
-    print("=== Extraindo texto do PDF ===")
-    pages_text = extract_all_text(PDF_PATH)
-    
-    print("\n=== Parseando estrutura bíblica ===")
-    bible = parse_bible_text(pages_text, alias_map)
-    
-    print("\n=== Verificando cobertura ===")
-    uncovered = []
-    for idx, name in enumerate(BOOK_NAMES):
-        chaps = bible.get(name, {})
-        if not chaps:
-            uncovered.append(name)
-            print(f"  AVISO: {name} sem dados!")
-        else:
-            total_verses = sum(len(v) for v in chaps.values())
-            print(f"  {name}: {len(chaps)} capítulos, {total_verses} versículos")
-    
-    print(f"\n=== Convertendo para formato do app ===")
-    json_data = bible_to_json_format(bible)
-    
-    print(f"\n=== Salvando em {OUT_PATH} ===")
     with open(OUT_PATH, 'w', encoding='utf-8') as f:
-        json.dump(json_data, f, ensure_ascii=False, separators=(',', ':'))
+        json.dump(final_data, f, ensure_ascii=False, indent=0)
     
-    import os
-    size_mb = os.path.getsize(OUT_PATH) / 1024 / 1024
-    print(f"  Arquivo salvo: {size_mb:.1f} MB")
-    print("\nConcluído!")
+    print(f"Sucesso! Bíblia completa salva em {OUT_PATH}")
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    extract()

@@ -10,8 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 export default function BibleReader() {
   const { user, showToast, updateReadingTime } = useAuth();
   const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === '1') || BIBLE_BOOKS[0]);
-  const [chapter, setChapter] = useState(1);
-  const [version, setVersion] = useState<'acf'|'ara'|'nvi'|'ntlh'>('acf');
+  const [version, setVersion] = useState<'acf'|'ara'|'nvi'|'ntlh'|'mensagem'>('acf');
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSelector, setShowSelector] = useState(false);
@@ -21,7 +20,8 @@ export default function BibleReader() {
     { id: 'acf', name: 'ACF - Almeida Corrigida' },
     { id: 'ara', name: 'ARA - Almeida Rev. e Atualizada' },
     { id: 'nvi', name: 'NVI - Nova Versão Internacional' },
-    { id: 'ntlh', name: 'NTLH - Linguagem de Hoje (A Mensagem)' }
+    { id: 'ntlh', name: 'NTLH - Linguagem de Hoje' },
+    { id: 'mensagem', name: 'A Mensagem (Tradução PDF)' }
   ];
   
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
@@ -269,11 +269,13 @@ export default function BibleReader() {
                          : undefined
                    }}
                  >
-                    <sup 
-                       className={`text-[11px] font-bold mr-1 ml-2 ${favorites.includes(v.verse) ? 'text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}
-                    >
-                      {v.verse}
-                    </sup>
+                    {version !== 'mensagem' && (
+                      <sup 
+                         className={`text-[11px] font-bold mr-1 ml-2 ${favorites.includes(v.verse) ? 'text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}
+                      >
+                        {v.verse}
+                      </sup>
+                    )}
                     {v.text}{' '}
                  </span>
                ))}
