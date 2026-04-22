@@ -364,6 +364,11 @@ class QueryBuilder {
     return this;
   }
 
+  queryRaw(raw: string) {
+    this._qs.push(raw.startsWith('&') ? raw.substring(1) : raw);
+    return this;
+  }
+
   eq(col: string, val: string | number | boolean) {
     this._qs.push(`${col}=eq.${encodeURIComponent(String(val))}`);
     return this;

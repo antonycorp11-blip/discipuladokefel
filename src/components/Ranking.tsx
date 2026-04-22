@@ -40,15 +40,20 @@ export function Ranking() {
     setLoading(true);
     const sunday = getSundayOfCurrentWeek();
 
+    const now = Date.now();
     const [logsRes, profilesRes, celulaRes] = await Promise.all([
-      supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
-      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, tempo_leitura_total"),
-      supabase.from("kefel_celulas").select("id, nome, imagem_url")
+      supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday).queryRaw(`&t=${now}`),
+      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, tempo_leitura_total").queryRaw(`&t=${now}`),
+      supabase.from("kefel_celulas").select("id, nome, imagem_url").queryRaw(`&t=${now}`)
     ]);
 
     const logs = (logsRes.data as any[]) || [];
     const profiles = (profilesRes.data as any[]) || [];
     const celulas = (celulaRes.data as any[]) || [];
+
+    console.log(`[Ranking] Periodo: ${sunday} ate agora`);
+    console.log(`[Ranking] Logs carregados: ${logs.length}`);
+    console.log(`[Ranking] Perfis carregados: ${profiles.length}`);
 
     if (logsRes.error) {
        console.error("Erro ao buscar logs:", logsRes.error.message);
@@ -57,7 +62,8 @@ export function Ranking() {
     // Somar tempos dos logs da semana por usuário
     const userTimesFromLogs: Record<string, number> = {};
     logs.forEach(log => {
-      userTimesFromLogs[log.user_id] = (userTimesFromLogs[log.user_id] || 0) + Number(log.tempo_segundos || 0);
+      const secs = Number(log.tempo_segundos || 0);
+      userTimesFromLogs[log.user_id] = (userTimesFromLogs[log.user_id] || 0) + secs;
     });
 
     // Se há logs válidos esta semana, usa logs. Senão, usa tempo_leitura_total do perfil (fallback histórico)
