@@ -44,11 +44,10 @@ export function Ranking() {
     setLoading(true);
     const sunday = getSundayOfCurrentWeek();
 
-    const now = Date.now();
     const [logsRes, profilesRes, celulaRes] = await Promise.all([
-      supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday).queryRaw(`&t=${now}`),
-      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, tempo_leitura_total").queryRaw(`&t=${now}`),
-      supabase.from("kefel_celulas").select("id, nome, imagem_url").queryRaw(`&t=${now}`)
+      supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
+      supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id, cultos_presenca, tempo_leitura_total"),
+      supabase.from("kefel_celulas").select("id, nome, imagem_url")
     ]);
 
     const logs = (logsRes.data as any[]) || [];
