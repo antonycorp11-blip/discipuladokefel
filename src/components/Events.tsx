@@ -48,8 +48,49 @@ export default function Events() {
   const [imageUrl, setImageUrl] = useState("");
   const [bannerPosY, setBannerPosY] = useState(50);
   const [editId, setEditId] = useState<string | null>(null);
+  const [reportTab, setReportTab] = useState<'participants' | 'ranking'>('participants');
 
   const [celulasRepo, setCelulasRepo] = useState<any[]>([]);
+
+  const handleExportToWhatsApp = () => {
+    if (inscribedUsers.length === 0) {
+      showToast("Ninguém inscrito ainda.");
+      return;
+    }
+    
+    const event = eventos.find(e => e.id === showInscriptions);
+    if (!event) return;
+    
+    let text = `📝 *RELATÓRIO DE INSCRIÇÕES*\n`;
+    text += `🏆 *Evento:* ${event.titulo}\n`;
+    text += `👥 *Total:* ${inscribedUsers.length} inscritos\n`;
+    text += `────────────────────\n\n`;
+    
+    // Group by cell
+    const celIds = Array.from(new Set(inscribedUsers.map(i => i.kefel_profiles?.celula_id || 'sem-celula')));
+    
+    celIds.forEach(celId => {
+      const celName = celulasRepo.find(c => c.id === celId)?.nome || "Membros sem Célula / Visitantes";
+      const membersInCel = inscribedUsers.filter(i => (i.kefel_profiles?.celula_id || 'sem-celula') === celId);
+      
+      if (membersInCel.length > 0) {
+        text += `🟢 *${celName.toUpperCase()}* (${membersInCel.length})\n`;
+        membersInCel.forEach((insc, idx) => {
+          const prof = insc.kefel_profiles;
+          const nome = prof?.nome || "Membro";
+          text += `  ${idx + 1}. ${nome}\n`;
+        });
+        text += `\n`;
+      }
+    });
+    
+    text += `────────────────────\n`;
+    text += `*Gerado pelo App Kefel Discipulado*`;
+    
+    // Open Whatsapp API
+    const encoded = encodeURIComponent(text);
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+  };
 
   useEffect(() => {
     fetchEvents();
@@ -57,7 +98,7 @@ export default function Events() {
   }, []);
 
   async function fetchCellsRepo() {
-     const { data } = await supabase.from("kefel_celulas").select("id, nome");
+     const { data } = await supabase.from("kefel_celulas").select("id, nome, imagem_url");
      setCelulasRepo(data || []);
   }
 
@@ -369,61 +410,144 @@ export default function Events() {
                transition={{ type: "spring", damping: 25, stiffness: 200 }}
                className="bg-white w-full h-[85vh] rounded-t-[4.5rem] p-8 flex flex-col shadow-2xl max-w-[430px] mx-auto relative"
             >
-               <div className="flex justify-between items-center mb-8 px-2">
-                  <div>
-                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">Inscritos</h2>
-                    <p className="text-[10px] font-black uppercase text-[#1B3B6B] tracking-widest">{inscribedUsers.length} Participantes Confirmados</p>
-                  </div>
-                  <button onClick={() => setShowInscriptions(null)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
-               </div>
-               
-               <div className="flex-1 overflow-y-auto space-y-8 pb-32 pr-2">
-                  {loadingInsc ? (
-                    <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-[#1B3B6B]" /></div>
-                   ) : inscribedUsers.length === 0 ? (
-                    <div className="py-20 text-center space-y-4">
-                       <Users size={48} className="mx-auto text-gray-100" />
-                       <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Ninguém inscrito ainda</p>
-                    </div>
+               <div className="flex justify-between items-center mb-6 px-2">
+                   <div>
+                     <h2 className="text-xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">Inscritos</h2>
+                     <p className="text-[10px] font-black uppercase text-[#1B3B6B] dark:text-blue-400 tracking-widest">{inscribedUsers.length} Participantes Confirmados</p>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <button 
+                         onClick={handleExportToWhatsApp} 
+                         className="bg-[#25D366] hover:bg-[#20ba5a] text-white p-3 rounded-full shadow-md active:scale-90 transition-all flex items-center justify-center"
+                         title="Exportar para WhatsApp"
+                      >
+                         <Share2 size={18} />
+                      </button>
+                      <button onClick={() => setShowInscriptions(null)} className="glass-panel p-3 rounded-full text-gray-800 dark:text-white"><X size={20} /></button>
+                   </div>
+                </div>
+
+                {/* Tabs Segmented Control */}
+                <div className="flex bg-gray-100 dark:bg-zinc-800 p-1 rounded-2xl mb-6 shrink-0">
+                  <button 
+                    onClick={() => setReportTab('participants')}
+                    className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${reportTab === 'participants' ? 'bg-white dark:bg-zinc-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}
+                  >
+                    Participantes
+                  </button>
+                  <button 
+                    onClick={() => setReportTab('ranking')}
+                    className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${reportTab === 'ranking' ? 'bg-white dark:bg-zinc-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}
+                  >
+                    🏆 Ranking Células
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto space-y-6 pb-24 pr-1">
+                   {loadingInsc ? (
+                     <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-[#1B3B6B]" /></div>
+                    ) : inscribedUsers.length === 0 ? (
+                     <div className="py-20 text-center space-y-4">
+                        <Users size={48} className="mx-auto text-gray-100" />
+                        <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Ninguém inscrito ainda</p>
+                     </div>
+                  ) : reportTab === 'participants' ? (
+                     // Agrupar por Célula Compacto
+                     Array.from(new Set(inscribedUsers.map(i => i.kefel_profiles?.celula_id || 'sem-celula'))).map(celId => {
+                        const celName = celulasRepo.find(c => c.id === celId)?.nome || "Visitantes / Sem Célula";
+                        const membersInCel = inscribedUsers.filter(i => (i.kefel_profiles?.celula_id || 'sem-celula') === celId);
+
+                        if (membersInCel.length === 0) return null;
+
+                        return (
+                           <div key={String(celId)} className="space-y-2">
+                              <div className="flex items-center justify-between bg-gray-100/50 dark:bg-zinc-800/40 px-4 py-2 rounded-xl border border-gray-200/50 dark:border-white/5">
+                                 <h4 className="text-[10px] font-black text-gray-800 dark:text-gray-200 uppercase italic tracking-wider">{celName}</h4>
+                                 <span className="text-[9px] font-black text-[#1B3B6B] dark:text-blue-400 bg-white dark:bg-zinc-800 px-2 py-0.5 rounded-md shadow-sm">{membersInCel.length}</span>
+                              </div>
+                              
+                              <div className="grid gap-2">
+                                 {membersInCel.map(insc => {
+                                   const prof = Array.isArray(insc.kefel_profiles) ? insc.kefel_profiles[0] : (insc.kefel_profiles as any);
+                                   return (
+                                     <div key={insc.id} className="flex items-center gap-3 p-2 px-3.5 glass-panel rounded-2xl border-white/80 dark:border-white/5 shadow-sm">
+                                       <div className="w-8 h-8 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden border border-gray-100 dark:border-white/10 shadow-sm p-0.5 flex items-center justify-center shrink-0">
+                                          {prof?.avatar_url ? <img src={prof.avatar_url} className="w-full h-full object-cover rounded-lg" /> : <User className="w-full h-full p-1.5 text-gray-300" />}
+                                       </div>
+                                       <div className="flex-1 min-w-0">
+                                         <p className="font-black text-gray-800 dark:text-gray-100 uppercase italic text-[11px] leading-tight truncate">{prof?.nome || "Membro"}</p>
+                                         <p className="text-[8px] text-[#1B3B6B]/40 dark:text-white/30 font-black uppercase tracking-widest mt-0.5">{insc.confirmado_em ? new Date(insc.confirmado_em).toLocaleDateString('pt-BR') : 'Agora'}</p>
+                                       </div>
+                                       <div className="bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 p-1.5 rounded-xl shrink-0">
+                                          <CheckCircle size={12} />
+                                       </div>
+                                     </div>
+                                   );
+                                 })}
+                              </div>
+                           </div>
+                        );
+                     })
                   ) : (
-                    // Agrupar por Célula (lidando com nulos e perfis ausentes)
-                    Array.from(new Set(inscribedUsers.map(i => i.kefel_profiles?.celula_id || 'sem-celula'))).map(celId => {
-                       const celName = celulasRepo.find(c => c.id === celId)?.nome || "Membros sem Célula / Visitantes";
-                       const membersInCel = inscribedUsers.filter(i => (i.kefel_profiles?.celula_id || 'sem-celula') === celId);
+                     // View Ranking por Célula
+                     <div className="space-y-3">
+                       {(() => {
+                          const cellCounts: Record<string, { name: string; image: string; count: number }> = {};
+                          
+                          celulasRepo.forEach(c => {
+                            cellCounts[c.id] = { name: c.nome, image: c.imagem_url || "", count: 0 };
+                          });
+                          
+                          cellCounts['sem-celula'] = { name: "Visitantes / Sem Célula", image: "", count: 0 };
+                          
+                          inscribedUsers.forEach(insc => {
+                            const celId = insc.kefel_profiles?.celula_id || 'sem-celula';
+                            if (!cellCounts[celId]) {
+                              cellCounts[celId] = { name: "Visitantes / Sem Célula", image: "", count: 0 };
+                            }
+                            cellCounts[celId].count += 1;
+                          });
+                          
+                          const ranking = Object.entries(cellCounts)
+                            .map(([id, val]) => ({ id, ...val }))
+                            .sort((a, b) => b.count - a.count);
 
-                       if (membersInCel.length === 0) return null;
+                          return ranking.map((item, idx) => {
+                             const isTop3 = idx < 3;
+                             const medalColors = ['bg-amber-400 text-amber-950', 'bg-slate-300 text-slate-900', 'bg-amber-600 text-amber-50', 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-gray-500'];
+                             const medalLabel = ['🥇', '🥈', '🥉', `${idx + 1}º`][Math.min(idx, 3)];
+                             const percentage = inscribedUsers.length > 0 ? (item.count / inscribedUsers.length) * 100 : 0;
 
-                       return (
-                          <div key={String(celId)} className="space-y-4">
-                             <div className="flex items-center justify-between bg-gray-50/80 px-6 py-4 rounded-[2rem] border border-gray-100 border-dashed">
-                                <h4 className="text-[11px] font-black text-gray-900 uppercase italic tracking-tighter">{celName}</h4>
-                                <span className="text-[10px] font-black text-[#1B3B6B] bg-white px-3 py-1 rounded-full shadow-sm">{membersInCel.length}</span>
-                             </div>
-                             
-                             <div className="grid gap-3">
-                                {membersInCel.map(insc => {
-                                  const prof = Array.isArray(insc.kefel_profiles) ? insc.kefel_profiles[0] : (insc.kefel_profiles as any);
-                                  return (
-                                    <div key={insc.id} className="flex items-center gap-4 p-4 glass-panel rounded-[2rem] border-white/80 shadow-sm ml-2">
-                                      <div className="w-12 h-12 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm p-0.5">
-                                         {prof?.avatar_url ? <img src={prof.avatar_url} className="w-full h-full object-cover rounded-xl" /> : <User className="w-full h-full p-2 text-gray-200" />}
-                                      </div>
-                                      <div className="flex-1">
-                                        <p className="font-black text-gray-800 uppercase italic text-xs leading-none">{prof?.nome || "Membro"}</p>
-                                        <p className="text-[9px] text-[#1B3B6B]/40 font-black uppercase tracking-widest mt-1.5">{insc.confirmado_em ? new Date(insc.confirmado_em).toLocaleDateString('pt-BR') : 'Agora'}</p>
-                                      </div>
-                                      <div className="bg-green-50 text-green-600 p-2 rounded-xl">
-                                         <CheckCircle size={14} />
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                             </div>
-                          </div>
-                       );
-                    })
+                             return (
+                               <div key={item.id} className="glass-panel p-2.5 px-4 rounded-2xl border-white/80 dark:border-white/5 flex items-center gap-3 relative overflow-hidden shadow-sm">
+                                  <div className="absolute inset-0 bg-[#1B3B6B]/5 dark:bg-white/5 origin-left" style={{ width: `${percentage}%`, zIndex: -1 }} />
+                                  
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0 ${isTop3 ? medalColors[idx] : medalColors[3]}`}>
+                                     {medalLabel}
+                                  </div>
+                                  
+                                  <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-zinc-800 overflow-hidden border border-gray-100 dark:border-white/10 flex items-center justify-center shrink-0">
+                                     {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Users size={14} className="text-gray-300" />}
+                                  </div>
+                                  
+                                  <div className="flex-1 min-w-0">
+                                     <h5 className="text-[10px] font-black uppercase italic text-gray-800 dark:text-gray-200 leading-none truncate">{item.name}</h5>
+                                     <div className="w-full bg-gray-200/50 dark:bg-zinc-800 h-1 rounded-full mt-1.5 overflow-hidden">
+                                        <div className="bg-[#1B3B6B] dark:bg-blue-500 h-full transition-all" style={{ width: `${percentage}%` }} />
+                                     </div>
+                                  </div>
+                                  
+                                  <div className="text-right shrink-0">
+                                     <span className="text-[11px] font-black text-[#1B3B6B] dark:text-blue-400">{item.count}</span>
+                                     <span className="text-[6px] block font-black uppercase text-gray-400 mt-0.5">inscritos</span>
+                                  </div>
+                               </div>
+                             );
+                          });
+                       })()}
+                     </div>
                   )}
-               </div>
+                </div>
             </motion.div>
           </div>
         )}
