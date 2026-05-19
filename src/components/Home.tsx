@@ -27,6 +27,7 @@ export function Home() {
   const [claiming, setClaiming] = useState(false);
   const [inscribedIds, setInscribedIds] = useState<string[]>([]);
   const [canClaimCulto, setCanClaimCulto] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     if (!user) return;
