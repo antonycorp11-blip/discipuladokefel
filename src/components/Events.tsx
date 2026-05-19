@@ -69,23 +69,50 @@ export default function Events() {
   }
 
   async function fetchInscriptions(eventId: string) {
+    setLoadingInsc(true);
     try {
        const { data, error } = await supabase
          .from("kefel_eventos_inscritos")
          .select(`
             id,
             confirmado_em,
-            user_id,
-            kefel_profiles (
-               nome,
-               avatar_url,
-               celula_id
-            )
+            user_id
          `)
          .eq("evento_id", eventId);
        
        if (error) throw error;
-       setInscribedUsers(data || []);
+       
+       if (data && data.length > 0) {
+          // Manual join to bypass potential FK/RLS relationship mapping issues
+          const userIds = data.map(i => i.user_id).filter(id => id);
+          
+          let profilesDict: Record<string, any> = {};
+          
+          if (userIds.length > 0) {
+            // Use an 'in' or loop query to fetch profiles safely. Doing multiple 'eq' or an 'in'
+            const { data: profData, error: profErr } = await supabase
+              .from("kefel_profiles")
+              .select("id, nome, avatar_url, celula_id")
+              .in("id", userIds);
+              
+            if (!profErr && profData) {
+               profData.forEach(p => {
+                 profilesDict[p.id] = p;
+               });
+            } else {
+               console.error("Erro fetch profiles:", profErr);
+            }
+          }
+          
+          const combined = data.map(insc => ({
+             ...insc,
+             kefel_profiles: profilesDict[insc.user_id] || null
+          }));
+          
+          setInscribedUsers(combined);
+       } else {
+          setInscribedUsers([]);
+       }
     } catch (err) {
        console.error("Erro fetch inscritos:", err);
     } finally {

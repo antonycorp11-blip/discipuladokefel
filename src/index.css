@@ -52,20 +52,27 @@ html.dark body {
   color: #F1F5F9 !important;
 }
 
-/* ── #root ─────────────────────────────────────────── */
+/* ── #root (Mobile Simulator) ─────────────────────────── */
 #root {
   background: var(--surface);
   transition: background 0.3s ease;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  box-shadow: 0 0 40px rgba(0,0,0,0.1);
+  position: relative;
 }
 
 html.dark #root {
   background: #000000 !important;
+  box-shadow: 0 0 40px rgba(255,255,255,0.05);
 }
 
 /* Desktop: fundo cinza ao redor do app */
 @media (min-width: 430px) {
   html, body { background: #e5e7eb; }
-  html.dark, html.dark body { background: #000000; }
+  html.dark, html.dark body { background: #0f172a; }
 }
 
 h1, h2, h3, .font-heading {
