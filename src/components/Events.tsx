@@ -90,10 +90,11 @@ export default function Events() {
           
           if (userIds.length > 0) {
             // Use an 'in' or loop query to fetch profiles safely. Doing multiple 'eq' or an 'in'
+            // Use filter to avoid .in() mangling issues
             const { data: profData, error: profErr } = await supabase
               .from("kefel_profiles")
               .select("id, nome, avatar_url, celula_id")
-              .in("id", userIds);
+              .filter("id", "in", `(${userIds.join(',')})`);
               
             if (!profErr && profData) {
                profData.forEach(p => {
@@ -364,7 +365,7 @@ export default function Events() {
                animate={{ y: 0 }}
                exit={{ y: "100%" }}
                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-               className="bg-white w-full h-[85vh] rounded-t-[4.5rem] p-8 flex flex-col shadow-2xl"
+               className="bg-white w-full h-[85vh] rounded-t-[4.5rem] p-8 flex flex-col shadow-2xl max-w-[430px] mx-auto relative"
             >
                <div className="flex justify-between items-center mb-8 px-2">
                   <div>
@@ -435,7 +436,7 @@ export default function Events() {
                animate={{ y: 0 }}
                exit={{ y: "100%" }}
                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-               className="bg-white w-full h-[92vh] rounded-t-[3.5rem] p-8 overflow-y-auto shadow-2xl pb-32"
+               className="bg-white w-full h-[92vh] rounded-t-[3.5rem] p-8 overflow-y-auto shadow-2xl pb-32 max-w-[430px] mx-auto relative"
             >
               <div className="flex justify-between items-center mb-10">
                  <div>
