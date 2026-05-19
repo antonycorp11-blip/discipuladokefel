@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Home } from "./components/Home";
 import BibleReader from "./components/BibleReader";
@@ -30,10 +30,25 @@ function LoadingScreen() {
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user && (location.pathname === '/' || location.pathname === '/login')) {
+      const redirect = sessionStorage.getItem('redirectAfterLogin');
+      if (redirect) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirect);
+      }
+    }
+  }, [user, location.pathname, navigate]);
 
   if (loading) return <LoadingScreen />;
 
   if (!user) {
+    if (location.pathname !== '/login' && location.pathname !== '/') {
+      sessionStorage.setItem('redirectAfterLogin', location.pathname + location.search);
+    }
     return (
       <Routes>
         <Route path="/login" element={<Login />} />

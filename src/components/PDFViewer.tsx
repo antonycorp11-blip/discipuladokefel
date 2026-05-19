@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Loader2, X, Maximize, Minimize } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -11,11 +11,31 @@ import { useAuth } from "@/context/AuthContext";
 
 export function PDFViewer() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, updateReadingTime } = useAuth();
   const navigate = useNavigate();
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const sessionRef = useRef(0);
+  const timerId = useRef<NodeJS.Timeout|null>(null);
+
+  useEffect(() => {
+    timerId.current = setInterval(() => {
+      setSessionSeconds(s => { 
+        const next = s + 1; 
+        sessionRef.current = next; 
+        return next; 
+      });
+    }, 1000);
+
+    return () => {
+      if (timerId.current) clearInterval(timerId.current);
+      if (sessionRef.current > 0 && user && book) {
+        updateReadingTime(sessionRef.current, book.titulo, currentPage);
+      }
+    };
+  }, [user, book, currentPage, updateReadingTime]);
 
   useEffect(() => {
     fetchBook();
@@ -36,7 +56,14 @@ export function PDFViewer() {
   }
 
   const saveProgress = async (page: number) => {
-    if (!user || !id) return;
+    if (!user || !id || !book) return;
+    
+    if (sessionRef.current > 0) {
+      await updateReadingTime(sessionRef.current, book.titulo, currentPage);
+      setSessionSeconds(0);
+      sessionRef.current = 0;
+    }
+
     setCurrentPage(page);
     await supabase.from("kefel_library_progress").upsert({
       user_id: user.id,

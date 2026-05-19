@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Plus, Calendar, MapPin, Clock, 
-  X, Camera, Loader2, Image as ImageIcon, Trash2, Tag, QrCode, AlertCircle, Users, User, ChevronRight, ArrowRight, CheckCircle
+  X, Camera, Loader2, Image as ImageIcon, Trash2, Tag, QrCode, AlertCircle, Users, User, ChevronRight, ArrowRight, CheckCircle, Share2
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -63,7 +63,7 @@ export default function Events() {
 
   async function fetchEvents() {
     setLoading(true);
-    const { data: eventsData, error } = await supabase.from("kefel_eventos").select("*, kefel_eventos_inscritos(id)").order("data_hora", { ascending: true });
+    const { data: eventsData, error } = await supabase.from("kefel_eventos").select("*, kefel_eventos_inscritos(id, user_id)").order("data_hora", { ascending: true });
     if (!error) setEventos((eventsData || []) as Evento[]);
     setLoading(false);
   }
@@ -76,7 +76,7 @@ export default function Events() {
             id,
             confirmado_em,
             user_id,
-            kefel_profiles!fk_kefel_eventos_inscritos_user (
+            kefel_profiles (
                nome,
                avatar_url,
                celula_id
@@ -233,6 +233,20 @@ export default function Events() {
                             </button>
                           </>
                         )}
+                        <button 
+                           onClick={() => {
+                             const url = `${window.location.origin}/eventos?id=${event.id}`;
+                             if (navigator.share) {
+                               navigator.share({ title: event.titulo, url });
+                             } else {
+                               navigator.clipboard.writeText(url);
+                               showToast("Link copiado para compartilhar!");
+                             }
+                           }} 
+                           className="bg-white/90 backdrop-blur p-3 rounded-2xl text-[#1B3B6B] shadow-xl active:scale-90 transition-soft"
+                        >
+                           <Share2 size={18} />
+                        </button>
                     </div>
 
                     <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl flex flex-col items-center min-w-[60px] border border-white/10 z-20">

@@ -1,5 +1,5 @@
-import { BookOpen, Calendar, Bell, Loader2, QrCode, AlertCircle, X, Award, Sparkles } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { BookOpen, Calendar, Bell, Loader2, QrCode, AlertCircle, X, Award, Sparkles, CheckCircle, Share2 } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase, type KefelEvento, type KefelCelula } from "@/lib/supabase";
@@ -63,6 +63,19 @@ export function Home() {
     };
     checkClaimable();
   }, [user]);
+
+  // Handle URL deep-linking for events
+  useEffect(() => {
+    const eventId = searchParams.get('evento');
+    if (eventId && upcomingEvents.length > 0) {
+      const targetEvent = upcomingEvents.find(e => e.id === eventId);
+      if (targetEvent && (!selectedEvent || selectedEvent.id !== eventId)) {
+        setSelectedEvent(targetEvent);
+        // Clean URL to avoid reopening on refresh if closed manually
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, upcomingEvents, selectedEvent, setSearchParams]);
 
   const fetchData = async () => {
     const now = new Date().toISOString();
@@ -131,7 +144,7 @@ export function Home() {
     else { navigator.clipboard.writeText(msg); showToast("Copiado!", "info"); }
   };
 
-  const [activeTab, setActiveTab] = useState<'hoje' | 'comunidade'>('hoje');
+  const [activeTab, setActiveTab] = useState<'hoje' | 'feed'>('hoje');
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#121212] pt-4 pb-24 transition-colors duration-500">
@@ -260,8 +273,6 @@ export function Home() {
             );
           })()}
 
-
-
           {/* Agenda section - YouVersion layout */}
           <div className="space-y-4">
             {upcomingEvents.map((event, i) => {
@@ -304,7 +315,7 @@ export function Home() {
             >
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full mt-4" />
               
-              <div className="flex justify-between items-start pt-2">
+              <div className="flex justify-between items-start pt-2 mb-6">
                 <div className="space-y-1">
                    <div className="flex items-center gap-2">
                       <span className="text-[10px] font-black uppercase text-[#1B3B6B] dark:text-blue-400 bg-[#1B3B6B]/5 dark:bg-blue-400/10 px-3 py-1 rounded-full tracking-widest">{selectedEvent.tipo}</span>
@@ -312,7 +323,25 @@ export function Home() {
                    </div>
                    <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter leading-tight mt-2">{selectedEvent.titulo}</h3>
                 </div>
-                <button onClick={() => setSelectedEvent(null)} className="glass-panel dark:bg-slate-800 p-3 rounded-full active:scale-90 transition-soft"><X size={20} className="dark:text-white" /></button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => {
+                      const url = `${window.location.origin}/?evento=${selectedEvent.id}`;
+                      if (navigator.share) {
+                        navigator.share({ title: selectedEvent.titulo, url });
+                      } else {
+                        navigator.clipboard.writeText(url);
+                        showToast("Link copiado!");
+                      }
+                    }} 
+                    className="glass-panel dark:bg-slate-800 p-3 rounded-full text-[#1B3B6B] dark:text-white transition-soft"
+                  >
+                    <Share2 size={20} />
+                  </button>
+                  <button onClick={() => setSelectedEvent(null)} className="glass-panel dark:bg-slate-800 p-3 rounded-full text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-soft">
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-6">
@@ -343,13 +372,19 @@ export function Home() {
                 )}
               </div>
 
-              <button 
-                onClick={handleInscribe} 
-                disabled={subscribing} 
-                className="w-full bg-[#1B3B6B] text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-[0.1em] active:scale-95 transition-soft disabled:opacity-50"
-              >
-                {subscribing ? <Loader2 className="animate-spin mx-auto" /> : "Garantir minha vaga"}
-              </button>
+              {inscribedIds.includes(selectedEvent.id) ? (
+                <div className="w-full bg-green-50 text-green-600 py-7 rounded-[2.5rem] flex items-center justify-center gap-2 border border-green-100 font-black uppercase tracking-[0.1em] text-xs">
+                  <CheckCircle size={18} /> Presença Confirmada
+                </div>
+              ) : (
+                <button 
+                  onClick={handleInscribe} 
+                  disabled={subscribing} 
+                  className="w-full bg-[#1B3B6B] text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-[0.1em] active:scale-95 transition-soft disabled:opacity-50"
+                >
+                  {subscribing ? <Loader2 className="animate-spin mx-auto" /> : "Garantir minha vaga"}
+                </button>
+              )}
             </motion.div>
           </div>
         )}
