@@ -262,11 +262,15 @@ export default function Events() {
                         <button 
                            onClick={() => {
                              const url = `${window.location.origin}/eventos?id=${event.id}`;
+                             const dataFormatada = new Date(event.data).toLocaleDateString('pt-BR');
+                             const valorStr = event.valor > 0 ? `Valor: R$ ${event.valor.toFixed(2)}` : 'GRATUITO';
+                             const shareText = `*${event.titulo}*\n\n📅 Data: ${dataFormatada}\n⏰ Horário: ${event.hora}\n📍 Local: ${event.endereco}\n🎟️ ${valorStr}\n\nGaranta sua vaga e confirme sua presença pelo app Kefel:`;
+                             
                              if (navigator.share) {
-                               navigator.share({ title: event.titulo, url });
+                               navigator.share({ title: event.titulo, text: shareText, url }).catch(console.error);
                              } else {
-                               navigator.clipboard.writeText(url);
-                               showToast("Link copiado para compartilhar!");
+                               navigator.clipboard.writeText(`${shareText}\n${url}`);
+                               showToast("Mensagem e link copiados para compartilhar!");
                              }
                            }} 
                            className="bg-white/90 backdrop-blur p-3 rounded-2xl text-[#1B3B6B] shadow-xl active:scale-90 transition-soft"
