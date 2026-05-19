@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { 
   UserPlus, Star, Heart, 
-  Loader2, UserCircle, Clock, HandMetal, Users
+  Loader2, UserCircle, Clock, HandMetal, Users, Calendar, TrendingUp, BookOpen
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "motion/react";
@@ -81,36 +81,81 @@ export function SocialFeed() {
     try {
       const sunday = getSundayOfCurrentWeek();
 
-      const [profilesRes, favoritesRes, logsRes, oracaoRes, celulasRes] = await Promise.all([
+      const [profilesRes, favoritesRes, logsRes, oracaoRes, celulasRes, inscRes, eventosRes] = await Promise.all([
         supabase.from("kefel_profiles").select("id, nome, avatar_url, created_at, celula_id"),
         supabase.from("kefel_favoritos").select("id, user_id, livro, capitulo, versiculo, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(15),
-        supabase.from("kefel_leitura_logs").select("user_id, tempo_segundos").gte("created_at", sunday),
+        supabase.from("kefel_leitura_logs").select("id, user_id, tempo_segundos, created_at").gte("created_at", sunday).order("created_at", { ascending: false }),
         supabase.from("kefel_oracao").select("id, user_id, texto, created_at, profile:user_id(nome, avatar_url)").order("created_at", { ascending: false }).limit(10),
-        supabase.from("kefel_celulas").select("*")
+        supabase.from("kefel_celulas").select("*"),
+        supabase.from("kefel_eventos_inscritos").select("id, user_id, evento_id, created_at").order("created_at", { ascending: false }).limit(10),
+        supabase.from("kefel_eventos").select("id, titulo")
       ]);
 
       fetchInteractions();
 
+      const profilesList = (profilesRes.data as any[]) || [];
+      const logsList = (logsRes.data as any[]) || [];
+      const celulas = (celulasRes.data as any[]) || [];
+      const inscritosList = (inscRes.data as any[]) || [];
+      const eventosList = (eventosRes.data as any[]) || [];
+
+      // Helper to find profile details
+      const getProfile = (uid: string) => profilesList.find(p => p.id === uid) || { nome: 'Membro', avatar_url: null };
+
+      // Get 5 most recent reading logs
+      const recentLogs = logsList.slice(0, 5).map(log => ({
+          type: 'reading', id: log.id, profileId: log.user_id,
+          nome: getProfile(log.user_id).nome,
+          avatar_url: getProfile(log.user_id).avatar_url,
+          tempo_segundos: log.tempo_segundos,
+          created_at: log.created_at
+      }));
+
+      // Get recent joins (last 7 days, max 5)
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const recentJoins = profilesList
+        .filter(p => new Date(p.created_at) > oneWeekAgo)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5)
+        .map(p => ({
+          type: 'join', id: p.id, profileId: p.id,
+          nome: p.nome,
+          avatar_url: p.avatar_url,
+          created_at: p.created_at
+        }));
+
+      // Get recent event inscriptions
+      const recentInscriptions = inscritosList.map(insc => {
+        const evento = eventosList.find(e => e.id === insc.evento_id);
+        return {
+          type: 'event_join', id: insc.id, profileId: insc.user_id,
+          nome: getProfile(insc.user_id).nome,
+          avatar_url: getProfile(insc.user_id).avatar_url,
+          event_title: evento ? evento.titulo : 'um evento',
+          created_at: insc.created_at
+        };
+      });
+
       const snapshots: any[] = [
         ...((favoritesRes.data as any[]) || []).map(f => ({
           type: 'favorite', id: f.id, profileId: f.user_id,
-          nome: (f.profile as any)?.nome || 'Membro',
-          avatar_url: (f.profile as any)?.avatar_url,
+          nome: (f.profile as any)?.nome || getProfile(f.user_id).nome,
+          avatar_url: (f.profile as any)?.avatar_url || getProfile(f.user_id).avatar_url,
           book: f.livro, chapter: f.capitulo, verse: f.versiculo, text: f.texto,
           created_at: f.created_at
         })),
         ...((oracaoRes.data as any[]) || []).map(o => ({
           type: 'oracao', id: o.id, profileId: o.user_id,
-          nome: (o.profile as any)?.nome || 'Membro',
-          avatar_url: (o.profile as any)?.avatar_url,
+          nome: (o.profile as any)?.nome || getProfile(o.user_id).nome,
+          avatar_url: (o.profile as any)?.avatar_url || getProfile(o.user_id).avatar_url,
           text: o.texto,
           created_at: o.created_at
-        }))
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      const profilesList = (profilesRes.data as any[]) || [];
-      const logsList = (logsRes.data as any[]) || [];
-      const celulas = (celulasRes.data as any[]) || [];
+        })),
+        ...recentLogs,
+        ...recentJoins,
+        ...recentInscriptions
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 40);
 
       const userTimes: Record<string, number> = {};
       logsList.forEach(log => {
@@ -249,8 +294,20 @@ export function SocialFeed() {
                           {act.nome} pediu oração
                         </Link>
                       )}
+                      {act.type === 'event_join' && (
+                        <Link to={`/perfil/${act.profileId}`} className="flex items-center gap-1">
+                          <Calendar size={10} className="text-blue-400" />
+                          {act.nome} confirmou presença
+                        </Link>
+                      )}
+                      {act.type === 'reading' && (
+                        <Link to={`/perfil/${act.profileId}`} className="flex items-center gap-1">
+                          <BookOpen size={10} className="text-amber-400" />
+                          {act.nome} logou tempo de leitura
+                        </Link>
+                      )}
                     </p>
-                    <span className="text-[9px] text-white/20">
+                    <span className="text-[9px] text-white/20 shrink-0">
                       {formatDistanceToNow(new Date(act.created_at), { addSuffix: true, locale: ptBR })}
                     </span>
                  </div>
@@ -287,7 +344,20 @@ export function SocialFeed() {
                     </div>
                  )}
                  {act.type === 'join' && (
-                    <p className="text-[10px] text-white/30 italic">Bem-vindo à nossa comunidade! 🎉</p>
+                    <p className="text-[10px] text-white/30 italic">Bem-vindo(a) à nossa comunidade! 🎉</p>
+                 )}
+                 {act.type === 'event_join' && (
+                    <div className="bg-[#1C1C1E] border border-blue-500/10 p-2.5 rounded-2xl rounded-tl-none">
+                       <p className="text-[10px] text-blue-400/80 font-black uppercase tracking-widest leading-relaxed">Em: {act.event_title}</p>
+                    </div>
+                 )}
+                 {act.type === 'reading' && (
+                    <div className="bg-[#1C1C1E] border border-amber-500/10 p-2.5 rounded-2xl rounded-tl-none flex items-center gap-2">
+                       <TrendingUp size={14} className="text-amber-500" />
+                       <p className="text-[10px] text-amber-500/80 font-black uppercase tracking-widest leading-relaxed">
+                         Leu por {Math.floor(act.tempo_segundos / 60)} minuto(s) e subiu no ranking! 📈
+                       </p>
+                    </div>
                  )}
                </div>
             </motion.div>

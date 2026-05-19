@@ -40,6 +40,42 @@ serve(async (req) => {
       finalTitle = "✨ Versículo Favoritado"
       finalMessage = `${firstName} favoritou um versículo no feed!`
       finalType = 'broadcast'
+    } else if (table === 'kefel_eventos_inscritos' && type === 'INSERT') {
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      const { data: profile } = await supabaseAdmin
+        .from('kefel_profiles')
+        .select('nome')
+        .eq('id', record.user_id)
+        .single()
+      
+      const { data: evento } = await supabaseAdmin
+        .from('kefel_eventos')
+        .select('titulo')
+        .eq('id', record.evento_id)
+        .single()
+      
+      const firstName = profile?.nome ? profile.nome.split(' ')[0] : 'Um membro'
+      finalTitle = "🎟️ Nova Inscrição!"
+      finalMessage = `${firstName} confirmou presença no evento ${evento?.titulo || 'Kefel'}!`
+      finalType = 'broadcast'
+    } else if (table === 'kefel_leitura_logs' && type === 'INSERT') {
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      const { data: profile } = await supabaseAdmin
+        .from('kefel_profiles')
+        .select('nome')
+        .eq('id', record.user_id)
+        .single()
+      
+      const firstName = profile?.nome ? profile.nome.split(' ')[0] : 'Um membro'
+      finalTitle = "📈 Subiu no Ranking!"
+      finalMessage = `${firstName} acabou de registrar tempo de leitura na Palavra!`
+      finalType = 'broadcast'
     }
 
     let notificationBody: any = {
