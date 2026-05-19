@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "motion/react";
 export function UserManagement() {
   const { user: currentUser, showToast, deleteProfile } = useAuth();
   const [users, setUsers] = useState<KefelProfile[]>([]);
+  const [celulas, setCelulas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -25,17 +26,36 @@ export function UserManagement() {
 
   async function fetchUsers() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("kefel_profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [{ data, error }, { data: celData }] = await Promise.all([
+      supabase.from("kefel_profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("kefel_celulas").select("id, nome").order("nome", { ascending: true })
+    ]);
 
     if (!error) {
       setUsers(data as KefelProfile[]);
     } else {
       showToast("Erro ao carregar usuários", "error");
     }
+    
+    if (celData) {
+      setCelulas(celData);
+    }
+    
     setLoading(false);
+  }
+
+  async function handleChangeUserCell(userId: string, newCellId: string) {
+    const { error } = await supabase
+      .from("kefel_profiles")
+      .update({ celula_id: newCellId === "none" ? null : newCellId })
+      .eq("id", userId);
+      
+    if (!error) {
+      showToast("Célula alterada com sucesso!");
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, celula_id: newCellId === "none" ? null : newCellId } : u));
+    } else {
+      showToast("Erro ao alterar célula", "error");
+    }
   }
 
   async function fetchBadgeRequests() {
@@ -257,13 +277,28 @@ export function UserManagement() {
                                 {u.role}
                               </span>
                            </div>
-                           <div className="flex items-center gap-3 mt-1">
-                              <p className="text-[10px] font-black text-[#1B3B6B] tracking-tight">{u.telefone ? `(${u.telefone.slice(0,2)}) ${u.telefone.slice(2,7)}-${u.telefone.slice(7)}` : 'Sem Telefone'}</p>
-                              {isDuplicate && (
-                                <span className="text-[8px] font-black text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full uppercase">Duplicado</span>
-                              )}
-                           </div>
-                        </div>
+                            <div className="flex flex-col gap-3 mt-1">
+                               <div className="flex items-center gap-3">
+                                 <p className="text-[10px] font-black text-[#1B3B6B] tracking-tight">{u.telefone ? `(${u.telefone.slice(0,2)}) ${u.telefone.slice(2,7)}-${u.telefone.slice(7)}` : 'Sem Telefone'}</p>
+                                 {isDuplicate && (
+                                   <span className="text-[8px] font-black text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full uppercase">Duplicado</span>
+                                 )}
+                               </div>
+                               
+                               {currentUser?.role === 'master' && (
+                                 <select 
+                                   value={u.celula_id || "none"}
+                                   onChange={(e) => handleChangeUserCell(u.id, e.target.value)}
+                                   className="text-[9px] font-black uppercase bg-gray-50 border border-gray-100 text-gray-600 py-1.5 px-2 rounded-xl outline-none max-w-[200px]"
+                                 >
+                                    <option value="none">SEM CÉLULA</option>
+                                    {celulas.map(c => (
+                                      <option key={c.id} value={c.id}>{c.nome}</option>
+                                    ))}
+                                 </select>
+                               )}
+                            </div>
+                         </div>
                         <div className="flex items-center gap-2">
                            {u.telefone && (
                              <a 

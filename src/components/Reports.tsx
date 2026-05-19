@@ -13,9 +13,18 @@ export function Reports() {
   const navigate = useNavigate();
   const [data, setData] = useState(new Date().toISOString().split('T')[0]); // Fallback para hoje
   
-  // Forms state
+  // Forms state Celula
   const [presentesCelula, setPresentesCelula] = useState<string>("");
+  const [visitantesCelula, setVisitantesCelula] = useState<string>("");
+  const [decisoesCelula, setDecisoesCelula] = useState<string>("");
+  const [obsCelula, setObsCelula] = useState<string>("");
+  
+  // Forms state Culto
   const [presentesCulto, setPresentesCulto] = useState<string>("");
+  const [visitantesCulto, setVisitantesCulto] = useState<string>("");
+  const [decisoesCulto, setDecisoesCulto] = useState<string>("");
+  const [obsCulto, setObsCulto] = useState<string>("");
+
   const [enviandoCelula, setEnviandoCelula] = useState(false);
   const [enviandoCulto, setEnviandoCulto] = useState(false);
   const [enviadoCelula, setEnviadoCelula] = useState(false);
@@ -35,12 +44,24 @@ export function Reports() {
            
            // Preenche inputs se já enviou
            const cel = res?.find(r => r.tipo === 'celula');
-           if (cel) setPresentesCelula(String(cel.presentes));
-           else setPresentesCelula("");
+           if (cel) {
+             setPresentesCelula(String(cel.presentes || ""));
+             setVisitantesCelula(String(cel.visitantes || ""));
+             setDecisoesCelula(String(cel.decisoes || ""));
+             setObsCelula(cel.observacoes || "");
+           } else {
+             setPresentesCelula(""); setVisitantesCelula(""); setDecisoesCelula(""); setObsCelula("");
+           }
 
            const cul = res?.find(r => r.tipo === 'culto');
-           if (cul) setPresentesCulto(String(cul.presentes));
-           else setPresentesCulto("");
+           if (cul) {
+             setPresentesCulto(String(cul.presentes || ""));
+             setVisitantesCulto(String(cul.visitantes || ""));
+             setDecisoesCulto(String(cul.decisoes || ""));
+             setObsCulto(cul.observacoes || "");
+           } else {
+             setPresentesCulto(""); setVisitantesCulto(""); setDecisoesCulto(""); setObsCulto("");
+           }
         });
     }
   }, [user, data]);
@@ -53,9 +74,14 @@ export function Reports() {
     if (!user) return;
     const valueStr = tipo === 'celula' ? presentesCelula : presentesCulto;
     const value = parseInt(valueStr);
+    const visStr = tipo === 'celula' ? visitantesCelula : visitantesCulto;
+    const vis = parseInt(visStr) || 0;
+    const decStr = tipo === 'celula' ? decisoesCelula : decisoesCulto;
+    const dec = parseInt(decStr) || 0;
+    const obs = tipo === 'celula' ? obsCelula : obsCulto;
     
     if (isNaN(value) || value < 0) {
-      showToast("Insira um número válido", "error");
+      showToast("Insira o número de presentes válido", "error");
       return;
     }
 
@@ -76,6 +102,9 @@ export function Reports() {
         lider_id: user.id,
         tipo,
         presentes: value,
+        visitantes: vis,
+        decisoes: dec,
+        observacoes: obs,
         data
       });
 
@@ -128,34 +157,57 @@ export function Reports() {
         
         {/* Card Célula */}
         <div className="bg-white rounded-[32px] p-8 border border-gray-100 relative shadow-sm overflow-hidden">
-          {enviadoCelula && (
-             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1B3B6B]/95 backdrop-blur-md transition-all duration-500 text-white animate-in zoom-in">
-               <div className="text-5xl mb-2">✅</div>
-               <h3 className="text-xl font-black uppercase mb-1">RELATÓRIO SALVO</h3>
-               <p className="text-[10px] uppercase tracking-widest font-bold opacity-80 text-center">Para alterar, escolha outra data e volte</p>
-             </div>
-          )}
+           {enviadoCelula && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1B3B6B]/95 backdrop-blur-md transition-all duration-500 text-white animate-in zoom-in">
+                <div className="text-5xl mb-2">✅</div>
+                <h3 className="text-xl font-black uppercase mb-1">RELATÓRIO SALVO</h3>
+                <button 
+                   onClick={() => setEnviadoCelula(false)}
+                   className="mt-4 bg-white text-[#1B3B6B] px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                >
+                   Editar Relatório
+                </button>
+              </div>
+           )}
           <div className="flex justify-between items-center mb-6">
-            <p className="text-[10px] font-black text-[#1B3B6B] uppercase tracking-widest flex items-center gap-2">
-               <Home size={14} /> PRESENÇA CÉLULA
-            </p>
+             <p className="text-[10px] font-black text-[#1B3B6B] uppercase tracking-widest flex items-center gap-2">
+                <Home size={14} /> PRESENÇA CÉLULA
+             </p>
           </div>
-          <div className="bg-gray-50 rounded-[24px] py-10 flex items-center justify-center mb-6 border-2 border-dashed border-gray-200 focus-within:border-[#1B3B6B] transition-soft">
-            <input 
-              type="number" 
-              disabled={enviadoCelula || enviandoCelula} 
-              value={presentesCelula} 
-              onChange={(e) => setPresentesCelula(e.target.value)} 
-              placeholder="0" 
-              className="bg-transparent text-6xl font-black text-center w-full focus:outline-none text-gray-900 tracking-tighter" 
-            />
+          
+          <div className="space-y-4 mb-6">
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Membros Presentes (Total)</p>
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 focus-within:border-[#1B3B6B] transition-soft">
+                  <input type="number" disabled={enviadoCelula || enviandoCelula} value={presentesCelula} onChange={(e) => setPresentesCelula(e.target.value)} placeholder="0" className="bg-transparent text-xl font-black w-full focus:outline-none text-gray-900" />
+                </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Visitantes</p>
+                   <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 focus-within:border-[#1B3B6B] transition-soft">
+                     <input type="number" disabled={enviadoCelula || enviandoCelula} value={visitantesCelula} onChange={(e) => setVisitantesCelula(e.target.value)} placeholder="0" className="bg-transparent text-xl font-black w-full focus:outline-none text-gray-900" />
+                   </div>
+                </div>
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Decisões</p>
+                   <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 focus-within:border-[#1B3B6B] transition-soft">
+                     <input type="number" disabled={enviadoCelula || enviandoCelula} value={decisoesCelula} onChange={(e) => setDecisoesCelula(e.target.value)} placeholder="0" className="bg-transparent text-xl font-black w-full focus:outline-none text-gray-900" />
+                   </div>
+                </div>
+             </div>
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Observações / Testemunhos</p>
+                <textarea disabled={enviadoCelula || enviandoCelula} value={obsCelula} onChange={(e) => setObsCelula(e.target.value)} placeholder="Opcional..." className="w-full bg-gray-50 p-4 rounded-2xl font-medium text-sm outline-none border border-gray-100 focus:border-[#1B3B6B] transition-soft resize-none h-24 text-gray-800" />
+             </div>
           </div>
+          
           <button 
-            onClick={() => handleSendReport('celula')} 
-            disabled={enviandoCelula || !presentesCelula} 
-            className="w-full bg-[#1B3B6B] text-white font-black uppercase italic tracking-widest py-5 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30 disabled:active:scale-100"
+             onClick={() => handleSendReport('celula')} 
+             disabled={enviandoCelula || !presentesCelula} 
+             className="w-full bg-[#1B3B6B] text-white font-black uppercase italic tracking-widest py-5 rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30 disabled:active:scale-100"
           >
-            {enviandoCelula ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'ENVIAR AGORA'}
+             {enviandoCelula ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'ENVIAR AGORA'}
           </button>
         </div>
 
@@ -165,23 +217,47 @@ export function Reports() {
              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-indigo-600/95 backdrop-blur-md transition-all duration-500 text-white animate-in zoom-in">
                <div className="text-5xl mb-2">✅</div>
                <h3 className="text-xl font-black uppercase mb-1">RELATÓRIO SALVO</h3>
+               <button 
+                  onClick={() => setEnviadoCulto(false)}
+                  className="mt-4 bg-white text-indigo-600 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+               >
+                  Editar Relatório
+               </button>
              </div>
           )}
           <div className="flex justify-between items-center mb-6">
-            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
-               <Users size={14} /> PRESENÇA CULTO
-            </p>
+             <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
+                <Users size={14} /> PRESENÇA CULTO
+             </p>
           </div>
-          <div className="bg-gray-50 rounded-[24px] py-10 flex items-center justify-center mb-6 border-2 border-dashed border-gray-200 focus-within:border-indigo-400 transition-soft">
-            <input 
-              type="number" 
-              disabled={enviadoCulto || enviandoCulto} 
-              value={presentesCulto} 
-              onChange={(e) => setPresentesCulto(e.target.value)} 
-              placeholder="0" 
-              className="bg-transparent text-6xl font-black text-center w-full focus:outline-none text-gray-900 tracking-tighter" 
-            />
+          
+          <div className="space-y-4 mb-6">
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Membros Presentes (Total)</p>
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 focus-within:border-indigo-400 transition-soft">
+                  <input type="number" disabled={enviadoCulto || enviandoCulto} value={presentesCulto} onChange={(e) => setPresentesCulto(e.target.value)} placeholder="0" className="bg-transparent text-xl font-black w-full focus:outline-none text-gray-900" />
+                </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Visitantes</p>
+                   <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 focus-within:border-indigo-400 transition-soft">
+                     <input type="number" disabled={enviadoCulto || enviandoCulto} value={visitantesCulto} onChange={(e) => setVisitantesCulto(e.target.value)} placeholder="0" className="bg-transparent text-xl font-black w-full focus:outline-none text-gray-900" />
+                   </div>
+                </div>
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Decisões</p>
+                   <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 focus-within:border-indigo-400 transition-soft">
+                     <input type="number" disabled={enviadoCulto || enviandoCulto} value={decisoesCulto} onChange={(e) => setDecisoesCulto(e.target.value)} placeholder="0" className="bg-transparent text-xl font-black w-full focus:outline-none text-gray-900" />
+                   </div>
+                </div>
+             </div>
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Observações / Testemunhos</p>
+                <textarea disabled={enviadoCulto || enviandoCulto} value={obsCulto} onChange={(e) => setObsCulto(e.target.value)} placeholder="Opcional..." className="w-full bg-gray-50 p-4 rounded-2xl font-medium text-sm outline-none border border-gray-100 focus:border-indigo-400 transition-soft resize-none h-24 text-gray-800" />
+             </div>
           </div>
+
           <button 
             onClick={() => handleSendReport('culto')} 
             disabled={enviandoCulto || !presentesCulto} 
