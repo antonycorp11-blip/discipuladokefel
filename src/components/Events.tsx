@@ -89,20 +89,18 @@ export default function Events() {
           let profilesDict: Record<string, any> = {};
           
           if (userIds.length > 0) {
-            // Use an 'in' or loop query to fetch profiles safely. Doing multiple 'eq' or an 'in'
-            // Use filter to avoid .in() mangling issues
-            const { data: profData, error: profErr } = await supabase
-              .from("kefel_profiles")
-              .select("id, nome, avatar_url, celula_id")
-              .filter("id", "in", `(${userIds.join(',')})`);
-              
-            if (!profErr && profData) {
-               profData.forEach(p => {
-                 profilesDict[p.id] = p;
-               });
-            } else {
-               console.error("Erro fetch profiles:", profErr);
-            }
+            // Fetch individually using Promise.all and .eq to avoid .in() or .filter() minification bugs in production
+            const fetchPromises = userIds.map(uid => 
+              supabase.from("kefel_profiles").select("id, nome, avatar_url, celula_id").eq("id", uid).single()
+            );
+            
+            const results = await Promise.all(fetchPromises);
+            
+            results.forEach(res => {
+               if (res.data) {
+                 profilesDict[res.data.id] = res.data;
+               }
+            });
           }
           
           const combined = data.map(insc => ({
