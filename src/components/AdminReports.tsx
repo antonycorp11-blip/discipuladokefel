@@ -140,25 +140,25 @@ export function AdminReports() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 pt-14 px-6 overflow-y-auto pb-24">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black pt-14 px-6 overflow-y-auto pb-24 transition-colors">
       <header className="flex items-center gap-4 mb-8 pt-4">
-        <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-2xl shadow-sm"><ChevronLeft size={20} className="text-gray-900" /></button>
+        <button onClick={() => navigate(-1)} className="p-3 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-sm border border-transparent dark:border-white/5"><ChevronLeft size={20} className="text-gray-900 dark:text-white" /></button>
         <div>
-           <h1 className="text-2xl font-black text-gray-900 italic uppercase tracking-tight">Painel Admin</h1>
-           <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Gestão de Relatórios</p>
+           <h1 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight">Painel Admin</h1>
+           <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400">Gestão de Relatórios</p>
         </div>
       </header>
 
       {/* CONTROLE CENTRAL (Seletor de Tipo e Semana) */}
-      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6">
-         <h3 className="text-sm font-black uppercase text-gray-900 mb-4 flex items-center gap-2">Configuração do Relatório</h3>
+      <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 mb-6 transition-colors">
+         <h3 className="text-sm font-black uppercase text-gray-900 dark:text-white mb-4 flex items-center gap-2">Configuração do Relatório</h3>
          
-         <div className="flex gap-2 mb-4 bg-gray-50 p-1.5 rounded-2xl">
+         <div className="flex gap-2 mb-4 bg-gray-50 dark:bg-black/50 p-1.5 rounded-2xl">
            {(['celula', 'culto', 'evento'] as const).map(t => (
              <button 
                key={t}
                onClick={() => setTipoLink(t)}
-               className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${tipoLink === t ? 'bg-white text-indigo-600 shadow-sm border border-gray-100' : 'text-gray-400'}`}
+               className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${tipoLink === t ? 'bg-white dark:bg-[#2C2C2E] text-indigo-600 dark:text-indigo-400 shadow-sm border border-gray-100 dark:border-white/10' : 'text-gray-400 dark:text-gray-500'}`}
              >
                {t}
              </button>
@@ -166,11 +166,11 @@ export function AdminReports() {
          </div>
 
          <div className="relative mb-4">
-           <p className="text-[9px] font-black uppercase text-gray-400 ml-2 mb-1">Referência (Ex: Semana / Data)</p>
+           <p className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 ml-2 mb-1">Referência (Ex: Semana / Data)</p>
            <input 
              value={refName}
              onChange={(e) => setRefName(e.target.value)}
-             className="w-full bg-gray-50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 transition-all border border-gray-100"
+             className="w-full bg-gray-50 dark:bg-black/50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/50 transition-all border border-gray-100 dark:border-white/5 dark:text-white"
            />
          </div>
 
@@ -191,20 +191,20 @@ export function AdminReports() {
          )}
       </div>
 
-      <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-[#1C1C1E] p-5 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm flex items-center justify-between mb-6 transition-colors">
         <div>
-          <p className="text-4xl font-black text-[#1B3B6B] leading-none">{totalVidas}</p>
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">Total Alcançado</p>
+          <p className="text-4xl font-black text-[#1B3B6B] dark:text-indigo-400 leading-none">{totalVidas}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mt-1">Total Alcançado</p>
         </div>
-        <Users size={32} className="text-gray-100" />
+        <Users size={32} className="text-gray-100 dark:text-white/5" />
       </div>
 
       {/* VISÃO GERAL DAS CÉLULAS */}
-      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6">
+      <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 mb-6 transition-colors">
          <div className="flex justify-between items-center mb-6">
            <div>
-             <h3 className="text-sm font-black uppercase text-gray-900 leading-tight">Desempenho Geral</h3>
-             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{refName}</p>
+             <h3 className="text-sm font-black uppercase text-gray-900 dark:text-white leading-tight">Desempenho Geral</h3>
+             <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{refName}</p>
            </div>
            <button onClick={handleShareWhatsApp} className="bg-[#25D366]/10 text-[#25D366] p-3 rounded-2xl hover:bg-[#25D366]/20 transition-colors" title="Exportar WhatsApp">
              <Share2 size={18} />
@@ -217,20 +217,20 @@ export function AdminReports() {
              const liderNome = r.celula.lider?.nome?.split(' ')[0] || "Sem Líder";
              const meta = r.meta_exigida || 1;
              
-             let statusColor = "bg-gray-50 border-gray-100";
+             let statusColor = "bg-gray-50 border-gray-100 dark:bg-white/5 dark:border-white/5";
              let statusText = "";
              
              if (!r.enviado) {
-               statusColor = "bg-gray-50/50 border-dashed border-gray-200 opacity-60";
+               statusColor = "bg-gray-50/50 border-dashed border-gray-200 opacity-60 dark:bg-white/5 dark:border-white/10";
                statusText = "Pendente";
              } else if (r.presentes > meta) {
-               statusColor = "bg-emerald-50 border-emerald-100";
+               statusColor = "bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20";
                statusText = `+${r.presentes - meta} da meta`;
              } else if (r.presentes === meta) {
-               statusColor = "bg-blue-50 border-blue-100";
+               statusColor = "bg-blue-50 border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20";
                statusText = `Meta exata`;
              } else {
-               statusColor = "bg-rose-50 border-rose-100";
+               statusColor = "bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20";
                statusText = `-${meta - r.presentes} da meta`;
              }
 
@@ -238,18 +238,18 @@ export function AdminReports() {
                <div key={r.celula.id} className={`flex flex-col p-4 rounded-2xl border ${statusColor} transition-all`}>
                  <div className="flex items-center justify-between">
                    <div className="flex-1 min-w-0">
-                     <p className="text-xs font-black uppercase truncate text-gray-900 italic">{r.celula.nome}</p>
-                     <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">{liderNome}</p>
+                     <p className="text-xs font-black uppercase truncate text-gray-900 dark:text-white italic">{r.celula.nome}</p>
+                     <p className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest">{liderNome}</p>
                    </div>
                    <div className="text-right">
-                     <p className={`text-2xl font-black leading-none italic ${r.enviado ? 'text-gray-900' : 'text-gray-300'}`}>{r.presentes}</p>
+                     <p className={`text-2xl font-black leading-none italic ${r.enviado ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>{r.presentes}</p>
                    </div>
                  </div>
 
                  {r.enviado && (
-                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-black/5">
-                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-white/50 ${
-                       r.presentes >= meta ? 'text-emerald-600' : 'text-rose-500'
+                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-black/5 dark:border-white/5">
+                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-white/50 dark:bg-black/30 ${
+                       r.presentes >= meta ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
                      }`}>
                        {statusText}
                      </span>
