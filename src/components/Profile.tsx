@@ -318,7 +318,7 @@ export function Profile() {
        {/* Gestão Administrativa */}
        {isOwnProfile && (currentUser?.role === 'master' || currentUser?.role === 'lider' || currentUser?.email === 'aquilles@kefel.com') && (
          <section className="mb-6">
-           <Link to="/relatorios" className="bg-[#1C1C1E] p-6 rounded-[24px] shadow-lg flex items-center justify-between group active:scale-95 transition-all border border-white/5">
+           <Link to="/admin-relatorios" className="bg-[#1C1C1E] p-6 rounded-[24px] shadow-lg flex items-center justify-between group active:scale-95 transition-all border border-white/5">
               <div className="flex items-center gap-5">
                  <div className="w-14 h-14 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center shadow-inner border border-blue-500/20">
                     <FileText size={24} />

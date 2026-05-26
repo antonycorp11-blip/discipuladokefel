@@ -13,7 +13,14 @@ export function AdminReports() {
   const [loading, setLoading] = useState(true);
   
   // Link Generator
-  const [refName, setRefName] = useState("");
+  const getWeekName = () => {
+    const d = new Date();
+    const weekNum = Math.ceil(d.getDate() / 7);
+    const month = d.toLocaleDateString('pt-BR', { month: 'long' });
+    return `Semana ${weekNum} - ${month.charAt(0).toUpperCase() + month.slice(1)}`;
+  };
+  
+  const [refName, setRefName] = useState(getWeekName());
   const [tipoLink, setTipoLink] = useState("celula");
   const [generatedLink, setGeneratedLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -108,12 +115,20 @@ export function AdminReports() {
            ))}
          </div>
 
-         <input 
-           placeholder="Ex: Semana 1 - Abril" 
-           value={refName}
-           onChange={(e) => setRefName(e.target.value)}
-           className="w-full bg-gray-50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 mb-4"
-         />
+         <div className="relative mb-4">
+           <input 
+             placeholder="Ex: Semana 1 - Abril" 
+             value={refName}
+             onChange={(e) => setRefName(e.target.value)}
+             className="w-full bg-gray-50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100"
+           />
+           <button 
+             onClick={() => setRefName(getWeekName())}
+             className="absolute right-3 top-3 text-[10px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 px-2 py-1.5 rounded-lg active:scale-95"
+           >
+             Semana Atual
+           </button>
+         </div>
 
          <button 
            onClick={handleGenerateLink}
