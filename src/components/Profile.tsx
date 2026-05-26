@@ -101,11 +101,11 @@ export function Profile() {
       .eq("user_id", targetId)
       .eq("interaction_type", "prayer");
     
-    if (data && data.length > 0) {
-      const oracaoIds = data.map(i => i.item_id);
-      const { data: oracoes } = await supabase
+    if (data && (data as any[]).length > 0) {
+      const oracaoIds = (data as any[]).map(i => i.item_id);
+      const { data: oracoes } = await (supabase
         .from("kefel_oracao")
-        .select("*, profile:user_id(nome, avatar_url)")
+        .select("*, profile:user_id(nome, avatar_url)") as any)
         .in("id", oracaoIds);
       setMinhasOracoes(oracoes || []);
     }

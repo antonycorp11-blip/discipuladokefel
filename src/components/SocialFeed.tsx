@@ -59,7 +59,7 @@ export function SocialFeed() {
     const { data } = await supabase.from("kefel_feed_interactions").select("*");
     setInteractions(data || []);
     if (user) {
-      setLikedItems((data || []).filter((i: any) => i.user_id === user.id).map((i: any) => i.item_id));
+      setLikedItems(((data as any[]) || []).filter((i: any) => i.user_id === user.id).map((i: any) => i.item_id));
     }
   }
 

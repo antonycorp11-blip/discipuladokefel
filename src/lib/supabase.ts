@@ -32,6 +32,9 @@ export interface KefelCelula {
   lider_id?: string | null;
   criado_por?: string | null;
   imagem_url?: string | null;
+  meta_celula?: number;
+  meta_culto?: number;
+  meta_evento?: number;
 }
 
 export interface KefelEvento {

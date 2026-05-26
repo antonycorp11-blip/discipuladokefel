@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { sendPushNotification } from "@/lib/onesignal";
 import { motion, AnimatePresence } from "motion/react";
 
 interface Evento {
@@ -123,9 +124,9 @@ export default function Events() {
        
        if (error) throw error;
        
-       if (data && data.length > 0) {
+       if (data && (data as any[]).length > 0) {
           // Manual join to bypass potential FK/RLS relationship mapping issues
-          const userIds = data.map(i => i.user_id).filter(id => id);
+          const userIds = (data as any[]).map(i => i.user_id).filter(id => id);
           
           let profilesDict: Record<string, any> = {};
           
@@ -139,12 +140,12 @@ export default function Events() {
             
             results.forEach(res => {
                if (res.data) {
-                 profilesDict[res.data.id] = res.data;
+                 profilesDict[(res.data as any).id] = res.data;
                }
             });
           }
           
-          const combined = data.map(insc => ({
+          const combined = (data as any[]).map(insc => ({
              ...insc,
              kefel_profiles: profilesDict[insc.user_id] || null
           }));
@@ -211,6 +212,17 @@ export default function Events() {
       } else {
         const { error } = await supabase.from("kefel_eventos").insert(eventData);
         if (error) throw error;
+        
+        // Disparar notificação PUSH para todos
+        try {
+          await sendPushNotification({
+            headings: "Novo Evento!",
+            contents: `Confira: ${titulo} - Toque para detalhes.`,
+            url: `${window.location.origin}/eventos`
+          });
+        } catch(e) {
+          console.error("Erro ao enviar push:", e);
+        }
       }
 
       setShowForm(false);

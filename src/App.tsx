@@ -14,6 +14,8 @@ import { Onboarding } from "./components/Onboarding";
 import { Library } from "./components/Library";
 import { PDFViewer } from "./components/PDFViewer";
 import { Reports } from "./components/Reports";
+import { AdminReports } from "./components/AdminReports";
+import { ReportFill } from "./components/ReportFill";
 import { WhatsAppRequired } from "./components/WhatsAppRequired";
 import { UserManagement } from "./components/UserManagement";
 import { supabase } from "./lib/supabase";
@@ -80,6 +82,8 @@ function AppRoutes() {
         <Route path="/perfil/:id" element={<Profile />} />
         <Route path="/celulas" element={<CellManagement />} />
         <Route path="/relatorios" element={<Reports />} />
+        <Route path="/admin-relatorios" element={<AdminReports />} />
+        <Route path="/relatorio/:tipo" element={<ReportFill />} />
         <Route path="/usuarios" element={<UserManagement />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>

@@ -17,7 +17,7 @@ const VERSES = [
 const VERSE = VERSES[Math.floor(Math.random() * VERSES.length)];
 
 export function Home() {
-  const { user, showToast, refreshProfile } = useAuth();
+  const { user, showToast, refreshProfile, setUser } = useAuth();
   const navigate = useNavigate();
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [meuGrupo, setMeuGrupo] = useState<KefelCelula | null>(null);

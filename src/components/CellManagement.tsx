@@ -137,6 +137,17 @@ export function CellManagement() {
     }
   };
 
+  const handleUpdateMeta = async (cellId: string, field: 'meta_celula'|'meta_culto'|'meta_evento', value: number) => {
+    try {
+      const { error } = await supabase.from('kefel_celulas').update({ [field]: value }).eq('id', cellId);
+      if (error) throw error;
+      showToast("Meta atualizada!");
+      fetchData();
+    } catch (e) {
+      showToast("Erro ao atualizar meta", "error");
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -262,7 +273,25 @@ export function CellManagement() {
                         className="overflow-hidden space-y-4 pt-2"
                      >
                         <div className="h-px bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100" />
-                        <div className="grid grid-cols-1 gap-3">
+                        
+                        {user?.role === 'master' && (
+                           <div className="grid grid-cols-3 gap-2 bg-white/50 p-3 rounded-2xl border border-gray-100">
+                              <div className="text-center">
+                                <p className="text-[8px] font-black uppercase text-gray-400 mb-1">Meta Célula</p>
+                                <input type="number" defaultValue={c.meta_celula || 0} onBlur={(e) => handleUpdateMeta(c.id, 'meta_celula', parseInt(e.target.value)||0)} className="w-full bg-white p-2 rounded-xl text-center text-sm font-black border border-gray-100 outline-none focus:border-indigo-300" />
+                              </div>
+                              <div className="text-center">
+                                <p className="text-[8px] font-black uppercase text-gray-400 mb-1">Meta Culto</p>
+                                <input type="number" defaultValue={c.meta_culto || 0} onBlur={(e) => handleUpdateMeta(c.id, 'meta_culto', parseInt(e.target.value)||0)} className="w-full bg-white p-2 rounded-xl text-center text-sm font-black border border-gray-100 outline-none focus:border-indigo-300" />
+                              </div>
+                              <div className="text-center">
+                                <p className="text-[8px] font-black uppercase text-gray-400 mb-1">Meta Evento</p>
+                                <input type="number" defaultValue={c.meta_evento || 0} onBlur={(e) => handleUpdateMeta(c.id, 'meta_evento', parseInt(e.target.value)||0)} className="w-full bg-white p-2 rounded-xl text-center text-sm font-black border border-gray-100 outline-none focus:border-indigo-300" />
+                              </div>
+                           </div>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-3 mt-2">
                            {cellMembers.length === 0 ? (
                              <p className="text-center py-4 text-[10px] font-black text-gray-300 uppercase tracking-widest">Nenhum membro cadastrado</p>
                            ) : (

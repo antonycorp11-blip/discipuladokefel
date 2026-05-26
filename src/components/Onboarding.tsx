@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Users, CheckCircle, Loader2, User } from "lucide-react";
 import { supabase, type KefelCelula } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { sendPushNotification } from "@/lib/onesignal";
 
 export function Onboarding() {
   const { user, showToast, setUser, logout } = useAuth();
@@ -35,6 +36,15 @@ export function Onboarding() {
     if (!error) {
       setUser(updated as any);
       showToast("Tudo pronto! Bem-vindo.");
+      
+      // Enviar notificação push para admins (master)
+      try {
+        await sendPushNotification({
+          headings: "Novo Usuário 🎉",
+          contents: `${nome} acabou de se cadastrar no app.`,
+          targetTags: [{ key: 'role', relation: '=', value: 'master' }]
+        });
+      } catch(e) {}
     } else {
       showToast("Erro ao salvar: " + error.message, "error");
     }
