@@ -53,15 +53,41 @@ export function AdminReports() {
 
   const formattedRef = refName.trim().replace(/ /g, '_');
 
-  // Gerar lista de semanas/cultos anteriores que já possuem relatórios
-  const pastReferences = Array.from(new Set(
-    allRelatorios
-      .filter(r => r.tipo === tipoLink && r.referencia)
-      .map(r => r.referencia.replace(/_/g, ' '))
-  ));
-
-  // Inclui o atual (se não estiver na lista) para ficar como primeira opção
-  const referenceOptions = Array.from(new Set([refName, ...pastReferences]));
+  // Gerar lista de opções de semanas/cultos para o seletor (focando no futuro/atual)
+  const referenceOptions = React.useMemo(() => {
+    const opts = [];
+    const d = new Date();
+    
+    if (tipoLink === 'celula') {
+      // Mês atual
+      const month = d.toLocaleDateString('pt-BR', { month: 'long' });
+      const capMonth = month.charAt(0).toUpperCase() + month.slice(1);
+      for (let i = 1; i <= 5; i++) {
+        opts.push(`Semana ${i} - ${capMonth}`);
+      }
+      // Próximo mês
+      const nextDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const nextMonth = nextDate.toLocaleDateString('pt-BR', { month: 'long' });
+      const nextCapMonth = nextMonth.charAt(0).toUpperCase() + nextMonth.slice(1);
+      for (let i = 1; i <= 4; i++) {
+        opts.push(`Semana ${i} - ${nextCapMonth}`);
+      }
+    } else if (tipoLink === 'culto') {
+      // Pega o domingo anterior/atual e os próximos 7 domingos
+      let sunday = new Date(d);
+      sunday.setDate(sunday.getDate() - sunday.getDay());
+      for (let i = 0; i < 8; i++) {
+        opts.push(`Culto de Domingo - ${sunday.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`);
+        sunday.setDate(sunday.getDate() + 7);
+      }
+    }
+    
+    // Adiciona o refName atual se ele não estiver na lista (garantia)
+    if (refName && !opts.includes(refName) && tipoLink !== 'evento') {
+      opts.unshift(refName);
+    }
+    return opts;
+  }, [tipoLink, refName]);
 
   const handleGenerateLink = () => {
     if (!refName || refName === "Nome do Evento") {
@@ -182,18 +208,23 @@ export function AdminReports() {
 
          <div className="relative mb-4">
            <p className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 ml-2 mb-1">Referência (Ex: Semana / Data)</p>
-           <input 
-             list="references-list"
-             value={refName}
-             onChange={(e) => setRefName(e.target.value)}
-             className="w-full bg-gray-50 dark:bg-black/50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/50 transition-all border border-gray-100 dark:border-white/5 dark:text-white"
-             placeholder="Digite ou selecione a semana/data"
-           />
-           <datalist id="references-list">
-             {referenceOptions.map((opt, idx) => (
-               <option key={idx} value={opt} />
-             ))}
-           </datalist>
+           {tipoLink === 'evento' ? (
+             <input 
+               value={refName}
+               onChange={(e) => setRefName(e.target.value)}
+               className="w-full bg-gray-50 dark:bg-black/50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/50 transition-all border border-gray-100 dark:border-white/5 dark:text-white"
+             />
+           ) : (
+             <select 
+               value={refName}
+               onChange={(e) => setRefName(e.target.value)}
+               className="w-full bg-gray-50 dark:bg-black/50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/50 transition-all border border-gray-100 dark:border-white/5 dark:text-white appearance-none"
+             >
+               {referenceOptions.map((opt, idx) => (
+                 <option key={idx} value={opt}>{opt}</option>
+               ))}
+             </select>
+           )}
          </div>
 
          <button 
