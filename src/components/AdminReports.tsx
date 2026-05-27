@@ -10,6 +10,7 @@ export function AdminReports() {
 
   const [allRelatorios, setAllRelatorios] = useState<any[]>([]);
   const [celulas, setCelulas] = useState<any[]>([]);
+  const [allProfiles, setAllProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [tipoLink, setTipoLink] = useState<"celula" | "culto" | "evento">("celula");
@@ -43,12 +44,14 @@ export function AdminReports() {
 
   useEffect(() => {
     async function fetchData() {
-      const [relRes, celRes] = await Promise.all([
+      const [relRes, celRes, profRes] = await Promise.all([
         supabase.from("kefel_relatorios").select("*, kefel_celulas(nome), lider:lider_id(nome)").order('created_at', { ascending: false }).limit(1000),
-        supabase.from("kefel_celulas").select("*, lider:lider_id(nome)").order("nome", { ascending: true })
+        supabase.from("kefel_celulas").select("*, lider:lider_id(nome)").order("nome", { ascending: true }),
+        supabase.from("kefel_profiles").select("id, nome, celula_id")
       ]);
       setAllRelatorios(relRes.data || []);
       setCelulas(celRes.data || []);
+      setAllProfiles(profRes.data || []);
       setLoading(false);
     }
     if (user?.role === 'master') fetchData();
@@ -160,34 +163,38 @@ export function AdminReports() {
 
   const totalVidas = currentReports.reduce((acc, curr) => acc + curr.presentes, 0);
 
+  const getShortName = (fullName: string) => {
+    if (!fullName) return "";
+    const parts = fullName.trim().split(' ');
+    if (parts.length > 1) return `${parts[0]} ${parts[1]}`;
+    return parts[0];
+  };
+
   const handleShareWhatsApp = () => {
     let msg = ``;
     
     if (tipoLink === 'celula') {
-      msg += `📊 *RELATÓRIO DE CÉLULAS*\n🗓️ *${refName}*\n\n`;
+      msg += `*RELATÓRIO DE CÉLULAS*\n*${refName}*\n\n`;
     } else if (tipoLink === 'culto') {
-      msg += `📊 *RELATÓRIO DE CULTO*\n🗓️ *${refName}*\n\n`;
+      msg += `*RELATÓRIO DE CULTO*\n*${refName}*\n\n`;
     } else {
-      msg += `📊 *RELATÓRIO DE EVENTO: ${refName.toUpperCase()}*\n\n`;
+      msg += `*RELATÓRIO DE EVENTO: ${refName.toUpperCase()}*\n\n`;
     }
 
-    msg += `👥 *Total de Vidas:* ${totalVidas}\n\n`;
+    msg += `*Total de Vidas:* ${totalVidas}\n\n`;
     msg += `*CÉLULAS:*\n`;
 
     currentReports.forEach(r => {
       const liderNome = r.celula.lider?.nome?.split(' ')[0] || "Sem Líder";
       if (!r.enviado) {
-        msg += `🔹 *${r.celula.nome}* (${liderNome}): Pendente (0)\n`;
+        msg += `*${r.celula.nome} (${liderNome})*: Pendente (0)\n`;
       } else {
         let percentText = "";
         if (tipoLink === 'culto' && r.lastCellPresentes > 0) {
           const perc = Math.round((r.presentes / r.lastCellPresentes) * 100);
-          percentText = ` [${perc}% da Célula]`;
+          percentText = ` [${perc}%]`;
         }
-        msg += `🔹 *${r.celula.nome}* (${liderNome}): ${r.presentes} pessoas${percentText}\n`;
-        if (r.presentes_nomes && r.presentes_nomes.length > 0) {
-          msg += `   ↳ _${r.presentes_nomes.join(', ')}_\n`;
-        }
+        msg += `*${r.celula.nome} (${liderNome})*: ${r.presentes} pessoas${percentText}\n`;
       }
     });
 
@@ -198,15 +205,31 @@ export function AdminReports() {
       const meta = r.meta_exigida || 1;
       
       if (r.presentes > meta) {
-        msg += `🏆 ${liderNome} superou a meta em ${r.presentes - meta}!\n`;
+        msg += `*${liderNome}*: Superou em ${r.presentes - meta}\n`;
       } else if (r.presentes === meta) {
-        msg += `🎯 ${liderNome} bateu a meta!\n`;
+        msg += `*${liderNome}*: Atingiu a meta\n`;
       } else {
-        msg += `⚠️ ${liderNome}: Faltaram ${meta - r.presentes} p/ meta.\n`;
+        msg += `*${liderNome}*: Faltaram ${meta - r.presentes}\n`;
       }
     });
 
-    msg += `\n🚀 _"Multiplicando líderes, salvando vidas!"_`;
+    msg += `\n*LISTA DE PRESENÇA POR LÍDER:*\n`;
+    currentReports.forEach(r => {
+      if (!r.enviado) return;
+      const liderNome = r.celula.lider?.nome?.split(' ')[0] || "Sem Líder";
+      
+      const presentesNomes = r.presentes_nomes || [];
+      const shortPresentes = presentesNomes.map((n: string) => getShortName(n));
+      
+      const cellProfiles = allProfiles.filter(p => p.celula_id === r.celula.id);
+      const faltantesNomes = cellProfiles
+        .filter(p => !presentesNomes.includes(p.nome))
+        .map(p => getShortName(p.nome));
+      
+      msg += `\n*${r.celula.nome} (${liderNome})*\n`;
+      msg += `Foi: ${shortPresentes.length > 0 ? shortPresentes.join(', ') : 'Ninguém'}\n`;
+      msg += `Não foi: ${faltantesNomes.length > 0 ? faltantesNomes.join(', ') : 'Ninguém'}\n`;
+    });
 
     const encoded = encodeURIComponent(msg);
     window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
