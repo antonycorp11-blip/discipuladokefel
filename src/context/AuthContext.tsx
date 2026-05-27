@@ -95,6 +95,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select("*")
               .single();
             if (recoveredProfile) setUser(recoveredProfile as KefelProfile);
+          } else if (!(session.user as any).is_anonymous) {
+            // Recupera líder ou master que foi apagado apenas do kefel_profiles
+            const role = session.user.email === 'antonycorp11@gmail.com' ? 'master' : 'lider'; 
+            const nomeRecuperado = (session.user as any).user_metadata?.nome || session.user.email?.split('@')[0] || "Líder Recuperado";
+            const { data: recoveredProfile } = await supabase
+              .from("kefel_profiles")
+              .upsert({
+                id: session.user.id,
+                nome: nomeRecuperado,
+                role: role,
+                email: session.user.email,
+                tempo_leitura_total: 0
+              })
+              .select("*")
+              .single();
+            if (recoveredProfile) setUser(recoveredProfile as KefelProfile);
           }
         } else {
           // Salvar no localStorage para persistência se for membro

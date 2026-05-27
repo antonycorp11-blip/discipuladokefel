@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { ChevronLeft, Share2, Copy, Users, CopyCheck, Loader2, ArrowRight } from "lucide-react";
+import { ChevronLeft, Share2, Copy, Users, CopyCheck, Loader2, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export function AdminReports() {
@@ -16,6 +16,7 @@ export function AdminReports() {
   const [refName, setRefName] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [expandedCell, setExpandedCell] = useState<string | null>(null);
 
   // Auto-fill reference based on type
   useEffect(() => {
@@ -92,6 +93,7 @@ export function AdminReports() {
     return {
       celula,
       presentes: report ? report.presentes : 0,
+      presentes_nomes: report ? report.presentes_nomes || [] : [],
       meta_exigida: report ? report.meta_exigida : (tipoLink === 'celula' ? celula.meta_celula : tipoLink === 'culto' ? celula.meta_culto : celula.meta_evento),
       enviado: !!report,
       lastCellPresentes: lastCellReport?.presentes || 0
@@ -104,9 +106,9 @@ export function AdminReports() {
     let msg = ``;
     
     if (tipoLink === 'celula') {
-      msg += `📊 *RELATÓRIO DE CÉLULAS DISCIPULADO KÉFEL*\n🗓️ *${refName}*\n\n`;
+      msg += `📊 *RELATÓRIO DE CÉLULAS*\n🗓️ *${refName}*\n\n`;
     } else if (tipoLink === 'culto') {
-      msg += `📊 *RELATÓRIO DE CULTO DISCIPULADO KÉFEL*\n🗓️ *${refName}*\n\n`;
+      msg += `📊 *RELATÓRIO DE CULTO*\n🗓️ *${refName}*\n\n`;
     } else {
       msg += `📊 *RELATÓRIO DE EVENTO: ${refName.toUpperCase()}*\n\n`;
     }
@@ -117,14 +119,17 @@ export function AdminReports() {
     currentReports.forEach(r => {
       const liderNome = r.celula.lider?.nome?.split(' ')[0] || "Sem Líder";
       if (!r.enviado) {
-        msg += `🔹 ${r.celula.nome} (Líder ${liderNome}): Pendente (0)\n`;
+        msg += `🔹 *${r.celula.nome}* (${liderNome}): Pendente (0)\n`;
       } else {
         let percentText = "";
         if (tipoLink === 'culto' && r.lastCellPresentes > 0) {
           const perc = Math.round((r.presentes / r.lastCellPresentes) * 100);
           percentText = ` [${perc}% da Célula]`;
         }
-        msg += `🔹 ${r.celula.nome} (Líder ${liderNome}): ${r.presentes} pessoas${percentText}\n`;
+        msg += `🔹 *${r.celula.nome}* (${liderNome}): ${r.presentes} pessoas${percentText}\n`;
+        if (r.presentes_nomes && r.presentes_nomes.length > 0) {
+          msg += `   ↳ _${r.presentes_nomes.join(', ')}_\n`;
+        }
       }
     });
 
@@ -135,11 +140,11 @@ export function AdminReports() {
       const meta = r.meta_exigida || 1;
       
       if (r.presentes > meta) {
-        msg += `🏆 ${liderNome} superou a meta em ${r.presentes - meta} pessoas!\n`;
+        msg += `🏆 ${liderNome} superou a meta em ${r.presentes - meta}!\n`;
       } else if (r.presentes === meta) {
-        msg += `🎯 ${liderNome} alcançou a meta na mosca!\n`;
+        msg += `🎯 ${liderNome} bateu a meta!\n`;
       } else {
-        msg += `⚠️ ${liderNome}: Faltaram ${meta - r.presentes} pessoas para bater a meta.\n`;
+        msg += `⚠️ ${liderNome}: Faltaram ${meta - r.presentes} p/ meta.\n`;
       }
     });
 
@@ -177,23 +182,18 @@ export function AdminReports() {
 
          <div className="relative mb-4">
            <p className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 ml-2 mb-1">Referência (Ex: Semana / Data)</p>
-           {tipoLink === 'evento' ? (
-             <input 
-               value={refName}
-               onChange={(e) => setRefName(e.target.value)}
-               className="w-full bg-gray-50 dark:bg-black/50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/50 transition-all border border-gray-100 dark:border-white/5 dark:text-white"
-             />
-           ) : (
-             <select 
-               value={refName}
-               onChange={(e) => setRefName(e.target.value)}
-               className="w-full bg-gray-50 dark:bg-black/50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/50 transition-all border border-gray-100 dark:border-white/5 dark:text-white appearance-none"
-             >
-               {referenceOptions.map((opt, idx) => (
-                 <option key={idx} value={opt}>{opt}</option>
-               ))}
-             </select>
-           )}
+           <input 
+             list="references-list"
+             value={refName}
+             onChange={(e) => setRefName(e.target.value)}
+             className="w-full bg-gray-50 dark:bg-black/50 p-4 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/50 transition-all border border-gray-100 dark:border-white/5 dark:text-white"
+             placeholder="Digite ou selecione a semana/data"
+           />
+           <datalist id="references-list">
+             {referenceOptions.map((opt, idx) => (
+               <option key={idx} value={opt} />
+             ))}
+           </datalist>
          </div>
 
          <button 
@@ -258,15 +258,31 @@ export function AdminReports() {
 
              return (
                <div key={r.celula.id} className={`flex flex-col p-4 rounded-2xl border ${statusColor} transition-all`}>
-                 <div className="flex items-center justify-between">
+                 <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpandedCell(expandedCell === r.celula.id ? null : r.celula.id)}>
                    <div className="flex-1 min-w-0">
                      <p className="text-xs font-black uppercase truncate text-gray-900 dark:text-white italic">{r.celula.nome}</p>
                      <p className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest">{liderNome}</p>
                    </div>
-                   <div className="text-right">
+                   <div className="flex items-center gap-3">
                      <p className={`text-2xl font-black leading-none italic ${r.enviado ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>{r.presentes}</p>
+                     {r.presentes_nomes && r.presentes_nomes.length > 0 && (
+                       expandedCell === r.celula.id ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />
+                     )}
                    </div>
                  </div>
+
+                 {expandedCell === r.celula.id && r.presentes_nomes && r.presentes_nomes.length > 0 && (
+                   <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5 animate-in slide-in-from-top-2">
+                     <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Lista de Presentes:</p>
+                     <div className="flex flex-wrap gap-1.5">
+                       {r.presentes_nomes.map((nome: string, idx: number) => (
+                         <span key={idx} className="bg-white dark:bg-black/40 text-[10px] font-black uppercase text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md shadow-sm border border-gray-100 dark:border-white/5">
+                           {nome}
+                         </span>
+                       ))}
+                     </div>
+                   </div>
+                 )}
 
                  {r.enviado && (
                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-black/5 dark:border-white/5">
