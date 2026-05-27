@@ -533,15 +533,6 @@ export function Profile() {
             </Link>
           )}
           {currentUser.role === 'master' && (
-            <button onClick={() => { setShowReportCenter(true); fetchAllReports(); }} className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-50 dark:border-white/5 w-full text-left">
-               <div className="flex items-center gap-4">
-                  <FileText className="text-[#1B3B6B] dark:text-blue-400" size={20} />
-                  <span className="font-bold text-gray-900 dark:text-white text-sm">Central de Relatórios Master</span>
-               </div>
-               <ChevronRight className="text-gray-200 dark:text-gray-600" size={16} />
-            </button>
-          )}
-          {currentUser.role === 'master' && (
             <Link to="/usuarios" className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-50 dark:border-white/5">
                <div className="flex items-center gap-4">
                   <Users className="text-[#1B3B6B] dark:text-blue-400" size={20} />

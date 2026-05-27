@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Users, Plus, X, 
   Loader2, Trash2, Shield, User,
-  Camera, CheckCircle, Clock, ChevronRight, Home
+  Camera, CheckCircle, Clock, ChevronRight, Home, Edit2
 } from "lucide-react";
 import { supabase, type KefelCelula } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +17,7 @@ export function CellManagement() {
   const [saving, setSaving] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [expandedCellId, setExpandedCellId] = useState<string | null>(null);
+  const [editingCellId, setEditingCellId] = useState<string | null>(null);
 
   // Form states
   const [nome, setNome] = useState("");
@@ -24,10 +25,6 @@ export function CellManagement() {
   const [liderId, setLiderId] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File|null>(null);
   const [imagePreview, setImagePreview] = useState<string|null>(null);
-
-  // Relatorios State (Dashboard Master)
-  const [dataAlvo, setDataAlvo] = useState(new Date().toISOString().split('T')[0]);
-  const [relatoriosData, setRelatoriosData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -58,13 +55,6 @@ export function CellManagement() {
     }
   }
 
-  useEffect(() => {
-    supabase.from("kefel_relatorios")
-      .select("*")
-      .eq("data", dataAlvo)
-      .then(({data}) => setRelatoriosData(data || []));
-  }, [dataAlvo]);
-
   async function handleAddCell(e: React.FormEvent) {
     e.preventDefault();
     if (!user || (user.role !== "master" && user.role !== "lider")) return;
@@ -84,30 +74,50 @@ export function CellManagement() {
           }
       }
 
-      const { error } = await supabase.from("kefel_celulas").insert({
-        nome,
-        dia_semana: diaSemana,
-        lider_id: liderId || null,
-        imagem_url: imageUrl,
-        criado_por: user.id
-      });
-
-      if (error) throw error;
+      if (editingCellId) {
+        const { error } = await supabase.from("kefel_celulas").update({
+          nome,
+          dia_semana: diaSemana,
+          lider_id: liderId || null,
+          ...(imageUrl ? { imagem_url: imageUrl } : {})
+        }).eq("id", editingCellId);
+        if (error) throw error;
+        showToast("Célula atualizada com sucesso!");
+      } else {
+        const { error } = await supabase.from("kefel_celulas").insert({
+          nome,
+          dia_semana: diaSemana,
+          lider_id: liderId || null,
+          imagem_url: imageUrl,
+          criado_por: user.id
+        });
+        if (error) throw error;
+        showToast("Célula criada com sucesso!");
+      }
 
       setShowAddForm(false);
       resetForm();
       fetchData();
-      showToast("Célula criada com sucesso!");
     } catch (err: any) {
-      console.error("Erro ao criar célula:", err);
-      showToast("Falha ao criar célula", "error");
+      console.error("Erro ao salvar célula:", err);
+      showToast("Falha ao salvar célula", "error");
     } finally {
       setSaving(false);
     }
   }
 
   const resetForm = () => {
-    setNome(""); setLiderId(null); setImageFile(null); setImagePreview(null);
+    setNome(""); setLiderId(null); setImageFile(null); setImagePreview(null); setEditingCellId(null);
+  };
+
+  const handleEdit = (cell: KefelCelula) => {
+    setEditingCellId(cell.id);
+    setNome(cell.nome);
+    setDiaSemana(cell.dia_semana || "Terça-feira");
+    setLiderId(cell.lider_id || null);
+    setImagePreview(cell.imagem_url || null);
+    setImageFile(null);
+    setShowAddForm(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -142,7 +152,8 @@ export function CellManagement() {
       const { error } = await supabase.from('kefel_celulas').update({ [field]: value }).eq('id', cellId);
       if (error) throw error;
       showToast("Meta atualizada!");
-      fetchData();
+      // Atualiza estado local sem recarregar tudo para não perder o foco
+      setCelulas(prev => prev.map(c => c.id === cellId ? { ...c, [field]: value } : c));
     } catch (e) {
       showToast("Erro ao atualizar meta", "error");
     }
@@ -158,13 +169,15 @@ export function CellManagement() {
 
   if (user?.role !== "master" && user?.role !== "lider") return null;
 
+  const visibleCells = user?.role === 'lider' ? celulas.filter(c => c.lider_id === user.id) : celulas;
+
   return (
     <div className="flex flex-col h-screen bg-transparent pt-14 pb-24 px-6 overflow-y-auto">
       <header className="flex justify-between items-center pt-4">
         <div>
-           <h1 className="text-2xl font-black text-gray-900 italic uppercase">Visão Geral</h1>
+           <h1 className="text-2xl font-black text-gray-900 italic uppercase">Gestão de Células</h1>
            <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
-           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">{celulas.length} Células Ativas</p>
+           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">{visibleCells.length} Célula{visibleCells.length !== 1 ? 's' : ''}</p>
         </div>
         {(user?.role === 'master' || user?.role === 'lider') && (
           <button onClick={() => setShowAddForm(true)} className="bg-black text-white p-3.5 rounded-2xl shadow-premium shadow-black/10 active:scale-95 transition-soft">
@@ -174,35 +187,17 @@ export function CellManagement() {
       </header>
 
       {user?.role === 'master' && (
-        <div className="mt-6 mb-8 space-y-4">
-          <div className="bg-white rounded-[2rem] p-4 border border-gray-100 shadow-sm flex flex-col relative z-20">
-            <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60 text-gray-500 ml-2">Filtrar Relatórios por Data</p>
-            <input 
-              type="date" 
-              value={dataAlvo} 
-              onChange={e => setDataAlvo(e.target.value)}
-              className="w-full bg-gray-50 p-4 rounded-2xl font-black italic text-gray-900 uppercase text-xs outline-none border border-transparent focus:border-[#1B3B6B]/20 transition-soft" 
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-             <div className="bg-[#1B3B6B] rounded-[2rem] p-5 shadow-lg shadow-[#1B3B6B]/20 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1 relative z-10">Total Célula</p>
-                <div className="flex items-center gap-2 relative z-10">
-                   <Home size={18} className="opacity-80"/>
-                   <span className="text-3xl font-black">{relatoriosData.filter(r => r.tipo === 'celula').reduce((acc, r) => acc + (r.presentes || 0), 0)}</span>
+        <div className="mt-6 mb-8">
+           <div className="bg-[#1B3B6B] rounded-[2rem] p-6 shadow-lg shadow-[#1B3B6B]/20 text-white relative overflow-hidden flex items-center justify-between">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1 relative z-10">Total de Membros no App</p>
+                <div className="flex items-center gap-3 relative z-10 mt-1">
+                   <Users size={24} className="opacity-80"/>
+                   <span className="text-4xl font-black leading-none">{members.length}</span>
                 </div>
-             </div>
-             <div className="bg-indigo-600 rounded-[2rem] p-5 shadow-lg shadow-indigo-600/20 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1 relative z-10">Total Culto</p>
-                <div className="flex items-center gap-2 relative z-10">
-                   <Users size={18} className="opacity-80"/>
-                   <span className="text-3xl font-black">{relatoriosData.filter(r => r.tipo === 'culto').reduce((acc, r) => acc + (r.presentes || 0), 0)}</span>
-                </div>
-             </div>
-          </div>
+              </div>
+           </div>
         </div>
       )}
 
@@ -210,7 +205,7 @@ export function CellManagement() {
         <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[#1B3B6B]" /></div>
       ) : (
         <div className="grid gap-6 pb-10">
-          {celulas.map(c => {
+          {visibleCells.map(c => {
             const cellMembers = members.filter(m => m.celula_id === c.id);
             const isExpanded = expandedCellId === c.id;
 
@@ -220,7 +215,8 @@ export function CellManagement() {
                    <div className="flex items-center gap-5">
                       <div className="w-16 h-16 bg-white rounded-[1.8rem] overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-indigo-100 border border-gray-50 p-1 group-hover:scale-110 transition-soft">
                          {c.imagem_url ? <img src={c.imagem_url} className="w-full h-full object-cover rounded-2xl" /> : <Users size={28} />}
-                                        <div>
+                      </div>
+                      <div>
                          <h3 className="font-black text-gray-900 uppercase italic text-base leading-tight">{c.nome}</h3>
                          <div className="flex items-center gap-4 mt-1.5">
                             <div className="flex items-center gap-1">
@@ -235,33 +231,18 @@ export function CellManagement() {
                       </div>
                    </div>
                    <div className="flex flex-col items-end gap-2">
-                     <div className="flex gap-2">
-                       {(() => {
-                         const relCel = relatoriosData.find(r => r.lider_id === c.lider_id && r.tipo === 'celula');
-                         const relCul = relatoriosData.find(r => r.lider_id === c.lider_id && r.tipo === 'culto');
-                         if (user?.role !== 'master') return null;
-                         
-                         return (
-                           <div className="flex flex-col gap-1 items-end mr-2">
-                             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${relCel ? 'bg-green-100 text-green-700' : 'bg-rose-50 text-rose-500'}`}>
-                               <Home size={8}/> {relCel ? `${relCel.presentes} P` : 'Pendente'}
-                             </div>
-                             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${relCul ? 'bg-green-100 text-green-700' : 'bg-rose-50 text-rose-500'}`}>
-                               <Users size={8}/> {relCul ? `${relCul.presentes} P` : 'Pendente'}
-                             </div>
-                           </div>
-                         );
-                       })()}
-                     </div>
-                     <div className="flex items-center gap-3">
+                     <div className="flex items-center gap-2">
                        {user?.role === 'master' && (
-                         <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }} className="bg-rose-50 text-rose-500 p-2 rounded-xl active:scale-90 transition-soft hover:bg-rose-100"><Trash2 size={16} /></button>
+                         <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="bg-blue-50 text-[#1B3B6B] p-2.5 rounded-xl active:scale-90 transition-soft hover:bg-blue-100"><Edit2 size={16} /></button>
+                       )}
+                       {user?.role === 'master' && (
+                         <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }} className="bg-rose-50 text-rose-500 p-2.5 rounded-xl active:scale-90 transition-soft hover:bg-rose-100"><Trash2 size={16} /></button>
                        )}
                        <div className={`p-2 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-[#1B3B6B]' : 'text-gray-300'}`}>
                           <ChevronRight size={20} />
                        </div>
                      </div>
-                   </div>      </div>
+                   </div>
                 </div>
 
                 <AnimatePresence>
@@ -352,10 +333,10 @@ export function CellManagement() {
             >
                <div className="flex justify-between items-center mb-8">
                   <div>
-                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">Nova Célula</h2>
+                    <h2 className="text-2xl font-black text-gray-900 italic uppercase">{editingCellId ? "Editar Célula" : "Nova Célula"}</h2>
                     <div className="h-1.5 w-12 bg-[#1B3B6B] rounded-full mt-1"></div>
                   </div>
-                  <button onClick={() => setShowAddForm(false)} className="glass-panel p-3 rounded-full"><X size={20} /></button>
+                  <button onClick={() => {setShowAddForm(false); resetForm();}} className="glass-panel p-3 rounded-full"><X size={20} /></button>
                </div>
 
                <form onSubmit={handleAddCell} className="space-y-8 flex-1 overflow-y-auto pr-2">
@@ -403,7 +384,7 @@ export function CellManagement() {
                   </div>
 
                   <button disabled={saving} type="submit" className="w-full bg-[#1B3B6B] text-white py-7 rounded-[2.5rem] font-black shadow-premium shadow-indigo-600/20 uppercase italic tracking-widest active:scale-95 transition-soft disabled:opacity-50">
-                     {saving ? <Loader2 className="animate-spin mx-auto" /> : "Consagrar Nova Célula"}
+                     {saving ? <Loader2 className="animate-spin mx-auto" /> : editingCellId ? "Salvar Alterações" : "Consagrar Nova Célula"}
                   </button>
                </form>
             </motion.div>

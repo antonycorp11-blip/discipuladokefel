@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { ChevronLeft, Share2, Copy, Users, CopyCheck, Loader2, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronLeft, Share2, Copy, Users, CopyCheck, Loader2, ArrowRight, ChevronDown, ChevronUp, Edit2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export function AdminReports() {
@@ -17,6 +17,11 @@ export function AdminReports() {
   const [generatedLink, setGeneratedLink] = useState("");
   const [copied, setCopied] = useState(false);
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
+
+  const [editingReport, setEditingReport] = useState<any>(null);
+  const [editPresentes, setEditPresentes] = useState(0);
+  const [editNomesStr, setEditNomesStr] = useState("");
+  const [savingReport, setSavingReport] = useState(false);
 
   // Auto-fill reference based on type
   useEffect(() => {
@@ -108,6 +113,32 @@ export function AdminReports() {
     }
   };
 
+  const handleSaveEdit = async () => {
+    if (!editingReport?.report_id) return;
+    setSavingReport(true);
+    const nomesArray = editNomesStr.split("\n").map(s => s.trim()).filter(s => s);
+    
+    const { error } = await supabase.from('kefel_relatorios').update({
+      presentes: editPresentes,
+      presentes_nomes: nomesArray
+    }).eq('id', editingReport.report_id);
+    
+    if (!error) {
+      showToast("Relatório atualizado!");
+      setAllRelatorios(prev => prev.map(rep => rep.id === editingReport.report_id ? { ...rep, presentes: editPresentes, presentes_nomes: nomesArray } : rep));
+      setEditingReport(null);
+    } else {
+      showToast("Erro ao atualizar", "error");
+    }
+    setSavingReport(false);
+  };
+
+  const handleOpenEdit = (r: any) => {
+    setEditingReport(r);
+    setEditPresentes(r.presentes);
+    setEditNomesStr(r.presentes_nomes.join("\n"));
+  };
+
   // Filtrar os dados que aparecem na lista (Baseado na aba selecionada E na referência digitada)
   // Assim o Admin pode navegar entre semanas apenas trocando o texto do input
   const currentReports = celulas.map(celula => {
@@ -118,6 +149,7 @@ export function AdminReports() {
     
     return {
       celula,
+      report_id: report?.id,
       presentes: report ? report.presentes : 0,
       presentes_nomes: report ? report.presentes_nomes || [] : [],
       meta_exigida: report ? report.meta_exigida : (tipoLink === 'celula' ? celula.meta_celula : tipoLink === 'culto' ? celula.meta_culto : celula.meta_evento),
@@ -296,6 +328,11 @@ export function AdminReports() {
                    </div>
                    <div className="flex items-center gap-3">
                      <p className={`text-2xl font-black leading-none italic ${r.enviado ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>{r.presentes}</p>
+                     {r.enviado && (
+                       <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(r); }} className="text-blue-500 p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg active:scale-90 transition-all ml-1" title="Editar Relatório">
+                         <Edit2 size={14} />
+                       </button>
+                     )}
                      {r.presentes_nomes && r.presentes_nomes.length > 0 && (
                        expandedCell === r.celula.id ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />
                      )}
@@ -335,7 +372,49 @@ export function AdminReports() {
              )
            })}
          </div>
-      </div>
+       </div>
+
+       {editingReport && (
+         <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-end">
+           <div className="bg-white dark:bg-slate-900 w-full rounded-t-[2.5rem] p-8 pb-10 shadow-2xl animate-in slide-in-from-bottom-10">
+             <div className="flex justify-between items-center mb-6">
+               <div>
+                 <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase italic">Editar Relatório</h2>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-[#1B3B6B] dark:text-blue-400 mt-1">{editingReport.celula.nome}</p>
+               </div>
+               <button onClick={() => setEditingReport(null)} className="p-2 bg-gray-100 dark:bg-slate-800 rounded-full"><X size={18} className="dark:text-white" /></button>
+             </div>
+             
+             <div className="space-y-4">
+               <div>
+                 <label className="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500 ml-2">Total de Presentes</label>
+                 <input 
+                   type="number" 
+                   value={editPresentes} 
+                   onChange={e => setEditPresentes(parseInt(e.target.value) || 0)} 
+                   className="w-full bg-gray-50 dark:bg-slate-800 p-4 rounded-xl font-black text-lg outline-none mt-1 border border-transparent focus:border-indigo-200 dark:text-white" 
+                 />
+               </div>
+               <div>
+                 <label className="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500 ml-2">Nomes (Um por linha)</label>
+                 <textarea 
+                   value={editNomesStr} 
+                   onChange={e => setEditNomesStr(e.target.value)} 
+                   className="w-full bg-gray-50 dark:bg-slate-800 p-4 rounded-xl font-bold text-sm outline-none mt-1 min-h-[120px] border border-transparent focus:border-indigo-200 dark:text-white" 
+                   placeholder="João Silva&#10;Maria Souza..."
+                 />
+               </div>
+               <button 
+                 disabled={savingReport}
+                 onClick={handleSaveEdit}
+                 className="w-full bg-[#1B3B6B] text-white py-4 rounded-xl font-black uppercase italic tracking-widest mt-2 active:scale-95 transition-all disabled:opacity-50 flex justify-center"
+               >
+                 {savingReport ? <Loader2 size={20} className="animate-spin" /> : "Salvar Alterações"}
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 }
