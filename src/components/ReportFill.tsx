@@ -26,7 +26,17 @@ export function ReportFill() {
 
   useEffect(() => {
     async function loadData() {
-      if (!user?.celula_id) {
+      let currentCelulaId = user?.celula_id;
+      
+      if (!currentCelulaId && (user?.role === 'lider' || user?.role === 'master')) {
+        const { data: ownCell } = await supabase.from('kefel_celulas').select('id').eq('lider_id', user.id).limit(1);
+        const ownCellArray = ownCell as any[];
+        if (ownCellArray && ownCellArray.length > 0) {
+          currentCelulaId = ownCellArray[0].id;
+        }
+      }
+
+      if (!currentCelulaId) {
         setLoading(false);
         return;
       }
@@ -35,12 +45,12 @@ export function ReportFill() {
           supabase
             .from("kefel_celulas")
             .select("meta_celula, meta_culto, meta_evento")
-            .eq("id", user.celula_id)
+            .eq("id", currentCelulaId)
             .single(),
           supabase
             .from("kefel_profiles")
             .select("id, nome")
-            .eq("celula_id", user.celula_id)
+            .eq("celula_id", currentCelulaId)
             .order("nome", { ascending: true })
         ]);
         
@@ -109,9 +119,16 @@ export function ReportFill() {
         .eq("referencia", ref)
         .eq("tipo", tipo);
 
+      let currentCelulaId = user?.celula_id;
+      if (!currentCelulaId && (user?.role === 'lider' || user?.role === 'master')) {
+        const { data: ownCell } = await supabase.from('kefel_celulas').select('id').eq('lider_id', user.id).limit(1);
+        const ownCellArray = ownCell as any[];
+        if (ownCellArray && ownCellArray.length > 0) currentCelulaId = ownCellArray[0].id;
+      }
+
       // Inserir
       const { error } = await supabase.from("kefel_relatorios").insert({
-        celula_id: user.celula_id,
+        celula_id: currentCelulaId,
         lider_id: user.id,
         tipo,
         presentes: totalPresentes,

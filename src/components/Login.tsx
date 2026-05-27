@@ -81,7 +81,31 @@ export function Login() {
     
     setError(null);
     setLoading(true);
-    const result = await signInMember(memberName.trim(), selectedCell?.id || "", memberPhone.trim());
+    const telClean = memberPhone.replace(/\D/g, '');
+
+    // Check if phone already exists when trying to register
+    if (!isExistingMember && telClean) {
+      const { data: existing } = await supabase
+        .from('kefel_profiles')
+        .select('nome')
+        .eq('telefone', telClean)
+        .limit(1);
+        
+      const existingArray = existing as any[];
+      if (existingArray && existingArray.length > 0) {
+        setError(`Telefone já cadastrado no nome de "${existingArray[0].nome}". Redirecionando para login...`);
+        setTimeout(() => {
+           setIsExistingMember(true);
+           setSelectedCell(null);
+           setMemberName(existingArray[0].nome);
+           setError(null);
+        }, 3000);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const result = await signInMember(memberName.trim(), selectedCell?.id || "", telClean);
     if (!result.success) {
       setError(result.message || "Erro ao entrar.");
     }
@@ -161,7 +185,7 @@ export function Login() {
                 <h2 className="text-xs font-black uppercase text-gray-900 tracking-widest italic">Escolha sua Célula</h2>
                 <button 
                   onClick={startExistingFlow}
-                  className="text-[9px] font-black uppercase tracking-widest text-[#1B3B6B] bg-[#1B3B6B]/5 px-4 py-2 rounded-full border border-[#1B3B6B]/10 hover:bg-[#1B3B6B]/10 transition-all italic hover:scale-105 active:scale-95"
+                  className="text-[10px] font-black uppercase tracking-widest text-white bg-[#FF5722] px-5 py-2.5 rounded-full shadow-lg shadow-[#FF5722]/30 border border-[#E64A19] hover:bg-[#E64A19] hover:shadow-xl transition-all italic hover:scale-105 active:scale-95 animate-pulse"
                 >
                   Já sou cadastrado
                 </button>
