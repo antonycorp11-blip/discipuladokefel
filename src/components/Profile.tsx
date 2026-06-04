@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X, Trash2, Moon, Sun, Award, BookOpen, Send, CheckCircle2, HandMetal } from "lucide-react";
+import { User, Settings, LogOut, Users, Clock, Loader2, Camera, ChevronRight, Star, FileText, X, Trash2, Moon, Sun, Award, BookOpen, Send, CheckCircle2, HandMetal, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { supabase, type KefelCelula, type KefelProfile, type KefelFavorito } from "@/lib/supabase";
@@ -317,7 +317,7 @@ export function Profile() {
 
        {/* Gestão Administrativa */}
        {isOwnProfile && (currentUser?.role === 'master' || currentUser?.role === 'lider' || currentUser?.email === 'aquilles@kefel.com') && (
-         <section className="mb-6">
+        <section className="mb-6 flex flex-col gap-4">
            <Link to="/admin-relatorios" className="bg-[#1C1C1E] p-6 rounded-[24px] shadow-lg flex items-center justify-between group active:scale-95 transition-all border border-white/5">
               <div className="flex items-center gap-5">
                  <div className="w-14 h-14 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center shadow-inner border border-blue-500/20">
@@ -330,6 +330,20 @@ export function Profile() {
               </div>
               <ChevronRight size={20} className="text-white/20 group-hover:translate-x-1 transition-transform" />
            </Link>
+           {currentUser?.role === 'master' && (
+             <Link to="/admin-analise" className="bg-[#1C1C1E] p-6 rounded-[24px] shadow-lg flex items-center justify-between group active:scale-95 transition-all border border-white/5">
+                <div className="flex items-center gap-5">
+                   <div className="w-14 h-14 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center shadow-inner border border-emerald-500/20">
+                      <TrendingUp size={24} />
+                   </div>
+                   <div>
+                      <h3 className="font-black text-white text-[17px] leading-tight tracking-tight italic uppercase">Análise Estratégica</h3>
+                      <p className="text-[10px] text-white/30 font-black uppercase mt-1 tracking-widest">Painel de Crescimento</p>
+                   </div>
+                </div>
+                <ChevronRight size={20} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+             </Link>
+           )}
          </section>
        )}
 

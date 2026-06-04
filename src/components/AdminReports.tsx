@@ -67,24 +67,23 @@ export function AdminReports() {
     const d = new Date();
     
     if (tipoLink === 'celula') {
-      // Mês atual
-      const month = d.toLocaleDateString('pt-BR', { month: 'long' });
-      const capMonth = month.charAt(0).toUpperCase() + month.slice(1);
-      for (let i = 1; i <= 5; i++) {
-        opts.push(`Semana ${i} - ${capMonth}`);
-      }
-      // Próximo mês
-      const nextDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      const nextMonth = nextDate.toLocaleDateString('pt-BR', { month: 'long' });
-      const nextCapMonth = nextMonth.charAt(0).toUpperCase() + nextMonth.slice(1);
-      for (let i = 1; i <= 4; i++) {
-        opts.push(`Semana ${i} - ${nextCapMonth}`);
+      // Meses anteriores (2 meses atrás)
+      for (let mOffset = -2; mOffset <= 1; mOffset++) {
+        const targetDate = new Date(d.getFullYear(), d.getMonth() + mOffset, 1);
+        const monthName = targetDate.toLocaleDateString('pt-BR', { month: 'long' });
+        const capMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        // Geralmente há até 5 semanas
+        for (let i = 1; i <= 5; i++) {
+          opts.push(`Semana ${i} - ${capMonth}`);
+        }
       }
     } else if (tipoLink === 'culto') {
-      // Pega o domingo anterior/atual e os próximos 7 domingos
+      // Pega domingos anteriores (12 semanas atrás) até 4 semanas no futuro
       let sunday = new Date(d);
       sunday.setDate(sunday.getDate() - sunday.getDay());
-      for (let i = 0; i < 8; i++) {
+      sunday.setDate(sunday.getDate() - 12 * 7); // Volta 12 semanas
+      
+      for (let i = 0; i < 17; i++) {
         opts.push(`Culto de Domingo - ${sunday.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`);
         sunday.setDate(sunday.getDate() + 7);
       }
