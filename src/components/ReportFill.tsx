@@ -31,13 +31,7 @@ export function ReportFill() {
   useEffect(() => {
     async function init() {
       try {
-        // 1. Tenta pegar o usuário atual (sessão). Se não houver, faz login anônimo.
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (!currentUser) {
-          await supabase.auth.signInAnonymously();
-        }
-
-        // 2. Busca todas as células
+        // Busca todas as células diretamente (RLS permite leitura pública)
         const { data: celulas, error } = await supabase
           .from('kefel_celulas')
           .select('*, lider:lider_id(nome)')
