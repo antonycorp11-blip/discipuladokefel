@@ -30,22 +30,26 @@ export function ReportFill() {
 
   useEffect(() => {
     async function init() {
-      // 1. Tenta pegar a sessão atual. Se não houver, faz login anônimo para passar no RLS de leitura.
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        await supabase.auth.signInAnonymously();
-      }
+      try {
+        // 1. Tenta pegar o usuário atual (sessão). Se não houver, faz login anônimo.
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) {
+          await supabase.auth.signInAnonymously();
+        }
 
-      // 2. Busca todas as células
-      const { data: celulas, error } = await supabase
-        .from('kefel_celulas')
-        .select('*, lider:lider_id(nome)')
-        .order('nome');
-      
-      if (celulas) setTodasCelulas(celulas);
-      if (error) console.error("Erro ao buscar células:", error);
-      
-      setLoading(false);
+        // 2. Busca todas as células
+        const { data: celulas, error } = await supabase
+          .from('kefel_celulas')
+          .select('*, lider:lider_id(nome)')
+          .order('nome');
+        
+        if (celulas) setTodasCelulas(celulas);
+        if (error) console.error("Erro ao buscar células:", error);
+      } catch (err) {
+        console.error("Erro na inicialização", err);
+      } finally {
+        setLoading(false);
+      }
     }
     init();
   }, []);
