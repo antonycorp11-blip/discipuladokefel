@@ -200,7 +200,7 @@ export function AdminReports() {
     totalPessoasGlobais += totalAusentesGlobais;
     const redePercent = totalPessoasGlobais > 0 ? Math.round((totalVidas / totalPessoasGlobais) * 100) : 0;
 
-    msg += `👥 *REDE: ${totalVidas}/${totalPessoasGlobais} • ${redePercent}%*\n\n`;
+    msg += `👥 *DISCIPULADO: ${totalVidas}/${totalPessoasGlobais} • ${redePercent}%*\n\n`;
     msg += `━━━━━━━━━━━━\n\n`;
 
     currentReports.forEach(r => {
