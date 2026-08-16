@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/relatorio/(.*)",
+      "destination": "/report.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
