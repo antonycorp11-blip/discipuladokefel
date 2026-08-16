@@ -89,6 +89,13 @@ export function Reports() {
     else setEnviandoCulto(true);
 
     try {
+      let currentCelulaId = user.celula_id;
+      if (!currentCelulaId && (user.role === 'lider' || user.role === 'master')) {
+        const { data: ownCell } = await supabase.from('kefel_celulas').select('id').eq('lider_id', user.id).limit(1);
+        const ownCellArray = ownCell as any[];
+        if (ownCellArray && ownCellArray.length > 0) currentCelulaId = ownCellArray[0].id;
+      }
+
       // Removendo relatorio anterior do mesmo tipo e dia
       await supabase.from("kefel_relatorios")
         .delete()
@@ -98,7 +105,7 @@ export function Reports() {
 
       // Inserindo o novo
       const { error: insErr } = await supabase.from("kefel_relatorios").insert({
-        celula_id: user.celula_id, // Pode ser null
+        celula_id: currentCelulaId, // Resolvido acima
         lider_id: user.id,
         tipo,
         presentes: value,
@@ -116,7 +123,7 @@ export function Reports() {
       else setEnviadoCulto(true);
     } catch (err: any) {
       console.error("Erro ao enviar:", err);
-      showToast("Erro ao enviar", "error");
+      showToast(`Erro ao enviar: ${err.message || "Falha técnica"}`, "error");
     } finally {
       if (tipo === 'celula') setEnviandoCelula(false);
       else setEnviandoCulto(false);
