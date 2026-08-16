@@ -2,21 +2,25 @@ import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { ChevronLeft, CheckCircle, Loader2, Target, Plus, UserCheck } from "lucide-react";
+import { ChevronLeft, CheckCircle, Loader2, Target, Plus, UserCheck, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { sendPushNotification } from "@/lib/onesignal";
 
 export function ReportFill() {
-  const { tipo } = useParams<{ tipo: string }>(); // 'celula', 'culto' ou 'evento'
+  const { tipo } = useParams<{ tipo: string }>();
   const [searchParams] = useSearchParams();
   const ref = searchParams.get("ref");
   
-  const { user, showToast } = useAuth();
+  const { showToast } = useAuth();
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [todasCelulas, setTodasCelulas] = useState<any[]>([]);
+  const [selectedCelula, setSelectedCelula] = useState<any | null>(null);
 
   const [meta, setMeta] = useState<number>(0);
   const [membros, setMembros] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
 
@@ -25,52 +29,49 @@ export function ReportFill() {
   const [newVisitor, setNewVisitor] = useState("");
 
   useEffect(() => {
-    async function loadData() {
-      let currentCelulaId = user?.celula_id;
+    async function init() {
+      // 1. Tenta pegar a sessão atual. Se não houver, faz login anônimo para passar no RLS de leitura.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        await supabase.auth.signInAnonymously();
+      }
+
+      // 2. Busca todas as células
+      const { data: celulas, error } = await supabase
+        .from('kefel_celulas')
+        .select('*, lider:lider_id(nome)')
+        .order('nome');
       
-      if (!currentCelulaId && (user?.role === 'lider' || user?.role === 'master')) {
-        const { data: ownCell } = await supabase.from('kefel_celulas').select('id').eq('lider_id', user.id).limit(1);
-        const ownCellArray = ownCell as any[];
-        if (ownCellArray && ownCellArray.length > 0) {
-          currentCelulaId = ownCellArray[0].id;
-        }
-      }
-
-      if (!currentCelulaId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const [celulaRes, membrosRes] = await Promise.all([
-          supabase
-            .from("kefel_celulas")
-            .select("meta_celula, meta_culto, meta_evento")
-            .eq("id", currentCelulaId)
-            .single(),
-          supabase
-            .from("kefel_profiles")
-            .select("id, nome")
-            .eq("celula_id", currentCelulaId)
-            .order("nome", { ascending: true })
-        ]);
-        
-        if (celulaRes.data && !celulaRes.error) {
-          const d = celulaRes.data as any;
-          if (tipo === 'celula') setMeta(d.meta_celula || 0);
-          else if (tipo === 'culto') setMeta(d.meta_culto || 0);
-          else if (tipo === 'evento') setMeta(d.meta_evento || 0);
-        }
-
-        if (membrosRes.data && !membrosRes.error) {
-          setMembros(membrosRes.data);
-        }
-      } catch (err) {
-        console.error("Erro ao buscar dados", err);
-      }
+      if (celulas) setTodasCelulas(celulas);
+      if (error) console.error("Erro ao buscar células:", error);
+      
       setLoading(false);
     }
-    loadData();
-  }, [user, tipo]);
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCelula) return;
+    async function loadMembers() {
+      setLoading(true);
+      const d = selectedCelula;
+      if (tipo === 'celula') setMeta(d.meta_celula || 0);
+      else if (tipo === 'culto') setMeta(d.meta_culto || 0);
+      else if (tipo === 'evento') setMeta(d.meta_evento || 0);
+
+      const { data, error } = await supabase
+        .from("kefel_profiles")
+        .select("id, nome")
+        .eq("celula_id", selectedCelula.id)
+        .order("nome", { ascending: true });
+      
+      if (data) setMembros(data);
+      if (error) console.error("Erro membros", error);
+      
+      setLoading(false);
+    }
+    loadMembers();
+  }, [selectedCelula, tipo]);
 
   if (!ref || !tipo) {
     return (
@@ -104,7 +105,7 @@ export function ReportFill() {
   const totalPresentes = selectedMembros.length + visitantes.length;
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!selectedCelula) return;
     if (totalPresentes === 0) {
       showToast("Selecione pelo menos uma pessoa.", "error");
       return;
@@ -115,21 +116,14 @@ export function ReportFill() {
       // Deletar o anterior se houver
       await supabase.from("kefel_relatorios")
         .delete()
-        .eq("lider_id", user.id)
+        .eq("lider_id", selectedCelula.lider_id)
         .eq("referencia", ref)
         .eq("tipo", tipo);
 
-      let currentCelulaId = user?.celula_id;
-      if (!currentCelulaId && (user?.role === 'lider' || user?.role === 'master')) {
-        const { data: ownCell } = await supabase.from('kefel_celulas').select('id').eq('lider_id', user.id).limit(1);
-        const ownCellArray = ownCell as any[];
-        if (ownCellArray && ownCellArray.length > 0) currentCelulaId = ownCellArray[0].id;
-      }
-
       // Inserir
       const { error } = await supabase.from("kefel_relatorios").insert({
-        celula_id: currentCelulaId,
-        lider_id: user.id,
+        celula_id: selectedCelula.id,
+        lider_id: selectedCelula.lider_id,
         tipo,
         presentes: totalPresentes,
         presentes_nomes: [...selectedMembros, ...visitantes],
@@ -145,14 +139,14 @@ export function ReportFill() {
       try {
         await sendPushNotification({
           headings: "Relatório Enviado",
-          contents: `A liderança preencheu o relatório: ${ref}`,
+          contents: `A liderança de ${selectedCelula.nome} preencheu o relatório: ${ref}`,
           targetTags: [{ key: 'role', relation: '=', value: 'master' }]
         });
       } catch(e) {}
 
-    } catch (err) {
-      showToast("Erro ao enviar relatório.", "error");
-      console.error(err);
+    } catch (err: any) {
+      showToast(`Erro ao enviar: ${err.message || "Falha técnica"}`, "error");
+      console.error("Erro ao enviar relatório:", err);
     } finally {
       setEnviando(false);
     }
@@ -175,12 +169,57 @@ export function ReportFill() {
   return (
     <div className="flex flex-col h-screen bg-gray-50 pt-14 px-6 relative overflow-y-auto pb-24">
       <header className="flex items-center gap-4 mb-6 pt-4 z-10 relative">
-        <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-2xl shadow-sm"><ChevronLeft size={20} className="text-gray-900" /></button>
+        <button 
+          onClick={() => {
+            if (selectedCelula && !sucesso) {
+              setSelectedCelula(null);
+            } else {
+              navigate(-1);
+            }
+          }} 
+          className="p-3 bg-white rounded-2xl shadow-sm"
+        >
+          <ChevronLeft size={20} className="text-gray-900" />
+        </button>
       </header>
 
       <AnimatePresence>
-        {sucesso ? (
+        {!selectedCelula ? (
           <motion.div 
+            key="selecao-celula"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex flex-col flex-1 z-10"
+          >
+            <div className="mb-6">
+              <h1 className="text-4xl font-black italic uppercase tracking-tighter text-gray-900 leading-tight">
+                Selecione sua Célula
+              </h1>
+              <p className="text-[12px] font-black uppercase text-gray-400 mt-2 tracking-widest bg-white inline-block px-3 py-1.5 rounded-lg border border-gray-200">
+                {ref.replace(/_/g, ' ')}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {todasCelulas.map(celula => {
+                const liderNome = celula.lider?.nome || "Sem Líder";
+                return (
+                  <button 
+                    key={celula.id}
+                    onClick={() => setSelectedCelula(celula)}
+                    className="w-full bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-start active:scale-95 transition-all"
+                  >
+                    <p className="text-sm font-black uppercase text-gray-900 italic">{celula.nome}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mt-1">Líder: {liderNome}</p>
+                  </button>
+                )
+              })}
+            </div>
+          </motion.div>
+        ) : sucesso ? (
+          <motion.div 
+             key="sucesso"
              initial={{ opacity: 0, scale: 0.9 }}
              animate={{ opacity: 1, scale: 1 }}
              className="flex flex-col items-center justify-center flex-1 z-10 mt-10"
@@ -190,7 +229,7 @@ export function ReportFill() {
              </div>
              <h2 className="text-3xl font-black italic uppercase text-gray-900 mb-2">Enviado!</h2>
              <p className="text-gray-500 text-center text-sm mb-10 max-w-xs">
-               O seu relatório de {tipo} para a {ref.replace(/_/g, ' ')} foi registrado com sucesso com {totalPresentes} pessoas.
+               O relatório da célula {selectedCelula.nome} ({tipo}) foi registrado com sucesso com {totalPresentes} pessoas.
              </p>
              <button onClick={() => navigate('/')} className="bg-gray-900 text-white font-black uppercase tracking-widest py-4 px-10 rounded-full">
                Voltar ao Início
@@ -198,13 +237,14 @@ export function ReportFill() {
           </motion.div>
         ) : (
           <motion.div 
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
+             key="formulario"
+             initial={{ opacity: 0, x: 20 }}
+             animate={{ opacity: 1, x: 0 }}
              className="flex flex-col flex-1 z-10"
           >
             <div className="mb-6">
               <h1 className="text-4xl font-black italic uppercase tracking-tighter text-gray-900 leading-tight">
-                Relatório de {tipo}
+                {selectedCelula.nome}
               </h1>
               <p className="text-[12px] font-black uppercase text-gray-400 mt-2 tracking-widest bg-white inline-block px-3 py-1.5 rounded-lg border border-gray-200">
                 {ref.replace(/_/g, ' ')}
@@ -225,8 +265,8 @@ export function ReportFill() {
             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex-1 flex flex-col mb-10">
                <div className="mb-6">
                  <p className="text-xs font-black text-gray-900 uppercase tracking-widest mb-1 flex items-center gap-2">
-                   <UserCheck size={16} className="text-indigo-500" /> 
-                   Sua Célula
+                   <Users size={16} className="text-indigo-500" /> 
+                   Lista de Membros
                  </p>
                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-4">Toque nos membros que estão presentes</p>
                  

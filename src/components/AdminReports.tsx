@@ -173,49 +173,41 @@ export function AdminReports() {
     let msg = ``;
     
     if (tipoLink === 'celula') {
-      msg += `*RELATÓRIO DE CÉLULAS*\n*${refName}*\n\n`;
+      msg += `*📊 RELATÓRIO DE CÉLULAS*\n`;
     } else if (tipoLink === 'culto') {
-      msg += `*RELATÓRIO DE CULTO*\n*${refName}*\n\n`;
+      msg += `*📊 RELATÓRIO DO CULTO*\n`;
     } else {
-      msg += `*RELATÓRIO DE EVENTO: ${refName.toUpperCase()}*\n\n`;
+      msg += `*📊 RELATÓRIO DE EVENTO*\n`;
     }
 
-    msg += `*Total de Vidas:* ${totalVidas}\n\n`;
-    msg += `*CÉLULAS:*\n`;
+    msg += `📅 *${refName}*\n\n`;
 
-    currentReports.forEach(r => {
-      const liderNome = r.celula.lider?.nome?.split(' ')[0] || "Sem Líder";
-      if (!r.enviado) {
-        msg += `*${r.celula.nome} (${liderNome})*: Pendente (0)\n`;
-      } else {
-        let percentText = "";
-        if (tipoLink === 'culto' && r.lastCellPresentes > 0) {
-          const perc = Math.round((r.presentes / r.lastCellPresentes) * 100);
-          percentText = ` [${perc}%]`;
-        }
-        msg += `*${r.celula.nome} (${liderNome})*: ${r.presentes} pessoas${percentText}\n`;
-      }
-    });
+    let totalAusentesGlobais = 0;
+    let totalPessoasGlobais = totalVidas; 
 
-    msg += `\n*DESEMPENHO DAS METAS:*\n`;
+    // Primeiro passamos por todas as células para somar os faltantes
     currentReports.forEach(r => {
       if (!r.enviado) return;
-      const liderNome = r.celula.lider?.nome?.split(' ')[0] || "Sem Líder";
-      const meta = r.meta_exigida || 1;
+      const cellProfiles = allProfiles.filter(p => p.celula_id === r.celula.id);
+      const presentesNomes = r.presentes_nomes || [];
+      const faltantesNomes = cellProfiles
+        .filter(p => !presentesNomes.includes(p.nome))
+        .map(p => getShortName(p.nome));
       
-      if (r.presentes > meta) {
-        msg += `*${liderNome}*: Superou em ${r.presentes - meta}\n`;
-      } else if (r.presentes === meta) {
-        msg += `*${liderNome}*: Atingiu a meta\n`;
-      } else {
-        msg += `*${liderNome}*: Faltaram ${meta - r.presentes}\n`;
-      }
+      totalAusentesGlobais += faltantesNomes.length;
     });
 
-    msg += `\n*LISTA DE PRESENÇA POR LÍDER:*\n`;
+    totalPessoasGlobais += totalAusentesGlobais;
+    const redePercent = totalPessoasGlobais > 0 ? Math.round((totalVidas / totalPessoasGlobais) * 100) : 0;
+
+    msg += `👥 *REDE: ${totalVidas}/${totalPessoasGlobais} • ${redePercent}%*\n\n`;
+    msg += `━━━━━━━━━━━━\n\n`;
+
     currentReports.forEach(r => {
-      if (!r.enviado) return;
-      const liderNome = r.celula.lider?.nome?.split(' ')[0] || "Sem Líder";
+      if (!r.enviado) return; 
+
+      const liderNomeFull = r.celula.lider?.nome || "Sem Líder";
+      const liderNome = getShortName(liderNomeFull).toUpperCase();
       
       const presentesNomes = r.presentes_nomes || [];
       const shortPresentes = presentesNomes.map((n: string) => getShortName(n));
@@ -225,10 +217,29 @@ export function AdminReports() {
         .filter(p => !presentesNomes.includes(p.nome))
         .map(p => getShortName(p.nome));
       
-      msg += `\n*${r.celula.nome} (${liderNome})*\n`;
-      msg += `Foi: ${shortPresentes.length > 0 ? shortPresentes.join(', ') : 'Ninguém'}\n`;
-      msg += `Não foi: ${faltantesNomes.length > 0 ? faltantesNomes.join(', ') : 'Ninguém'}\n`;
+      const cellTotalPessoas = r.presentes + faltantesNomes.length;
+      const cellPercent = cellTotalPessoas > 0 ? Math.round((r.presentes / cellTotalPessoas) * 100) : 0;
+
+      const onFire = cellPercent >= 100 ? " 🔥" : "";
+
+      msg += `*${liderNome} — ${r.presentes}/${cellTotalPessoas} • ${cellPercent}%*${onFire}\n`;
+      msg += `✅ ${shortPresentes.length > 0 ? shortPresentes.join(', ') : 'Ninguém'}\n`;
+      
+      if (faltantesNomes.length > 0) {
+        msg += `❌ ${faltantesNomes.join(', ')}\n\n`;
+      } else {
+        msg += `🎉 *Todos presentes!*\n\n`;
+      }
     });
+
+    msg += `━━━━━━━━━━━━\n\n`;
+    msg += `*⚠️ AUSÊNCIAS*\n`;
+    msg += `❌ *${totalAusentesGlobais}* pessoas não estiveram no ${tipoLink === 'celula' ? 'encontro' : tipoLink}.\n\n`;
+    
+    msg += `*👥 TOTAL DO DISCIPULADO*\n`;
+    msg += `✅ *${totalVidas}/${totalPessoasGlobais} • ${redePercent}% de presença*\n\n`;
+    
+    msg += `Líderes, atenção aos que faltaram. Vamos entrar em contato e cuidar de cada um. ❤️`;
 
     const encoded = encodeURIComponent(msg);
     window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');

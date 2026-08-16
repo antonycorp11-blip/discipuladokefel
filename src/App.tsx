@@ -48,6 +48,15 @@ function AppRoutes() {
 
   if (loading) return <LoadingScreen />;
 
+  // Rotas Públicas (acessíveis sem login)
+  if (location.pathname.startsWith('/relatorio/')) {
+    return (
+      <Routes>
+        <Route path="/relatorio/:tipo" element={<ReportFill />} />
+      </Routes>
+    );
+  }
+
   if (!user) {
     if (location.pathname !== '/login' && location.pathname !== '/') {
       sessionStorage.setItem('redirectAfterLogin', location.pathname + location.search);
@@ -85,7 +94,6 @@ function AppRoutes() {
         <Route path="/relatorios" element={<Reports />} />
         <Route path="/admin-relatorios" element={<AdminReports />} />
         <Route path="/admin-analise" element={<Analytics />} />
-        <Route path="/relatorio/:tipo" element={<ReportFill />} />
         <Route path="/usuarios" element={<UserManagement />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
